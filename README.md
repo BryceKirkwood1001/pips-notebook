@@ -2,121 +2,120 @@
 
 A turn-based dungeon game where you can't fight. You can only teach.
 
-Repository: [BryceKirkwood1001/pips-notebook](https://github.com/BryceKirkwood1001/pips-notebook).
+Upload your course material, teach Pip what's in it, then send Pip into the dungeon. Pip writes down what you explain and asks questions when something is unclear. In battle, Pip answers using **only that notebook**: never your material and never the answer key. Whatever you left out or taught wrong shows up in the fight.
 
-Upload lecture slides or notes, then teach Pip, your apprentice, before sending them into battle. The material becomes a few coherent lessons, each with a room, teaching objectives and several related topics. Pip keeps a notebook of what you explain and asks follow-up questions. In combat, Pip answers questions using **only that notebook**, without access to your uploaded material or the answer keys. Gaps and misconceptions in your teaching affect the fight.
+The final boss is an exam on the rooms you chose. The results show a predicted grade and the parts of your material to revisit. The grade is a game estimate, not a prediction of a real exam score.
 
-The final boss is an exam covering the course. Results show the game's predicted grade and the material to revisit. This is a gameplay estimate, not a validated prediction of a real exam score.
-
-Built at HackPrinceton (November 13 to 15, 2026).
+Built at HackPrinceton, November 13–15, 2026. Repository: [BryceKirkwood1001/pips-notebook](https://github.com/BryceKirkwood1001/pips-notebook).
 
 ## Play it
 
-1. Install **Node.js 22 or later** (the LTS from [nodejs.org](https://nodejs.org) is fine).
+1. Install **Node.js 22 or later** (the LTS from [nodejs.org](https://nodejs.org) works). It includes npm.
 2. Get this repository: `git clone` it, or use **Code → Download ZIP** on GitHub and unzip it.
-3. Start it with one of these:
+3. Start it:
    - **macOS:** double-click `start.command`.
    - **Windows:** double-click `start.bat`.
-   - **Any terminal** (also Linux), from the repository folder:
+   - **Any terminal**, including Linux, from the repository folder:
 
      ```sh
      npm start
      ```
 
-The first start installs dependencies (about a minute); later starts take a few seconds. The game opens in your browser at [localhost:8787](http://localhost:8787). Keep the window open while you play and press **Ctrl+C** (or close the window) to stop. If port 8787 is busy, the next free port is used; `npm start -- --port 9000` picks one.
+The first start downloads dependencies, so it needs an internet connection and takes about a minute. Later starts take a few seconds. The game opens in your browser at [localhost:8787](http://localhost:8787). Keep the window open while you play; press **Ctrl+C** or close the window to stop.
 
-If macOS refuses to open a downloaded `start.command`, open **System Settings → Privacy & Security** and choose **Open Anyway**, or run `npm start` in Terminal instead.
+- If Pip's Notebook is already running, starting it again opens the running game instead of a second copy.
+- If another program is using port 8787, the next free port is used. To choose one: `npm start -- --port 9000`.
+- If macOS won't open a downloaded `start.command`, go to **System Settings → Privacy & Security** and choose **Open Anyway**, or run `npm start` in Terminal.
 
-**No API keys are needed.** Without keys the server uses deterministic offline models: open **My archive → Library** and pick a sample lesson. For your own material, choose OpenAI or Google Gemini in **Settings** and paste a key (or put it in a `.env` file, see below). Arbitrary uploads in offline mode use a limited heuristic and can fail coverage.
+**No API key is needed to try it.** A fresh install runs in **Offline** mode, which uses canned AI responses. Open **My archive → Library** and pick one of the sample lessons. To play with your own material, choose OpenAI or Google Gemini in **Settings** and paste a key. Uploads in Offline mode use a simple heuristic and often fail to prepare.
 
-## Current game
+## How a game works
 
-- **Centered main menu:** Play, My archive, Settings and Music on/off.
-- **Create New Dungeon:** inside My archive, upload files, paste notes, or combine both in one form with one dungeon title. All sources are prepared together.
-- **Source-grounded preparation:** PDF, Markdown and plain-text uploads, plus pasted notes. The planner normally groups a lecture into 3–5 complete lessons (1–2 for short material, at most 6), with descriptions and teaching objectives. Source-concept coverage and question quality are checked before preparation completes.
-- **Teach topic by topic:** a lesson book with an overview, topic pages and review. A floating Talk to Pip / Pip has a question bubble opens the teaching conversation. Feedback distinguishes new notes, unclear explanations and unrelated messages; incorrect teaching can become a misconception in Pip's notebook.
-- **Readable combat feedback:** room encounters, a final dragon exam, hit animations and a persistent turn outcome above Next turn. Click the outcome to open that turn in the battle log. The expedition report shows room progress, correct/total answers, accuracy and weak points.
-- **Navigation and saved progress:** Rooms and Pause open the lesson/progress menu. Pausing freezes pending help deadlines. My archive lists **Your saved dungeons** and their expeditions: resume, end or remove an expedition, or delete an entire dungeon after confirmation.
-- **Music transitions:** scene and battle tracks fade out and in; the music preference is remembered in the browser.
-- **On-device dictation only:** Dictate uses the browser's local speech recognition when available (live text, e.g. recent desktop Chrome with the language pack); otherwise it records a short clip and transcribes it inside the page with an open speech model (Moonshine base, MIT, English) via transformers.js. That model (about 63 MB) downloads once from Hugging Face/jsDelivr and is cached by the browser. Audio is never uploaded, and there is no cloud transcription backend.
-
-Preparation shows stage/task progress and, when supplied by OpenAI, public reasoning summaries. These summaries are optional and are not the model's private chain of thought. You can start with a ready selected room while later rooms continue preparing.
-
-## What's in this repository
-
-| Folder | What it is |
+| In the game | What it means |
 |---|---|
-| `client/` | The game: a 2D pixel-art dungeon built with Phaser AE. Source in `client/game/`; the ready-to-serve build in `client/dist/`. |
-| `server/` | The backend: API, game engine, material ingestion and retrieval. Node and TypeScript. It also serves the game. |
-| `shared/` | Public Zod contracts and a dependency-free API client, used by both the server and the game. |
-| `samples/` | Two sample course handouts with their prebuilt course packs, plus `rock-paper-scissors.pdf` to try uploading your own material. |
-| `scripts/` | The one-command launcher (`start.mjs`), the offline HTTP gauntlet and the API doc generator. |
-| `docs/` | Architecture, spec, API reference, state machine, ingest pipeline, and marketing art. |
+| **Dungeon** | A course prepared from your material: PDF, Markdown or plain-text files and pasted notes, up to 25 MB and 300 pages. Create one under **My archive → Create New Dungeon**. |
+| **Room** | One lesson in the dungeon, with a description and teaching goals. With an AI provider, a lecture usually becomes 3–5 rooms (1–2 for short material, never more than 6). |
+| **Topic** | One idea inside a room. You teach a room topic by topic. |
+| **Notebook** | What Pip wrote down from your teaching. It is Pip's only source in battle. |
+| **Wrong belief** | A common misconception about a topic. If you teach it, or skip Pip's question about it, it goes into the notebook looking like any other note. |
+| **Expedition** | One playthrough of a dungeon, from the first room to the results. Expeditions are saved in **My archive**, where you can resume, end or remove them. |
+| **"Help me!"** | Now and then Pip asks you to answer a question yourself, with a timer based on how hard it is. |
 
-See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for how the pieces fit together.
+A room has two halves. In the **lesson**, open **Talk to Pip**, explain each topic and answer Pip's questions; **Pip has a question!** means one is waiting. Then press **Ready: go fight** and use **Next turn** to watch Pip answer from the notebook. Each turn shows Pip's answer, reasoning, the notes Pip used and the correct answer. If Pip runs out of hearts, **Retry** returns to the lesson with the notebook kept and hearts refilled. The boss exam covers every room in the expedition, and up to half of its questions aim at wrong beliefs still in the notebook.
+
+Other things in the game:
+
+- **Rooms** and **Pause** open the expedition menu without losing your place, and pausing stops "Help me!" timers.
+- **Dictate** turns speech into text on your device. It uses the browser's own speech recognition when available; otherwise it downloads an open speech model once (Moonshine base, about 63 MB, from jsDelivr and Hugging Face) and runs it in the page. Audio never leaves your computer.
+- While a dungeon is being prepared, **Thinking** shows progress and, with OpenAI, the model's public reasoning summary (not its private reasoning). You can start an expedition as soon as its first room is ready.
+- Music changes with each scene. The **Music** button on the title screen and in the header turns it off, and your browser remembers the choice.
+
+## How it's built
+
+One Node.js process runs everything. The server (Fastify, TypeScript run directly by `tsx`, no build step) serves the game at `/` and the API under `/api`. It keeps all game state and makes every AI call, so API keys never reach the browser. The game is a Phaser AE project whose prebuilt copy is committed in `client/dist/`, so playing never needs the Phaser tools.
+
+| Path | What it is |
+|---|---|
+| `client/` | The game. Source in `client/game/` (screens in `client/game/course/`), prebuilt copy in `client/dist/`. |
+| `server/` | API, game rules, course preparation, search over your material, AI providers and storage. Also serves the game. |
+| `shared/` | The data contracts (Zod schemas) the server checks every request against, and the API client the game and scripts use. |
+| `samples/` | Two sample handouts with ready-made dungeons, plus `rock-paper-scissors.pdf` for trying an upload. |
+| `scripts/` | `start.mjs` (what `npm start` runs), the offline end-to-end test and the API doc generator. |
+| `docs/` | Architecture, API reference, run phases, course preparation, rules and decisions, and marketing art. |
+| `start.command`, `start.bat` | Double-click launchers for macOS and Windows. Both run `scripts/start.mjs`. |
+
+The game needs the internet only for an AI provider, the first install, and the dictation model download. The server listens on every network interface, so other devices on your network can open the game at your computer's address; changing Settings works only from the computer running it. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 
 ## Configuration
 
-Everything has a default, so a `.env` file is optional. To use one, copy `.env.example` to `.env` and fill in what you need:
+A fresh install needs no configuration. To set things before the first start, copy `.env.example` to `.env`:
 
-| Variable | What it is |
+| Variable | What it does |
 |---|---|
-| `LLM_PROVIDER` | `openai`, `gemini` or `mock`. Without an explicit selection, a Gemini key takes precedence, then OpenAI, then mocks. |
-| `GEMINI_API_KEY` / `OPENAI_API_KEY` | Credentials for the selected provider. Document preparation, teaching, grading and embeddings use that provider; live requests may incur usage charges. |
-| `OPENAI_MODEL` / `GEMINI_MODEL` | Generation model names. Choose a model available to your account; embedding models are configured separately. |
-| `MONGODB_URI` | Optional MongoDB connection string. Without it, everything is saved on disk in `.local/archive/`. |
-| `PORT` | The port for the game and API (default 8787). |
+| `LLM_PROVIDER` | `openai`, `gemini` or `mock` (Offline). If unset: Gemini when `GEMINI_API_KEY` is set, otherwise OpenAI when `OPENAI_API_KEY` is set, otherwise Offline. |
+| `OPENAI_API_KEY`, `GEMINI_API_KEY` | Keys for the provider. It prepares dungeons, plays Pip, grades written answers and creates search embeddings. Live calls cost API credit. |
+| `OPENAI_MODEL`, `GEMINI_MODEL` | Models for writing and answering. Embedding models are set separately: `OPENAI_EMBEDDING_MODEL` for OpenAI, `EMBEDDING_MODEL` for Gemini. |
+| `MONGODB_URI`, `MONGODB_DB` | Optional MongoDB storage (default database `pips_notebook`). Without it, data is saved in `.local/archive/`. |
+| `PORT` | Port for the game and API (default 8787). |
+| `DEMO_MODE` | `true` for a shorter game: 3 questions per room, 6 in the boss, and tighter "Help me!" timers. |
+| `DEBUG` | `true` turns on the developer endpoint that shows hidden answers. Never use it for real play. |
 
-Every other setting is described in `.env.example`.
+Every other setting is explained in `.env.example`.
 
-**Settings in the game** (OpenAI, Google Gemini or Offline; models; keys; timeouts) apply without a restart. Keys are write-only, stored by the server in the ignored `.local/api-settings.json` with owner-only permissions, and override `.env`. Only the non-secret backend URL is kept in the browser. Setup is limited to the server's own machine. During preparation, **Thinking** below Stage shows task progress and, from OpenAI, public reasoning summaries; these are not the model's private chain of thought.
+**Settings in the game** override the AI settings in `.env` and apply immediately. The server saves them in `.local/api-settings.json`, readable only by your user account. Keys can be replaced or removed but never read back. To return to the `.env` values, stop the game, delete that file and start again.
 
-**Storage.** Prepared courses, notebooks and expeditions survive restarts in `.local/archive/` (ignored by Git); original upload bytes are not kept. With `MONGODB_URI` set, the same data goes to MongoDB (default database `pips_notebook`; set `MONGODB_DB` to keep an existing one), with Atlas vector search when available. A failed connection falls back to local storage; [API health](http://localhost:8787/api/health) reports `storage`. Setting a URI does not migrate local data. This is a shared local archive, not separate user accounts. **Remove expedition** deletes one run; **Delete dungeon** deletes a prepared course and all its runs, never your source files. Details: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md#storage-and-the-archive).
+**Your saved data** lives in `.local/` (ignored by Git): prepared dungeons, notebooks and expeditions survive restarts, but your original files are not kept. With `MONGODB_URI` set, the same data goes to MongoDB instead, using Atlas Vector Search when available; if the connection fails, the server falls back to `.local/` and [the health check](http://localhost:8787/api/health) shows `storage: local`. Switching to MongoDB does not copy existing local data. Everyone who opens the game shares one archive; there are no user accounts. **Remove expedition** deletes one playthrough. **Delete dungeon** deletes the prepared course and all its expeditions, never the files on your computer.
 
 ## Commands
 
-Run these from the repository root.
+Run these from the repository folder.
 
 | Command | What it does |
 |---|---|
-| `npm start` | Installs dependencies if needed, starts the game and API on one port, and opens the browser. |
-| `npm run dev` | Starts the same server in watch mode, restarting on backend changes. |
-| `npm test` | Runs the test suite, including a check that the committed game build matches the game source. |
-| `npm run typecheck` | Type-checks `shared` and `server`. |
-| `npm run e2e` | Plays a full gauntlet against an isolated mock API and prints a transcript. `-- --sample binary-search` checks the other sample. |
-| `npm run build:game` | Rebuilds the game into `client/dist/`. Needs the Phaser AE toolkit (see below). |
-| `npm run dev:game` | The game's live-rebuilding preview on port 4173, talking to the API on 8787. Needs the toolkit. |
-| `npm run ingest -- samples/seasons.md` | Builds a course pack from a file and writes it to `samples/cache/`. |
-| `npm run llm:smoke` | Calls each model task using the saved/environment provider. Skips in Offline mode. |
-| `npm run docs:api` | Rebuilds the API reference from captured HTTP examples (`npm run e2e -- --capture-file docs/api-examples.json` refreshes them). |
+| `npm start` | Installs dependencies when needed, starts the game and API, and opens the browser. |
+| `npm run dev` | Runs the server and restarts it when server code changes. Install dependencies first (`npm ci`). |
+| `npm test` | Runs the tests, including a check that `client/dist/` is up to date with the game source. `npm run test:watch` reruns on changes. |
+| `npm run typecheck` | Type-checks `server/` and `shared/`. The game's own check is `npm --prefix client run typecheck`, which needs the Phaser tools. |
+| `npm run e2e` | Plays a full game against a temporary Offline server and prints the transcript. Add `-- --sample binary-search` for the other sample. |
+| `npm run build:game` | Rebuilds `client/dist/` from the game source. Needs the Phaser tools (below). |
+| `npm run dev:game` | Live-rebuilding game preview at localhost:4173, using the API on port 8787. Needs the Phaser tools. |
+| `npm run ingest -- <file>` | Prepares a dungeon from a file and saves it to `samples/cache/`, which adds it to the built-in samples. Uses the configured provider. |
+| `npm run llm:smoke` | Makes one live call for each in-game AI task plus one embedding, to check a provider works. Skipped in Offline mode. |
+| `npm run docs:api` | Rebuilds `docs/API.md` from recorded requests. `npm run e2e -- --capture-file docs/api-examples.json` records new ones. |
 
 ## Demo script
 
-1. Start the game ([Play it](#play-it)); it opens at [localhost:8787](http://localhost:8787).
-2. Open **My archive**, pick the **Why Earth Has Seasons** sample from Library, select rooms and a target grade, then start. Pip is your apprentice throughout the game.
-3. **Learning.** Open Talk to Pip, explain each topic and answer follow-up questions. Check the notebook and review the lesson before sending Pip to fight.
-4. **Room fight.** Press **Next turn** and watch Pip answer from the notebook. Click the turn outcome to inspect the answer, cited notes and grading. Use Rooms or Pause to inspect lesson progress without losing your place.
-5. **"Help me!"** Now and then the student asks you to solve a question yourself, with a time budget that depends on how hard the question is.
-6. **Boss.** The exam mixes every concept and aims questions at the wrong beliefs still in the notebook.
-7. **Results.** The predicted grade, whether you met your target, and the misconceptions that cost you, each with the page and section of the material that covers it.
-
-For backend development, `DEBUG=true` enables the protected debug endpoint. Hidden answer keys and misconception state must stay out of normal gameplay screens.
-
-For a shorter demo, set `DEMO_MODE=true`: rooms have 3 questions and the boss has 6.
-
-## Docs
-
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the game, server and contracts fit together, model providers, storage, and how the game uses the API.
-- [docs/API.md](docs/API.md): every endpoint with a real request and response.
-- [docs/STATE_MACHINE.md](docs/STATE_MACHINE.md): the phases of a run and which action is allowed when, including pause and end.
-- [docs/INGEST.md](docs/INGEST.md): how uploaded material becomes lessons and a verified question bank.
-- [docs/FRONTEND_VARIABLES.md](docs/FRONTEND_VARIABLES.md): public API fields and state mapped to the game's screens.
-- [client/game/README.md](client/game/README.md): the game's source map and frontend behavior.
-- [docs/SPEC.md](docs/SPEC.md) and [docs/DECISIONS.md](docs/DECISIONS.md): the game rules and the choices made along the way.
+1. Start the game ([Play it](#play-it)).
+2. Open **My archive → Library**, pick **Why Earth Has Seasons**, choose the rooms and a target grade, and start.
+3. **Lesson.** Open **Talk to Pip**, explain each topic and answer Pip's questions. Check the notebook before pressing **Ready: go fight**.
+4. **Room fight.** Press **Next turn** and watch Pip answer from the notebook. Click a turn to see Pip's answer, the notes Pip cited and how it was graded.
+5. **"Help me!"** When Pip asks for help, answer before the timer runs out.
+6. **Boss.** The exam covers every room you chose and goes after wrong beliefs left in the notebook.
+7. **Results.** See the predicted grade, whether you met your target, and each wrong belief that cost points, with the page and section of your material that explains it.
 
 ## Changing the game
 
-The game is built with Phaser AE. `client/dist/` holds a committed build, so playing never needs the Phaser toolchain. Changing game code does: restore the toolkit once (sign in with your own Phaser account when asked), then rebuild and commit `client/dist/` with your change.
+Playing uses the prebuilt copy in `client/dist/`. Changing game code means rebuilding it, which needs the Phaser AE tools. Install them once from the `client/` folder; the setup asks you to sign in with your own Phaser account:
 
 ```sh
 cd client
@@ -126,33 +125,38 @@ node restore-packs.mjs
 npm run build
 ```
 
-The update command may warn that the game did not bake; the next two commands restore the packs and build. After that, `npm run build:game` (from the root) rebuilds, and `npm run dev:game` serves a live preview on port 4173. `npm test` fails if `client/dist/` is older than the game source. The entry point is `client/game/main.ts`; lesson, combat, archive and settings screens are in `client/game/course/`. `?mock=1` runs the game's own canned practice API with no backend at all.
+`update` may warn that the game did not build; the next two commands fix that. Afterwards, `npm run build:game` rebuilds from the repository folder. Commit `client/dist/` together with your code change: `npm test` fails when the prebuilt copy is older than the source. The game starts in `client/game/main.ts`. Add `?mock=1` to the game's address for **Practice mode**, where the page answers itself with canned data and never calls the server's API. `client/AGENTS.md` lists the other Phaser AE commands.
 
-Hosted Phaser publishing and crew commands require the owner to link an accessible hosted build.
+## Docs
 
-Known verification limits: the native `npm run smoke` simulator fails at the frontend's DOM dependency (`document is not defined`). On-device speech recognition and audible music transitions need manual checks in a supporting browser; a full fresh-upload, live-model boss/results playthrough is not claimed.
+- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): how the pieces fit, AI providers and Settings, storage, and how the game uses the API.
+- [docs/API.md](docs/API.md): every endpoint with a real request and response.
+- [docs/STATE_MACHINE.md](docs/STATE_MACHINE.md): the phases of an expedition and which action is allowed when.
+- [docs/INGEST.md](docs/INGEST.md): how uploaded material becomes rooms and checked questions.
+- [docs/FRONTEND_VARIABLES.md](docs/FRONTEND_VARIABLES.md): every public field, by game screen.
+- [client/game/README.md](client/game/README.md): the game's source files.
+- [docs/SPEC.md](docs/SPEC.md) and [docs/DECISIONS.md](docs/DECISIONS.md): the rules and the choices made along the way.
 
 ## Artwork
 
-[3:2 thumbnail](docs/marketing/pips-notebook-thumbnail-3x2.png) · [original landscape variant](docs/marketing/pips-notebook-thumbnail-v2.png)
-
-The thumbnails use the game's official title, **Pip's Notebook**. Exact image prompts are kept beside the PNGs in `docs/marketing/`.
+[3:2 thumbnail](docs/marketing/pips-notebook-thumbnail-3x2.png) · [landscape version](docs/marketing/pips-notebook-thumbnail-v2.png). The prompts used to make them are next to the images in `docs/marketing/`.
 
 ## Credits
 
-Libraries and services this project uses:
-
 | Library or service | Used for | License |
 |---|---|---|
-| [Phaser AE](https://phaser.io) (`@phaser-ae/cli`) | The game in `client/` | Phaser AE terms |
-| [Fastify](https://fastify.dev), [`@fastify/cors`](https://github.com/fastify/fastify-cors), [`@fastify/multipart`](https://github.com/fastify/fastify-multipart), [`@fastify/static`](https://github.com/fastify/fastify-static) | The HTTP API, file uploads and serving the game | MIT |
-| [Zod](https://zod.dev), [`zod-to-json-schema`](https://github.com/StefanTerdell/zod-to-json-schema) | Data schemas and structured model output | MIT, ISC |
-| [`@google/genai`](https://github.com/googleapis/js-genai) with the Google Gemini API | The AI student, grading, course pack generation, embeddings | Apache-2.0 |
-| [OpenAI API](https://platform.openai.com/docs) (called directly over HTTPS, no SDK) | Optional second provider for the AI student, grading, course pack generation and embeddings | OpenAI terms |
-| [MongoDB Node.js driver](https://github.com/mongodb/node-mongodb-native) with MongoDB Atlas Vector Search | Storage and vector search | Apache-2.0 |
-| [`unpdf`](https://github.com/unjs/unpdf) | PDF text extraction | MIT |
-| [`pdf-lib`](https://pdf-lib.js.org) | Generating small PDFs inside tests | MIT |
-| [`dotenv`](https://github.com/motdotla/dotenv) | Loading `.env` | BSD-2-Clause |
-| [TypeScript](https://www.typescriptlang.org), [`tsx`](https://tsx.is), [Vitest](https://vitest.dev) | Language, running TypeScript, tests | Apache-2.0, MIT, MIT |
+| [Phaser AE](https://phaser.io) | The game engine and build tools | PolyForm Shield 1.0.0, with permission to make and sell games |
+| [Fastify](https://fastify.dev) with [`@fastify/cors`](https://github.com/fastify/fastify-cors), [`@fastify/multipart`](https://github.com/fastify/fastify-multipart) and [`@fastify/static`](https://github.com/fastify/fastify-static) | The server, uploads and serving the game | MIT |
+| [Zod](https://zod.dev), [`zod-to-json-schema`](https://github.com/StefanTerdell/zod-to-json-schema) | Data contracts and structured AI output | MIT, ISC |
+| [`@google/genai`](https://github.com/googleapis/js-genai) and the Google Gemini API | AI provider | Apache-2.0 |
+| [OpenAI API](https://platform.openai.com/docs), called directly over HTTPS | AI provider | OpenAI terms |
+| [MongoDB Node.js driver](https://github.com/mongodb/node-mongodb-native), MongoDB Atlas Vector Search | Optional storage and search | Apache-2.0 |
+| [`unpdf`](https://github.com/unjs/unpdf) | Reading PDF text | MIT |
+| [Transformers.js](https://github.com/huggingface/transformers.js) with [Moonshine base](https://huggingface.co/onnx-community/moonshine-base-ONNX) | Dictation fallback, loaded in the browser when needed | Apache-2.0, MIT |
+| [Silkscreen](https://fonts.google.com/specimen/Silkscreen) | Pixel font | SIL Open Font License (`client/game/media/OFL-Silkscreen.txt`) |
+| [`dotenv`](https://github.com/motdotla/dotenv) | Reading `.env` | BSD-2-Clause |
+| [TypeScript](https://www.typescriptlang.org), [`tsx`](https://tsx.is), [Vitest](https://vitest.dev), [`pdf-lib`](https://pdf-lib.js.org) | Language, running TypeScript, tests, test PDFs | Apache-2.0, MIT, MIT, MIT |
 
-The game, backend and docs were developed during the event with help from Claude Code and Codex.
+Art and music: **TODO, ask the team** who made the sprites, backgrounds and soundtrack in `client/game/media/`, and under what terms.
+
+The game, server and docs were built during the event with help from Claude Code and Codex.
