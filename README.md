@@ -6,7 +6,7 @@ Upload your course material, teach Pip what's in it, then send Pip into the dung
 
 The final boss is an exam on the rooms you chose. The results show a predicted grade and the parts of your material to revisit. The grade is a game estimate, not a prediction of a real exam score.
 
-![Pip's Notebook: Pip, a small blue dragon, writing in a notebook at a library desk](docs/marketing/pips-notebook-thumbnail-3x2.png)
+![](docs/marketing/pips-notebook-thumbnail-3x2.png)
 
 ## Play it
 
