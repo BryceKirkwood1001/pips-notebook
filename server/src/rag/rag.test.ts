@@ -36,6 +36,17 @@ async function makePdf(pages: string[]): Promise<Uint8Array> {
 }
 
 describe('parser', () => {
+  it('keeps every page of a large PDF without uploading the full document for every outline batch', async () => {
+    const llm = fakeLlm();
+    const upload = vi.spyOn(llm, 'uploadFile');
+    const data = await makePdf(Array.from({ length: 108 }, (_, i) => `Memory hierarchy evidence on page ${i + 1}.`));
+    const parsed = await createMaterialParser({ llm, config }).parse({ id: 'f1', name: 'lecture.pdf', type: 'pdf', data });
+    expect(parsed.pages).toHaveLength(108);
+    expect(parsed.pages[107].text).toContain('page 108');
+    expect(parsed.uploaded).toBeUndefined();
+    expect(upload).not.toHaveBeenCalled();
+  });
+
   it('reads a PDF per page, flags low-text pages, uploads', async () => {
     const data = await makePdf([
       'Page one has plenty of readable text about the seasons of the year.',

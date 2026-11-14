@@ -3,12 +3,13 @@ import type { CoverageGap } from '../../llm/types';
 import type { RetrievedChunk } from '../../rag/types';
 import { gapsBlock } from './adaptQuestions';
 import { conceptsBlock, itemsBlock, labelledEvidenceBlock, styleBlock, system } from './common';
-import { FLAT_QUESTION_SPEC } from './questionSpec';
+import { FLAT_QUESTION_SPEC, QUESTION_QUALITY_RULES } from './questionSpec';
 
 export const GENERATE_QUESTIONS_SYSTEM = system(
   [
     'Task: write brand-new questions that fill the coverage gaps, so they read as if the course authored them: same notation, units, code language, scenario types, depth and phrasing as the exemplars.',
     'Use only facts stated in the material excerpts; do not rely on outside knowledge for the key. Follow the preferred types, and vary the position of the correct option. Each question must have exactly one defensible answer.',
+    QUESTION_QUALITY_RULES,
     FLAT_QUESTION_SPEC,
   ].join('\n'),
 );

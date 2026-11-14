@@ -12,7 +12,7 @@ export const GRADE_OPEN_SYSTEM = [
 export function buildGradeOpenPrompt(input: GradeOpenInput): string {
   const q = input.question;
   const reference: string[] = [];
-  if (q.type === 'short_text') reference.push(`Accepted answers: ${q.payload.acceptedAnswers.join(' | ')}`);
+  if (q.type === 'short_text') reference.push(`Accepted answers: ${q.payload.acceptedAnswers.join(' | ')}`, `Rubric: ${q.payload.rubric}`);
   if (q.type === 'free_response') {
     reference.push(`Rubric: ${q.payload.rubric}`);
     if (q.payload.modelAnswer) reference.push(`Model answer: ${q.payload.modelAnswer}`);

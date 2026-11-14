@@ -2,12 +2,13 @@ import type { Concept, MaterialItem, StyleProfile } from '@top/shared';
 import type { CoverageGap } from '../../llm/types';
 import type { RetrievedChunk } from '../../rag/types';
 import { conceptsBlock, itemsBlock, labelledEvidenceBlock, styleBlock, system, wrap } from './common';
-import { FLAT_QUESTION_SPEC } from './questionSpec';
+import { FLAT_QUESTION_SPEC, QUESTION_QUALITY_RULES } from './questionSpec';
 
 export const ADAPT_QUESTIONS_SYSTEM = system(
   [
     'Task: write NEW questions by adapting the course\'s own exercises: same structure, notation, depth and phrasing, but new numbers, names or context.',
     'Add a field "itemId": the id of the exemplar item each question is adapted from. Compute any numeric answer carefully and make sure the explanation shows how it follows from the material. The question must be answerable from the material excerpts.',
+    QUESTION_QUALITY_RULES,
     FLAT_QUESTION_SPEC,
   ].join('\n'),
 );

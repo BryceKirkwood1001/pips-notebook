@@ -45,9 +45,20 @@ To use the real model and database, fill these in `.env`:
 | Variable | What it is |
 |---|---|
 | `GEMINI_API_KEY` | A Google Gemini API key. With a key the server uses Gemini for the student, grading, and building course packs from uploads. |
+| `OPENAI_API_KEY` | An OpenAI API key. Select `LLM_PROVIDER=openai` when both providers have keys. Uses Responses for generation, Files for PDFs, and OpenAI embeddings. |
 | `MONGODB_URI` | A MongoDB Atlas connection string. A free M0 cluster is enough. The server creates its collections and the vector search index on startup. |
 
 Every other setting has a default and is described in `.env.example`.
+
+### API setup in Settings
+
+Open **Settings** in the game's header to select **OpenAI**, **Google Gemini**, or **Offline**, change generation/embedding model names, replace/remove keys, or change the backend URL. Connection details separates the interactive timeout (30 seconds by default) from course preparation (180 seconds per request). Large uploads are outlined in bounded page/text batches. **Test connection** checks unsaved settings; **Save & apply** activates them without restarting the backend. A live connection test uses a small amount of API usage.
+
+During preparation, **Thinking** below Stage shows current task/page progress and public OpenAI reasoning summaries when available. Active document streams extend their idle timeout, with a ten-minute request cap. See [API_SETTINGS.md](docs/API_SETTINGS.md) for model support and fallback behavior.
+
+The same styled Settings component is available at [localhost:5174/api-settings.html](http://localhost:5174/api-settings.html) with `npm run dev:client`, including while the separate Phaser AE runtime is unavailable. The harness course picker also links to it.
+
+Keys are write-only in the setup API and stored by the backend in ignored `.local/api-settings.json` with owner-only file permissions. Only the non-secret backend URL is kept in browser storage. Saved API settings override the initial LLM environment settings; removing the local settings file restores environment defaults on the next restart. Setup is restricted to the backend's local machine and allowed browser origins. See [API_SETTINGS.md](docs/API_SETTINGS.md) for behavior, limits and implementation notes.
 
 ### Setting up MongoDB Atlas
 
@@ -70,7 +81,7 @@ Run these from the repository root.
 | `npm run e2e` | Plays a full gauntlet against the API with mocks and prints a transcript. |
 | `npm run typecheck` | Type-checks `shared`, `server` and `test-client`. |
 | `npm run ingest -- samples/seasons.md` | Builds a course pack from a file and writes it to `samples/cache/`. |
-| `npm run llm:smoke` | Calls each model task once. Skips itself when there is no `GEMINI_API_KEY`. |
+| `npm run llm:smoke` | Calls each model task using the saved/environment provider. Skips in Offline mode. |
 | `npm run docs:api` | Rebuilds the API reference from captured HTTP examples. |
 | `npm run docs:frontend` | Refreshes the per-file frontend variable inventory. |
 
@@ -93,10 +104,12 @@ For a shorter demo, set `DEMO_MODE=true`: rooms have 3 questions and the boss ha
 ## Docs
 
 - [docs/API.md](docs/API.md): every endpoint with a real request and response.
+- [docs/API_SETTINGS.md](docs/API_SETTINGS.md): OpenAI/Gemini setup, key storage and provider switching.
 - [docs/STATE_MACHINE.md](docs/STATE_MACHINE.md): the phases of a run and which action is allowed when.
 - [docs/PHASER_INTEGRATION.md](docs/PHASER_INTEGRATION.md): how to wire the Phaser game to the backend.
 - [docs/FRONTEND_VARIABLES.md](docs/FRONTEND_VARIABLES.md): every public field and screen state variable, mapped to the page that uses it; links to the complete source variable inventory.
 - [docs/INGEST.md](docs/INGEST.md): how uploaded material becomes a verified question bank.
+- [docs/QUESTION_QUALITY.md](docs/QUESTION_QUALITY.md): source-alignment rules, quality validation, reference-slide evaluation and battle feedback fixes.
 - [docs/SPEC.md](docs/SPEC.md) and [docs/DECISIONS.md](docs/DECISIONS.md): the game rules and the choices made along the way.
 - [docs/CONTINUATION_LOG.md](docs/CONTINUATION_LOG.md): the Codex handoff, changes, verification results and remaining live checks.
 - [docs/REVIEW.md](docs/REVIEW.md): the backend audit, fixes and limitations.
@@ -129,7 +142,7 @@ Start the local preview and open [localhost:4173](http://localhost:4173). Reload
 npm run serve
 ```
 
-The integrated entry point is `teach-or-perish/game/main.ts`; the course screens are in `teach-or-perish/game/course/`. The registered screens are `Title`, `Upload`, `Learning`, `Fight`, `Boss`, and `Results`.
+The integrated entry point is `teach-or-perish/game/main.ts`; the course screens are in `teach-or-perish/game/course/`. The registered screens are `Title`, `Upload`, `Learning`, `Fight`, `Boss`, `Results`, and `Settings`.
 
 ### Connect the backend
 

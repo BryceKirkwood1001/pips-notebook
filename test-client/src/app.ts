@@ -12,9 +12,11 @@ import { createMockApi } from './mockApi';
 
 export const params = new URLSearchParams(location.search);
 export const isMock = params.get('mock') === '1';
+let apiOrigin = params.get('api') || 'http://localhost:8787';
+try { apiOrigin = params.get('api') || localStorage.getItem('top.apiOrigin') || apiOrigin; } catch { /* Optional non-secret preference. */ }
 export const api: ApiClient = isMock
   ? createMockApi()
-  : createApiClient({ baseUrl: params.get('api') ?? 'http://localhost:8787' });
+  : createApiClient({ baseUrl: apiOrigin });
 
 export const state: { run: PublicRun | null; results: Results | null; game: Phaser.Game | null } = {
   run: null,

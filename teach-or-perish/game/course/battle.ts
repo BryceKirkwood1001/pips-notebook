@@ -2,7 +2,8 @@ import { api, call, goTo, sceneForPhase, setRun, state } from './app.js';
 import type { Answer, HelpMeTurn, PublicRun, TurnResult } from './api-client.js';
 import { buildHelp } from './help.js';
 import { Page, panel, stage, title } from './page.js';
-import { btn, el, mdToEl, questionEl } from './ui.js';
+import { btn, el, mdToEl } from './ui.js';
+import { turnCard } from './battle-feedback.js';
 import { drawStage } from '../art.js';
 import { game } from '../engine.js';
 
@@ -14,18 +15,13 @@ export class Battle extends Page {
         const run=state.run!;
         const fight=this.boss?run.boss:run.room;
         if(!fight) {goTo(sceneForPhase(run.phase));return;}
-        const stats=this.boss?'Health '+run.boss!.health+'/100':'Hearts '+run.room!.hearts+'/'+run.room!.maxHearts+' · Attempt '+run.room!.attempt;
-        title(this,(this.boss?'Final examination':run.currentRoom?.title ?? 'Room battle')+' · '+stats);
-        const journal=el('details','',el('summary','','Student notebook'),mdToEl(run.notebookMd));
+        const stats=this.boss?'Health '+Number(run.boss!.health.toFixed(1))+'/100':'Hearts '+run.room!.hearts+'/'+run.room!.maxHearts+' · Attempt '+run.room!.attempt;
+        title(this,this.boss?'Final examination':run.currentRoom?.title ?? 'Room battle');
+        const journal=el('details','battle-notebook',el('summary','','Student notebook'),el('div','notebook-body',mdToEl(run.notebookMd)));
         const log=el('div','turns');
         for(const event of fight.log) {
             if(event.kind==='student_answer' || event.kind==='help_result') {
-                const item=el('details','box',el('summary','',event.question.prompt+' · '+(event.correct?'Correct':'Incorrect')),questionEl(event.question));
-                if(event.kind==='student_answer') item.append(el('p','','Student: '+event.answerText),el('p','','Reasoning: '+event.reasoning),
-                    el('p','','Cited notes: '+(event.citedNotes.join(' · ') || 'None')),event.reason?el('p','',event.reason):'');
-                else item.append(el('p','',event.late?'Help arrived late':'Help answered in '+event.solveTimeSec+'s'),event.noteAdded?el('p','','Notebook: '+event.noteAdded):'');
-                item.append(el('p','','Correct answer: '+event.correctAnswer.text),el('p','',event.explanation),el('small','','Damage: '+event.damage));
-                log.prepend(item);
+                log.prepend(turnCard(event));
             }
         }
         log.querySelector('details')?.setAttribute('open','');
@@ -37,9 +33,9 @@ export class Battle extends Page {
                 const next=await call(()=>summary.passed?api.continueRun(run.id):api.retry(run.id));
                 if(next) {setRun(next);goTo(sceneForPhase(next.phase));}
             }));
-            for(const f of summary.failedTurns) log.prepend(el('article','box',questionEl(f.question),el('p','',f.reasoning),el('p','','Cited: '+f.citedNotes.join(' · '))));
         }
-        panel(this,el('div','',el('div','paneltop',el('b','','Question '+fight.turn+' / '+fight.totalTurns),journal),actions,log));
+        const toolbar=el('div','battle-toolbar',el('div','battle-status',el('span','',stats),el('span','dim','Answered '+fight.turn+' of '+fight.totalTurns)),actions,journal);
+        panel(this,el('div','battle-panel',toolbar,log));
         if(run.pendingHelpMe) this.helpModal(run.pendingHelpMe);
     }
     private helpModal(event:HelpMeTurn) {
@@ -81,12 +77,14 @@ export class Battle extends Page {
                 run.pendingHelpMe=event;this.helpModal(event);return;
             case 'student_answer':
             case 'help_result': {
+                const snapshot=await call(()=>api.getRun(run.id));
+                if(!this.active)return;
+                if(snapshot){setRun(snapshot);this.create();animateAnswer(event.correct);return;}
                 delete run.pendingHelpMe;
                 const fight=this.boss?run.boss!:run.room!;
                 fight.log.push(event);fight.turn++;
                 if(event.hearts!==undefined && run.room) run.room.hearts=event.hearts;
                 if(event.health!==undefined && run.boss) run.boss.health=event.health;
-                if(event.kind==='help_result' && event.noteAdded) run.notebookMd+='\n- '+event.noteAdded;
                 run.phase=event.phaseAfter;
                 this.create();
                 animateAnswer(event.correct);

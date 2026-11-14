@@ -5,10 +5,23 @@ import { game } from '../engine.js';
 
 const params = new URLSearchParams(location.search);
 export const mock = params.get('mock') === '1';
-export const api = mock ? createMockApi() : createApiClient({baseUrl: params.get('api') || 'http://localhost:8787'});
+export let apiOrigin = params.get('api') || 'http://localhost:8787';
+try { apiOrigin = params.get('api') || localStorage.getItem('top.apiOrigin') || apiOrigin; } catch { /* Storage may be disabled. */ }
+export let api = mock ? createMockApi() : createApiClient({baseUrl: apiOrigin});
 export const state: {run: PublicRun | null; results: Results | null} = {run:null, results:null};
-export type Screen = 'Title' | 'Upload' | 'Learning' | 'Fight' | 'Boss' | 'Results';
-export function goTo(screen: Screen) { game.scenes.go(screen); }
+export type Screen = 'Title' | 'Upload' | 'Learning' | 'Fight' | 'Boss' | 'Results' | 'Settings';
+let currentScreen: Screen = 'Title';
+let settingsReturn: Screen = 'Title';
+export function goTo(screen: Screen) { currentScreen = screen; game.scenes.go(screen); }
+export function openSettings() { settingsReturn = currentScreen; goTo('Settings'); }
+export function backFromSettings() { goTo(state.run ? sceneForPhase(state.run.phase) : settingsReturn === 'Settings' ? 'Title' : settingsReturn); }
+export function setApiOrigin(origin: string) {
+    if (apiOrigin !== origin) { setRun(null); state.results = null; settingsReturn = 'Title'; needsSync = false; }
+    apiOrigin = origin;
+    if (!mock) api = createApiClient({ baseUrl: origin });
+    try { localStorage.setItem('top.apiOrigin', origin); } catch { /* Only this non-secret origin is persisted in the browser. */ }
+    const url = new URL(location.href); url.searchParams.set('api', origin); history.replaceState(null, '', url);
+}
 export function sceneForPhase(phase: RunPhase): Screen {
     switch (phase) {
         case 'learning': return 'Learning';

@@ -16,6 +16,9 @@ The client is [shared/src/api-client.ts](../shared/src/api-client.ts), and the c
 | Method | Path | Success |
 |---|---|---|
 | GET | `/api/health` | 200 |
+| GET | `/api/settings/api` | 200 |
+| POST | `/api/settings/api` | 200 |
+| POST | `/api/settings/api/test` | 200 |
 | GET | `/api/samples` | 200 |
 | POST | `/api/courses/seed/:sample` | 200 |
 | POST | `/api/courses` | 202 |
@@ -63,6 +66,100 @@ Response: HTTP 200.
   "llmProvider": "mock",
   "storage": "memory",
   "debug": true
+}
+```
+
+## GET /api/settings/api
+
+Local API setup. Returns provider, generation/embedding model names, key-presence booleans, timeout, embedding dimensions and persistence mode. Never returns keys. Requires a loopback connection, a localhost Host, and an allowed browser origin. Responses use `Cache-Control: no-store`.
+
+### Example
+
+Request: `GET /api/settings/api` (no body).
+
+Response: HTTP 200.
+
+```json
+{
+  "provider": "mock",
+  "providers": {
+    "openai": {
+      "model": "gpt-5.6-luna",
+      "embeddingModel": "text-embedding-3-small",
+      "hasApiKey": false
+    },
+    "gemini": {
+      "model": "gemini-2.5-flash",
+      "embeddingModel": "gemini-embedding-001",
+      "hasApiKey": false
+    }
+  },
+  "timeoutMs": 30000,
+  "ingestTimeoutMs": 180000,
+  "embeddingDims": 768,
+  "persistence": "session"
+}
+```
+
+## POST /api/settings/api
+
+Saves and applies API settings for subsequent calls without restarting or deleting runs. `provider` is `openai`, `gemini` or `mock`. Optional `openai`/`gemini` objects accept `model`, `embeddingModel`, and write-only `apiKey`: omit the key to retain it, send `null` to remove it. The selected live provider requires a key. `timeoutMs` is 1,000–180,000 for interactive requests; `ingestTimeoutMs` is 1,000–600,000 for new course preparation requests (default 180,000). Unknown fields are rejected. Same local-access rules as GET. Production server saves to the ignored, permission-restricted `.local/api-settings.json`; explicit test environments default to session-only settings.
+
+### Example
+
+Request: `POST /api/settings/api` (`application/json`).
+
+```json
+{
+  "provider": "mock"
+}
+```
+
+Response: HTTP 200.
+
+```json
+{
+  "provider": "mock",
+  "providers": {
+    "openai": {
+      "model": "gpt-5.6-luna",
+      "embeddingModel": "text-embedding-3-small",
+      "hasApiKey": false
+    },
+    "gemini": {
+      "model": "gemini-2.5-flash",
+      "embeddingModel": "gemini-embedding-001",
+      "hasApiKey": false
+    }
+  },
+  "timeoutMs": 30000,
+  "ingestTimeoutMs": 180000,
+  "embeddingDims": 768,
+  "persistence": "session"
+}
+```
+
+## POST /api/settings/api/test
+
+Validates an unsaved candidate with the same body and local-access rules as Save. For a live provider, makes one small structured generation request (with at most one invalid-output retry) and an embedding request. Can incur API usage. Offline mode makes no provider calls. Does not save credentials or change the active provider.
+
+### Example
+
+Request: `POST /api/settings/api/test` (`application/json`).
+
+```json
+{
+  "provider": "mock"
+}
+```
+
+Response: HTTP 200.
+
+```json
+{
+  "ok": true,
+  "provider": "mock",
+  "message": "Offline mode is ready. No API key is needed."
 }
 ```
 
@@ -126,7 +223,7 @@ Response: HTTP 202.
 
 ```json
 {
-  "courseId": "crs_1f5f2f209e"
+  "courseId": "crs_a331059882"
 }
 ```
 
@@ -155,13 +252,13 @@ Response: HTTP 202.
 
 ```json
 {
-  "courseId": "crs_93280d34e5"
+  "courseId": "crs_c65c2f46d2"
 }
 ```
 
 ## GET /api/courses/:id
 
-Returns public ingest progress, files, units, rooms and a style summary. Room readiness comes from `status.conceptsReady`; a complete course reaches `ready` only after coverage passes.
+Returns public ingest progress, files, units, rooms and a style summary. Optional `status.activity` contains `message` (up to 240 characters), latest public OpenAI document-analysis `summary` (up to 1200 characters), and optional `completed`/`total` counts for the current work. Polling updates the Thinking panel below Stage. Summaries are optional; raw reasoning and question-generation output are excluded. Room readiness comes from `status.conceptsReady`; a complete course reaches `ready` only after coverage passes.
 
 ### Example
 
@@ -274,7 +371,7 @@ Response: HTTP 201 (excerpt).
 
 ```json
 {
-  "id": "run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c",
+  "id": "run_8ad55a92-2de1-4a31-8c7d-7ca86a452476",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -310,13 +407,13 @@ Returns the current public run, notebook, completed turn logs and pending help e
 
 ### Example
 
-Request: `GET /api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c` (no body).
+Request: `GET /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c",
+  "id": "run_8ad55a92-2de1-4a31-8c7d-7ca86a452476",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -359,7 +456,7 @@ Allowed in `learning`. `explanation` is trimmed, nonempty, at most 8,000 charact
 
 ### Example
 
-Request: `POST /api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/teach` (`application/json`).
+Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/teach` (`application/json`).
 
 ```json
 {
@@ -398,7 +495,7 @@ Allowed in `learning` for an open student question. `answer` is nonempty text, a
 
 ### Example
 
-Request: `POST /api/runs/run_eed4ecf0-b8e4-415f-81ad-a32415399af3/questions/sq_0_0_1/answer` (`application/json`).
+Request: `POST /api/runs/run_91b6e57a-8e31-4180-909c-efc6d5d6afd1/questions/sq_0_0_1/answer` (`application/json`).
 
 ```json
 {
@@ -421,7 +518,7 @@ Allowed in `learning` for an open student question. No body. Adds its belief as 
 
 ### Example
 
-Request: `POST /api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/questions/sq_0_0_1/skip` (no body).
+Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/questions/sq_0_0_1/skip` (no body).
 
 Response: HTTP 200.
 
@@ -437,13 +534,13 @@ Allowed in `learning`. No body. Auto-skips open questions, draws fresh questions
 
 ### Example
 
-Request: `POST /api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/ready` (no body).
+Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/ready` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c",
+  "id": "run_8ad55a92-2de1-4a31-8c7d-7ca86a452476",
   "courseId": "sample-seasons",
   "phase": "room",
   "roomIndex": 0,
@@ -501,7 +598,7 @@ Allowed in `room`, `room_result`, `boss`, `results`. No body. Returns a discrimi
 
 ### student_answer
 
-Request: `POST /api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/turn` (no body).
+Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/turn` (no body).
 
 Response: HTTP 200.
 
@@ -541,7 +638,7 @@ Response: HTTP 200.
 
 ### help_me
 
-Request: `POST /api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/turn` (no body).
+Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/turn` (no body).
 
 Response: HTTP 200.
 
@@ -560,13 +657,13 @@ Response: HTTP 200.
     }
   },
   "timeBudgetSec": 80,
-  "deadline": "2026-11-14T03:34:33.352Z"
+  "deadline": "2026-11-14T06:02:50.984Z"
 }
 ```
 
 ### room_end
 
-Request: `POST /api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/turn` (no body).
+Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/turn` (no body).
 
 Response: HTTP 200.
 
@@ -633,7 +730,7 @@ Response: HTTP 200.
 
 ### boss_end
 
-Request: `POST /api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/turn` (no body).
+Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/turn` (no body).
 
 Response: HTTP 200.
 
@@ -673,7 +770,7 @@ Response: HTTP 200.
       "correct": 5,
       "wrong": 1,
       "late": 0,
-      "avgSolveTimeSec": 0
+      "avgSolveTimeSec": 0.005
     },
     "costlyMisconceptions": [
       {
@@ -708,7 +805,7 @@ Allowed in `room` or `boss` for the pending event. Send `{ answer: ... }` using 
 
 ### help_result
 
-Request: `POST /api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/help/help_r0_a1_t1` (`application/json`).
+Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/help/help_r0_a1_t1` (`application/json`).
 
 ```json
 {
@@ -743,7 +840,7 @@ Response: HTTP 200.
     "text": "40 degrees"
   },
   "explanation": "On an equinox the declination is 0, so 90 - |50 - 0| = 40 degrees.",
-  "solveTimeSec": 0,
+  "solveTimeSec": 0.01,
   "noteAdded": "Teacher showed me: 40 degrees",
   "damage": 0,
   "hearts": 2,
@@ -757,13 +854,13 @@ Allowed after a failed `room_result`. No body. Returns to `learning` for the sam
 
 ### Example
 
-Request: `POST /api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/retry` (no body).
+Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/retry` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c",
+  "id": "run_8ad55a92-2de1-4a31-8c7d-7ca86a452476",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -806,13 +903,13 @@ Allowed after a passed `room_result`. No body. Moves to the next room in `learni
 
 ### Example
 
-Request: `POST /api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/continue` (no body).
+Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/continue` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c",
+  "id": "run_8ad55a92-2de1-4a31-8c7d-7ca86a452476",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 1,
@@ -848,7 +945,7 @@ Allowed in `results`. Returns boss health rounded to a percentage, letter grade,
 
 ### Example
 
-Request: `GET /api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/results` (no body).
+Request: `GET /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/results` (no body).
 
 Response: HTTP 200.
 
@@ -886,7 +983,7 @@ Response: HTTP 200.
     "correct": 5,
     "wrong": 1,
     "late": 0,
-    "avgSolveTimeSec": 0
+    "avgSolveTimeSec": 0.005
   },
   "costlyMisconceptions": [
     {
@@ -920,14 +1017,14 @@ Development only: 404 unless `DEBUG=true`. Returns `{ run, pack, questions, stat
 
 ### Example
 
-Request: `GET /api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/debug` (no body).
+Request: `GET /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/debug` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
   "run": {
-    "id": "run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c",
+    "id": "run_8ad55a92-2de1-4a31-8c7d-7ca86a452476",
     "phase": "learning",
     "hidden": {
       "misconceptions": []

@@ -10,7 +10,8 @@ import { fileURLToPath } from 'node:url';
 import type { FileType } from '@top/shared';
 import { loadConfigFromProcess } from '../config';
 import { systemClock } from '../engine/types';
-import { createFakeLlmClient, createGeminiClient } from '../llm';
+import { createLlmClient } from '../llm';
+import { createApiSettingsManager } from '../settings';
 import { createMockIngestTasks } from '../llm/ingest/mock';
 import type { IngestTasks } from '../llm/types';
 import { createChunker, createEmbedder, createMaterialParser, createMemoryVectorStore, createRetriever } from '../rag';
@@ -26,9 +27,11 @@ async function main(): Promise<number> {
     console.error('usage: npm run ingest -- <file.md|.txt|.pdf> [more files]');
     return 2;
   }
-  const config = loadConfigFromProcess();
+  const manager = await createApiSettingsManager(loadConfigFromProcess(), { file: fileURLToPath(new URL('../../../.local/api-settings.json', import.meta.url)) });
+  const config = manager.config();
+  config.llmTimeoutMs = config.ingestLlmTimeoutMs;
   const mock = config.llmProvider === 'mock';
-  const llm = mock ? createFakeLlmClient({ embeddingDims: config.embeddingDims }) : createGeminiClient(config);
+  const llm = createLlmClient(config);
   let tasks: IngestTasks;
   if (mock) tasks = createMockIngestTasks();
   else tasks = (await import('../llm/ingest/gemini')).createIngestTasks(llm, config);
@@ -57,7 +60,7 @@ async function main(): Promise<number> {
     log: (m: string) => console.log(`  ${m}`),
   };
 
-  console.log(`Ingesting ${paths.join(', ')} as "${courseId}" (${mock ? 'mock' : 'gemini'})`);
+  console.log(`Ingesting ${paths.join(', ')} as "${courseId}" (${config.llmProvider})`);
   const report = await runIngest(deps, { courseId, files });
   const fixture = await buildFixture(deps, courseId, name);
   await mkdir(CACHE_DIR, { recursive: true });

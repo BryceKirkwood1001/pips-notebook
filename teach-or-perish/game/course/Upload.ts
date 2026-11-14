@@ -14,6 +14,7 @@ export class UploadScene extends Page {
   private emoji: StudentEmoji = STUDENT_EMOJIS[0];
   private timer = 0;
   private polling = false;
+  private retryUpload: (() => Promise<void>) | null = null;
   private sourceEl!: HTMLElement;
   private courseEl!: HTMLElement;
   private progressEl!: HTMLElement;
@@ -38,6 +39,7 @@ export class UploadScene extends Page {
     this.startBtn.disabled = true;
     this.hintEl = el('div', 'dim');
     this.polling = false;
+    this.retryUpload = null;
     title(this, 'Lesson preparation');
     const root = el('div', '', this.sourceEl, this.courseEl);
     panel(this, root);
@@ -55,7 +57,7 @@ export class UploadScene extends Page {
       samples.replaceChildren();
       if (!res) return samples.append(btn('Reload samples', () => goTo('Upload')));
       for (const s of res.samples) {
-        samples.append(btn(s.title, async () => this.begin(await call(() => api.seedCourse(s.id)))));
+        samples.append(btn(s.title, async () => { this.retryUpload = null; this.begin(await call(() => api.seedCourse(s.id))); }));
       }
       if (!res.samples.length) samples.append(el('div', 'dim', 'No samples available.'));
     });
@@ -71,7 +73,9 @@ export class UploadScene extends Page {
     const upload = btn('Upload files', async () => {
       const list = Array.from(files.files ?? []);
       if (!list.length) return showError('Choose at least one .pdf, .txt or .md file.');
-      this.begin(await call(() => api.uploadCourse(list.map((f) => ({ name: f.name, data: f })), fileTitle.value || undefined)));
+      const title = fileTitle.value || undefined;
+      this.retryUpload = async () => this.begin(await call(() => api.uploadCourse(list.map((f) => ({ name: f.name, data: f })), title)));
+      await this.retryUpload();
     });
 
     const text = el('textarea');
@@ -83,7 +87,9 @@ export class UploadScene extends Page {
     textTitle.placeholder = 'Course title (optional)';
     const create = btn('Create from text', async () => {
       if (!text.value.trim()) return showError('Paste some text first.');
-      this.begin(await call(() => api.createCourseFromText(text.value, textTitle.value || undefined)));
+      const notes = text.value, title = textTitle.value || undefined;
+      this.retryUpload = async () => this.begin(await call(() => api.createCourseFromText(notes, title)));
+      await this.retryUpload();
     });
 
     this.sourceEl.append(
@@ -99,6 +105,10 @@ export class UploadScene extends Page {
 
   private begin(res: { courseId: string } | undefined) {
     if (!this.active || !res) return;
+    clock.clearInterval(this.timer);
+    this.course = null; this.chosen.clear(); this.known.clear();
+    this.roomsEl.replaceChildren(); this.startBtn.disabled = true;
+    this.hintEl.textContent = 'Preparing your course…';
     this.courseId = res.courseId;
     this.sourceEl.style.display = 'none';
     this.courseEl.style.display = 'block';
@@ -170,7 +180,21 @@ export class UploadScene extends Page {
     const stageLine = el('div', '', 'Stage: ');
     for (const s of STAGES) stageLine.append(el('span', s === stage ? 'warn' : 'dim', (s === stage ? `[${s}]` : s) + ' > '));
     this.progressEl.replaceChildren(el('h3', '', c.title), stageLine);
-    if (stage === 'error') this.progressEl.append(el('div', 'bad', `Ingest error: ${c.status.error ?? 'unknown'}`));
+    const fallback: Record<string, string> = {
+      parsing: 'Reading and indexing your document…', outline: 'Finding the main ideas in your document…',
+      style: 'Matching the style of your material…', concepts: 'Preparing lessons and checking questions…',
+      ready: 'Your course is ready.', error: 'Preparation stopped. You can retry the upload.',
+    };
+    const thinking = el('div', 'ingest-thinking', el('small', 'thinking-label', stage === 'ready' ? 'Ready' : stage === 'error' ? 'Preparation stopped' : 'Thinking'),
+      el('p', 'thinking-activity', c.status.activity?.message ?? fallback[stage] ?? 'Preparing your course…'));
+    thinking.setAttribute('role', 'status'); thinking.setAttribute('aria-live', 'polite');
+    if (c.status.activity?.summary) thinking.append(el('small', 'thinking-source', 'Latest OpenAI reasoning summary'), el('p', 'thinking-summary', c.status.activity.summary));
+    this.progressEl.append(thinking);
+    if (stage === 'error') {
+      this.progressEl.append(el('div', 'bad', `Course preparation failed: ${c.status.error ?? 'unknown'}`));
+      if (/timed out|timeout/i.test(c.status.error ?? '')) this.progressEl.append(el('p', 'dim', 'Try again, or increase the course preparation timeout in Settings.'));
+      if (this.retryUpload) this.progressEl.append(btn('Retry preparation', () => void this.retryUpload?.()));
+    }
     this.progressEl.append(el('h4', '', 'Concepts'));
     for (const u of c.units) {
       this.progressEl.append(el('div', 'dim', u.title));
@@ -199,8 +223,10 @@ export class UploadScene extends Page {
     }
     const first = c.rooms.find((r) => this.chosen.has(r.id));
     this.startBtn.disabled = !first || !first.ready || c.status.stage === 'error';
-    this.hintEl.textContent = !first
-      ? 'Choose at least one room.'
+    this.hintEl.textContent = c.status.stage === 'error'
+      ? 'Course preparation stopped. Retry before starting a run.'
+      : !first
+      ? c.rooms.length ? 'Choose at least one room.' : 'Preparing your first room…'
       : first.ready
         ? ''
         : `Waiting for "${first.title}" to finish ingesting.`;

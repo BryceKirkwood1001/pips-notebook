@@ -156,6 +156,10 @@ async function verifyOne(run: Run, q: Question): Promise<Question> {
   try {
     const evidence = await retrieveFor(run, q.conceptIds, q.prompt);
     const out = await run.deps.tasks.verifyQuestion({ question: toPublicQuestion(q), evidence });
+    if (out.quality?.acceptable === false) {
+      run.log('question quality rejected; stored unverified', { id: q.id, issue: out.quality.reason });
+      return { ...q, verified: false };
+    }
     const grade = gradeDeterministic(q, out.answer);
     let agrees = grade.status === 'correct';
     if (grade.status === 'needs_llm') {
@@ -422,6 +426,7 @@ export async function runIngest(deps: IngestDeps, input: IngestInput): Promise<I
     const existing = await deps.repo.getCoursePack(courseId);
     pack = existing ?? emptyCoursePack(courseId, input.title ?? 'Untitled course', deps.clock.now().toISOString());
     pack.status = { stage: 'parsing', conceptsReady: [] };
+    pack.embeddingProfile = { provider: deps.config.llmProvider, model: deps.config.embeddingModel, dims: deps.config.embeddingDims };
     if (input.title) pack.title = input.title;
     const current = pack;
 
@@ -432,6 +437,11 @@ export async function runIngest(deps: IngestDeps, input: IngestInput): Promise<I
       const snapshot = structuredClone(current);
       saving = saving.then(() => deps.repo.saveCoursePack(snapshot));
       return saving;
+    };
+    const activity = async (update: NonNullable<CoursePack['status']['activity']>) => {
+      const summary = update.summary ?? current.status.activity?.summary;
+      current.status.activity = { ...update, message: update.message.slice(0, 240), ...(summary ? { summary: summary.slice(-1200) } : {}) };
+      await save();
     };
 
     const run: Run = {
@@ -453,10 +463,12 @@ export async function runIngest(deps: IngestDeps, input: IngestInput): Promise<I
     // ── parsing ──
     current.files = [];
     for (const file of input.files) {
+      await activity({ message: `Reading ${file.name}…` });
       const parsed = await deps.parser.parse(file);
       run.parsed.push(parsed);
       current.files.push({ id: file.id, name: file.name, type: file.type, pages: parsed.pages.length });
       const drafts = deps.chunker.chunk(courseId, parsed);
+      await activity({ message: `Indexing ${parsed.pages.length} pages so evidence can be found later.` });
       const vectors = await deps.embedder.embedDocuments(drafts.map((d) => d.text));
       run.chunks.push(...drafts.map((d, i) => ({ ...d, embedding: vectors[i] })));
     }
@@ -466,8 +478,8 @@ export async function runIngest(deps: IngestDeps, input: IngestInput): Promise<I
 
     // ── outline ──
     current.status.stage = 'outline';
-    await save();
-    const draft = await deps.tasks.extractOutline({ files: run.parsed, titleHint: input.title });
+    await activity({ message: 'Finding the main ideas and supporting passages in your material.' });
+    const draft = await deps.tasks.extractOutline({ files: run.parsed, titleHint: input.title, onProgress: activity });
     const outline = buildOutline(draft, run.chunks);
     for (const d of outline.dropped) log(`outline: dropped ${d}`);
     if (outline.concepts.length === 0) throw new Error('The outline has no concept with a findable quote.');
@@ -483,7 +495,7 @@ export async function runIngest(deps: IngestDeps, input: IngestInput): Promise<I
 
     // ── style ──
     current.status.stage = 'style';
-    await save();
+    await activity({ message: 'Matching the notation and question style used in your material.' });
     const samplePages = run.parsed
       .flatMap((f) => f.pages.map((p) => ({ fileId: f.fileId, page: p.page, text: p.text.slice(0, 2500) })))
       .filter((p) => p.text.trim() !== '')
@@ -501,10 +513,11 @@ export async function runIngest(deps: IngestDeps, input: IngestInput): Promise<I
 
     // ── concepts, in room order, a few at a time ──
     current.status.stage = 'concepts';
-    await save();
+    await activity({ message: 'Preparing lessons and checking their questions.', completed: 0, total: current.concepts.length });
     const order = current.rooms.flatMap((r) => r.conceptIds);
     const limit = createLimiter(deps.config.ingestConcurrency);
     const firstRoom = current.rooms[0];
+    let prepared = 0;
     const results = await Promise.allSettled(
       order.map((conceptId) =>
         limit(async () => {
@@ -517,7 +530,8 @@ export async function runIngest(deps: IngestDeps, input: IngestInput): Promise<I
           if (firstRoomReadyMs === undefined && firstRoom.conceptIds.every((id) => current.status.conceptsReady.includes(id))) {
             firstRoomReadyMs = elapsed();
           }
-          await save();
+          prepared++;
+          await activity({ message: `Prepared ${prepared} of ${order.length} lessons.`, completed: prepared, total: order.length });
           log(`concept ${conceptId} ready`);
         }),
       ),
@@ -526,6 +540,7 @@ export async function runIngest(deps: IngestDeps, input: IngestInput): Promise<I
     if (failure) throw failure.reason;
 
     // ── boss pool and coverage fill ──
+    await activity({ message: 'Checking the final exam and coverage of the course material.' });
     await bossPass(run);
 
     // ── ready ──
@@ -533,12 +548,12 @@ export async function runIngest(deps: IngestDeps, input: IngestInput): Promise<I
     if (!coverage.ok) {
       const error = 'Could not build enough verified questions to satisfy course coverage.';
       current.status = { ...current.status, stage: 'error', error };
-      await save();
+      await activity({ message: 'Preparation stopped before enough questions could be verified.' });
       return { courseId, ok: false, error, coverage, firstRoomReadyMs, totalMs: elapsed() };
     }
     current.status.conceptsReady = current.concepts.map((c) => c.id);
     current.status.stage = 'ready';
-    await save();
+    await activity({ message: 'Your course is ready. Choose the rooms you want to play.' });
     log('ingest finished', coverage);
     return { courseId, ok: coverage.ok, coverage, firstRoomReadyMs, totalMs: elapsed() };
   } catch (err) {
@@ -547,7 +562,7 @@ export async function runIngest(deps: IngestDeps, input: IngestInput): Promise<I
     try {
       const failed =
         pack ?? emptyCoursePack(courseId, input.title ?? 'Untitled course', deps.clock.now().toISOString());
-      failed.status = { stage: 'error', conceptsReady: failed.status.conceptsReady, error: message };
+      failed.status = { ...failed.status, stage: 'error', error: message, activity: { message: 'Preparation stopped. You can retry this upload.', ...(failed.status.activity?.summary ? { summary: failed.status.activity.summary } : {}) } };
       failed.updatedAt = deps.clock.now().toISOString();
       await deps.repo.saveCoursePack(structuredClone(failed));
     } catch (saveErr) {

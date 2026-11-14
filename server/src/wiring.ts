@@ -4,6 +4,7 @@
  *
  *   LLM_PROVIDER=mock (or no key)  -> fake LLM client + deterministic mock tasks
  *   LLM_PROVIDER=gemini            -> Gemini client + Gemini-backed tasks
+ *   LLM_PROVIDER=openai            -> OpenAI client + the same provider-independent tasks
  *   MONGODB_URI set                -> MongoDB repository + Atlas Vector Search
  *   MONGODB_URI empty              -> in-memory repository + in-memory cosine search
  */
@@ -15,9 +16,10 @@ import { engine } from './engine';
 import type { Clock } from './engine/types';
 import { runIngest } from './ingest';
 import type { IngestDeps } from './ingest/types';
-import { createFakeLlmClient, createGameplayTasks, createGeminiClient, createMockGameplayTasks } from './llm';
+import { createGameplayTasks, createLlmClient, createMockGameplayTasks } from './llm';
 import { createIngestTasks, createMockIngestTasks } from './llm/ingest';
-import type { IngestTasks } from './llm/types';
+import type { Retriever } from './rag/types';
+import type { ApiSettingsManager, LlmFactory } from './settings';
 import {
   createAtlasVectorStore,
   createChunker,
@@ -33,6 +35,8 @@ import type { Services } from './services/types';
 export interface WiringOptions {
   config: Config;
   clock: Clock;
+  settings: ApiSettingsManager;
+  llmFactory?: LlmFactory;
   /** Fixed RNG seed for every run (tests). Default: a random seed per run. */
   seed?: number;
   /** Default: the repo's `samples/` folder. */
@@ -66,10 +70,9 @@ async function connectMongo(config: Config): Promise<{ client: MongoClient; db: 
 }
 
 export async function wire(options: WiringOptions): Promise<Wired> {
-  const { config, clock } = options;
-  const useGemini = config.llmProvider === 'gemini';
-
-  const llm = useGemini ? createGeminiClient(config) : createFakeLlmClient({ embeddingDims: config.embeddingDims });
+  const { config, clock, settings } = options;
+  const factory = options.llmFactory ?? createLlmClient;
+  const legacyEmbedding = { provider: config.llmProvider, model: config.embeddingModel, dims: config.embeddingDims };
   const mongo = await connectMongo(config);
 
   const repo = mongo ? createMongoRepository(mongo.db) : createMemoryRepository();
@@ -77,37 +80,50 @@ export async function wire(options: WiringOptions): Promise<Wired> {
   await repo.init();
   await store.init();
 
-  const embedder = createEmbedder(llm, config);
-  const retriever = createRetriever({ store, embedder, config });
-  const gameplayTasks = useGemini ? createGameplayTasks(llm, config) : createMockGameplayTasks();
-  const geminiIngestTasks: IngestTasks | null = useGemini ? createIngestTasks(llm, config) : null;
-  // Only Gemini can read a PDF natively, so the upload is skipped in mock mode.
-  const parser = createMaterialParser({ llm: useGemini ? llm : undefined, config });
   const chunker = createChunker(config);
 
+  function resources(ingest = false) {
+    const snapshot = settings.config();
+    if (ingest) snapshot.llmTimeoutMs = snapshot.ingestLlmTimeoutMs;
+    const llm = factory(snapshot);
+    const mock = snapshot.llmProvider === 'mock';
+    const embedder = createEmbedder(llm, snapshot);
+    return { config: snapshot, llm, embedder,
+      gameplayTasks: mock ? createMockGameplayTasks() : createGameplayTasks(llm, snapshot),
+      ingestTasks: mock ? createMockIngestTasks() : createIngestTasks(llm, snapshot),
+      parser: createMaterialParser({ llm: mock ? undefined : llm, config: snapshot }),
+    };
+  }
+  const initial = resources();
+  // Existing courses keep their original embedding space when the selected generation provider changes.
+  const retriever: Retriever = { async retrieve(query) {
+    const pack = await repo.getCoursePack(query.courseId);
+    const snapshot = settings.embeddingConfig(pack?.embeddingProfile ?? legacyEmbedding);
+    const embedder = createEmbedder(factory(snapshot), snapshot);
+    return createRetriever({ store, embedder, config: snapshot }).retrieve(query);
+  } };
+
   /** Fresh per ingest: the mock ingest tasks hand each canned question out once per instance. */
-  const makeIngestDeps = (): IngestDeps => ({
-    config,
-    tasks: geminiIngestTasks ?? createMockIngestTasks(),
-    parser,
-    chunker,
-    embedder,
-    store,
-    retriever,
-    repo,
-    clock,
-    log: config.debug ? (message, data) => console.log(`[ingest] ${message}`, data ?? '') : undefined,
-  });
+  const makeIngestDeps = (): IngestDeps => {
+    const selected = resources(true);
+    return { config: selected.config, tasks: selected.ingestTasks, parser: selected.parser, chunker,
+      embedder: selected.embedder, store, retriever: createRetriever({ store, embedder: selected.embedder, config: selected.config }), repo, clock,
+      log: config.debug ? (message, data) => console.log(`[ingest] ${message}`, data ?? '') : undefined };
+  };
 
   const services = createServices({
     config,
     clock,
     repo,
     engine,
-    gameplayTasks,
+    gameplayTasks: initial.gameplayTasks,
+    getGameplay: () => {
+      const selected = resources();
+      return { config: selected.config, tasks: selected.gameplayTasks, retriever };
+    },
     retriever,
     store,
-    embedder,
+    embedder: initial.embedder,
     makeIngestDeps,
     runIngest,
     samplesDir: options.samplesDir ?? DEFAULT_SAMPLES_DIR,

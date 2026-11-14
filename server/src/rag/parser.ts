@@ -2,6 +2,7 @@ import { extractText } from 'unpdf';
 import { AppError } from '../errors';
 import type { Config } from '../config';
 import type { LlmClient, UploadedFile } from '../llm/types';
+import { fitsNativeOutline } from '../llm/ingest/outline-batches';
 import type { MaterialParser, ParsedFile, ParsedPage, SourceFile } from './types';
 
 /** A page with fewer non-whitespace characters than this is treated as scanned or image-only. */
@@ -35,7 +36,7 @@ export function createMaterialParser(deps: { llm?: LlmClient; config: Config }):
     const pages = texts.map((t, i) => toPage(i + 1, t));
 
     let uploaded: UploadedFile | undefined;
-    if (llm) {
+    if (llm && fitsNativeOutline(pages)) {
       try {
         uploaded = await llm.uploadFile(file.data, { mimeType: 'application/pdf', displayName: file.name });
       } catch (err) {

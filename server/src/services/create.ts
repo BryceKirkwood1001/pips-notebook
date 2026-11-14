@@ -37,6 +37,7 @@ export interface ServiceDeps {
   repo: Repository;
   engine: Engine;
   gameplayTasks: GameplayTasks;
+  getGameplay?: () => Pick<EngineDeps, 'config' | 'tasks' | 'retriever'>;
   retriever: Retriever;
   store: VectorStore;
   embedder: Embedder;
@@ -147,6 +148,7 @@ export function createServices(deps: ServiceDeps): Services {
     config,
     tasks: deps.gameplayTasks,
     retriever: deps.retriever,
+    ...deps.getGameplay?.(),
     rng,
     clock,
   });
@@ -220,16 +222,19 @@ export function createServices(deps: ServiceDeps): Services {
 
     async seedCourse(sample) {
       const fixture = await readFixture(sample);
+      const ingest = deps.makeIngestDeps();
+      const embedder = ingest.embedder;
       let chunks = fixture.chunks;
       // Vectors from another embedder live in a different space: embed the chunk texts again.
-      if (chunks.length > 0 && fixture.embedderId !== deps.embedder.id) {
-        const vectors = await deps.embedder.embedDocuments(chunks.map((c) => c.text));
+      if (chunks.length > 0 && fixture.embedderId !== embedder.id) {
+        const vectors = await embedder.embedDocuments(chunks.map((c) => c.text));
         chunks = chunks.map((c, i) => ({ ...c, embedding: vectors[i] }));
       }
       await deps.store.deleteCourse(fixture.pack.id);
       await deps.store.upsert(chunks);
       await repo.deleteQuestions(fixture.pack.id);
       await repo.upsertQuestions(fixture.questions);
+      fixture.pack.embeddingProfile = { provider: ingest.config.llmProvider, model: ingest.config.embeddingModel, dims: ingest.config.embeddingDims };
       await repo.saveCoursePack(fixture.pack);
       return { courseId: fixture.pack.id };
     },

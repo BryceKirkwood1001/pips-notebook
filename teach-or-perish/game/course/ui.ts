@@ -39,8 +39,8 @@ export function mdToEl(md: string): HTMLElement {
 }
 
 /** A question with its options, for context in logs and modals. */
-export function questionEl(q: PublicQuestion): HTMLElement {
-  const box = el('div', 'box', el('b', '', q.prompt));
+export function questionEl(q: PublicQuestion, showPrompt = true): HTMLElement {
+  const box = el('div', showPrompt ? 'box' : 'turn-question', showPrompt ? el('b', '', q.prompt) : null);
   const opts = (items: string[]) => box.append(el('ol', '', ...items.map((o) => el('li', '', o))));
   switch (q.type) {
     case 'mcq':
@@ -59,7 +59,8 @@ export function questionEl(q: PublicQuestion): HTMLElement {
     default:
       break;
   }
-  box.append(el('div', 'dim', `${q.type}, difficulty ${q.difficulty}/5, budget ${q.timeBudgetSec}s`));
+  const names = { mcq: 'Multiple choice', true_false: 'True or false', multi_select: 'Select all that apply', numeric: 'Calculation', short_text: 'Written answer', ordering: 'Put in order', free_response: 'Explanation' };
+  box.append(el('div', 'question-meta dim', `${names[q.type]} · Difficulty ${q.difficulty}/5 · Estimated time ${q.timeBudgetSec}s`));
   return box;
 }
 

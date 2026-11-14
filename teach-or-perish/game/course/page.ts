@@ -1,5 +1,5 @@
 import { btn, el, host } from './ui.js';
-import { banner, mock, state } from './app.js';
+import { banner, mock, openSettings, state } from './app.js';
 export const stage=el('main','stage course-stage');
 const heading=el('div','roomname');
 const content=el('section','');
@@ -13,6 +13,7 @@ export function panel(_page:Page, body:HTMLElement){content.replaceChildren(body
 export function frame(screen:string) {
     const badge=state.run ? state.run.studentEmoji+' · Target '+state.run.targetGrade : mock ? 'Practice course' : 'The Lantern Archive';
     const header=el('header','',el('span','','Teach or Perish'),el('div','nav-right',badge));
+    if (screen !== 'settings') header.append(btn('Settings', openSettings, 'alt'));
     if (state.run && screen !== 'report') header.append(btn('Pause', () => {
         const resume=btn('Resume',()=>pause.close());
         const pause=el('dialog','course-pause',el('h2','','Paused'),el('p','','Timed help deadlines keep running.'),resume);

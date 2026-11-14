@@ -10,7 +10,10 @@ import {
   CreateRunBodySchema,
   HelpBodySchema,
   TeachBodySchema,
+  UpdateApiSettingsBodySchema,
 } from '@top/shared';
+import type { ApiSettingsManager } from './settings';
+import type { Config } from './config';
 import { AppError } from './errors';
 import type { Services, UploadInput } from './services/types';
 
@@ -47,8 +50,31 @@ async function readMultipart(req: FastifyRequest): Promise<{ title?: string; fil
   return { title, files };
 }
 
-export function registerRoutes(app: FastifyInstance, services: Services): void {
+export function registerRoutes(app: FastifyInstance, services: Services, settings: ApiSettingsManager, config: Config): void {
   app.get('/api/health', async () => services.health());
+
+  // This unauthenticated hackathon server permits credential setup only from the local machine.
+  const localSettings = (req: FastifyRequest) => {
+    const ip = req.ip.replace(/^::ffff:/, '');
+    const host = req.hostname.replace(/^\[|\]$/g, '').toLowerCase();
+    const localIp = ip === '::1' || /^127\./.test(ip);
+    const localHost = host === 'localhost' || host === '::1' || host === '127.0.0.1';
+    const origin = req.headers.origin;
+    const trustedOrigin = !origin || config.corsOrigins.includes(origin) || origin === `${req.protocol}://${req.headers.host}`;
+    if (!localIp || !localHost || !trustedOrigin) throw new AppError('settings_forbidden', 'API setup is available only on the backend machine from an allowed local page.');
+  };
+  app.get('/api/settings/api', async (req, reply) => {
+    localSettings(req); reply.header('cache-control', 'no-store');
+    return settings.read();
+  });
+  app.post('/api/settings/api', { bodyLimit: 32768 }, async (req, reply) => {
+    localSettings(req); reply.header('cache-control', 'no-store');
+    return settings.save(parse(UpdateApiSettingsBodySchema, req.body, 'API settings'));
+  });
+  app.post('/api/settings/api/test', { bodyLimit: 32768 }, async (req, reply) => {
+    localSettings(req); reply.header('cache-control', 'no-store');
+    return settings.test(parse(UpdateApiSettingsBodySchema, req.body, 'API settings'));
+  });
 
   // ── Courses ───────────────────────────────────────────────────────────────
 

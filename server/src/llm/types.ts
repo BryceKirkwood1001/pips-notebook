@@ -2,7 +2,7 @@
  * LLM layer contracts (SPEC 5). Two layers, so mocking is easy and ownership is clean:
  *
  *   LlmClient      the transport: structured JSON generation, embeddings, file upload.
- *                  Implementations: Gemini (`@google/genai`) and a thin fake for tests.
+ *                  Implementations: Gemini (`@google/genai`), OpenAI (REST), and a fake for tests.
  *   Task modules   one function per LLM job, each with a Gemini-backed implementation and a
  *                  deterministic mock:
  *                    GameplayTasks  (llm-engineer)      server/src/llm/gameplay/**
@@ -26,6 +26,7 @@ import type { z } from 'zod';
 import type {
   Answer,
   Concept,
+  CourseActivity,
   ExamTimeHint,
   MaterialItem,
   MaterialItemKind,
@@ -62,15 +63,17 @@ export interface GenerateOptions {
   timeoutMs?: number;
   /** Files to attach (native PDF reading). */
   files?: UploadedFile[];
-  /** Override `config.geminiModel` for this call. */
+  /** Override the selected provider's configured model for this call. */
   model?: string;
   maxOutputTokens?: number;
   /** Short name for logs and for scripting the fake client, e.g. "studentAnswer". */
   label?: string;
+  /** Opt-in public reasoning summaries for document analysis, never raw reasoning text. */
+  onReasoningSummary?: (summary: string) => void | Promise<void>;
 }
 
 export interface LlmClient {
-  readonly provider: 'gemini' | 'fake';
+  readonly provider: 'gemini' | 'openai' | 'fake';
   /**
    * Structured output: asks for JSON matching `schema`, validates the reply with Zod, retries ONCE on
    * a parse or validation failure, and throws `AppError('llm_error')` if it still fails or times out.
@@ -286,6 +289,8 @@ export interface CoverageGap {
 }
 
 export interface VerifyQuestionOutput {
+  /** Live verifiers assess source alignment and question usefulness independently of the key. */
+  quality?: { acceptable: boolean; reason: string };
   /** The verifier's own answer, found WITHOUT seeing the key. `{ dontKnow: true }` if it cannot tell. */
   answer: Answer;
   workedSteps: WorkedStep[];
@@ -295,7 +300,7 @@ export interface VerifyQuestionOutput {
 
 export interface IngestTasks {
   /** Reads the material (PDFs natively when `file.uploaded` is set, page text otherwise). */
-  extractOutline(input: { files: ParsedFile[]; titleHint?: string }): Promise<OutlineDraft>;
+  extractOutline(input: { files: ParsedFile[]; titleHint?: string; onProgress?: (activity: CourseActivity) => Promise<void> }): Promise<OutlineDraft>;
   /** Style profile from the material's own items and a few sample pages. */
   buildStyleProfile(input: {
     materialItems: MaterialItem[];

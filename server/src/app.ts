@@ -64,7 +64,7 @@ export async function buildApp(container: Container): Promise<FastifyInstance> {
     });
   });
 
-  registerRoutes(app, container.services);
+  registerRoutes(app, container.services, container.settings, config);
 
   app.addHook('onClose', async () => {
     await container.close();

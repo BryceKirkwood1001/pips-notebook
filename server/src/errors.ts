@@ -8,6 +8,7 @@ export const ERROR_STATUS = {
   validation_error: 400,
   /** The answer does not fit the question type (e.g. `text` for an mcq). */
   invalid_answer: 400,
+  settings_forbidden: 403,
   not_found: 404,
   /** The action is not allowed in the run's current phase. */
   wrong_phase: 409,

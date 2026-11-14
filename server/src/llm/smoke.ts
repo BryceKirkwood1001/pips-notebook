@@ -1,6 +1,8 @@
-/** `npm run llm:smoke`: one live call per gameplay task plus one embed. Skips without GEMINI_API_KEY. */
+/** `npm run llm:smoke`: one live call per gameplay task plus one embed. Skips in Offline mode. */
 import { loadConfigFromProcess } from '../config';
-import { createGeminiClient } from './gemini-client';
+import { createLlmClient } from './provider';
+import { createApiSettingsManager } from '../settings';
+import { fileURLToPath } from 'node:url';
 import { createGameplayTasks } from './gameplay/gemini';
 
 async function timed<T>(name: string, fn: () => Promise<T>): Promise<void> {
@@ -10,12 +12,13 @@ async function timed<T>(name: string, fn: () => Promise<T>): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const config = loadConfigFromProcess();
-  if (!config.geminiApiKey) {
-    console.log('llm:smoke: GEMINI_API_KEY is not set, skipping.');
+  const settings = await createApiSettingsManager(loadConfigFromProcess(), { file: fileURLToPath(new URL('../../../.local/api-settings.json', import.meta.url)) });
+  const config = settings.config();
+  if (config.llmProvider === 'mock') {
+    console.log('llm:smoke: no live provider is selected, skipping. Configure OpenAI or Gemini in Settings.');
     return;
   }
-  const llm = createGeminiClient(config);
+  const llm = createLlmClient(config);
   const tasks = createGameplayTasks(llm, config);
   const misc = {
     id: 'distance_causes_seasons',

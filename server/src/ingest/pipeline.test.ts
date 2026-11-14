@@ -13,6 +13,23 @@ async function ingest(name: string, opts: Parameters<typeof makeDeps>[0] = {}) {
   return { ...ctx, report, pack, questions };
 }
 
+it('persists bounded public analysis summaries while outline work is still running', async () => {
+  const base = makeDeps().deps.tasks;
+  const ctx = makeDeps({ tasks: { async extractOutline(input) {
+    await input.onProgress?.({ message: 'Reading pages 1–12, part 1 of 9.', summary: 's'.repeat(2000), completed: 0, total: 9 });
+    const during = await ctx.repo.getCoursePack('activity');
+    expect(during!.status.stage).toBe('outline');
+    expect(during!.status.activity!.summary).toHaveLength(1200);
+    expect(during!.status.activity!.message).toContain('pages 1–12');
+    return base.extractOutline(input);
+  } } });
+  await runIngest(ctx.deps, { courseId: 'activity', files: [sampleFile('seasons')] });
+  const pack = await ctx.repo.getCoursePack('activity');
+  expect(pack!.status.stage).toBe('ready');
+  expect(pack!.status.activity!.summary).toHaveLength(1200);
+  expect(pack!.status.activity!.message).toContain('ready');
+});
+
 describe.each(['seasons', 'binary-search'])('mock ingest of %s', (name) => {
   it('ends ready with every coverage invariant satisfied', async () => {
     const { report, pack, questions, config } = await ingest(name);
@@ -103,6 +120,13 @@ describe('seasons specifics', () => {
 });
 
 describe('validation', () => {
+  it('rejects presentation-wording recall without banning substantive subject questions', async () => {
+    const { pack, questions } = await ingest('seasons');
+    const q = questions[0];
+    expect(validateQuestion({ ...q, prompt: 'What does the slide say about seasons?' }, pack)).toContain('question tests presentation wording instead of subject understanding');
+    expect(validateQuestion({ ...q, prompt: 'What problem does a change in sunlight angle raise for surface heating?' }, pack)).toEqual([]);
+  });
+
   it('drops bad drafts and never serves unverified questions', async () => {
     const base = makeDeps().deps.tasks;
     const badConvert: typeof base.convertItems = async (input) => {
@@ -147,6 +171,15 @@ describe('validation', () => {
 });
 
 describe('failures', () => {
+  it('does not serve questions rejected for source alignment or usefulness even if their keys agree', async () => {
+    const base = makeDeps().deps.tasks;
+    const { report, pack, questions } = await ingest('seasons', { tasks: { verifyQuestion: async input => ({ ...await base.verifyQuestion(input), quality: { acceptable: false, reason: 'Not a useful source-supported question.' } }) } });
+    expect(report.ok).toBe(false);
+    expect(questions.length).toBeGreaterThan(0);
+    expect(questions.every(q => !q.verified)).toBe(true);
+    expect(pack.status.conceptsReady).toEqual([]);
+  });
+
   it('never marks an unverified or under-covered course ready', async () => {
     const { report, pack, saves } = await ingest('seasons', {
       tasks: { verifyQuestion: async () => ({ answer: { dontKnow: true }, workedSteps: [], difficulty: 3 }) },

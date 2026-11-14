@@ -15,10 +15,15 @@ export interface Config {
   // LLM
   geminiApiKey: string;
   geminiModel: string;
-  llmProvider: 'gemini' | 'mock';
+  geminiEmbeddingModel: string;
+  openaiApiKey: string;
+  openaiModel: string;
+  openaiEmbeddingModel: string;
+  llmProvider: 'gemini' | 'openai' | 'mock';
   embeddingModel: string;
   embeddingDims: number;
   llmTimeoutMs: number;
+  ingestLlmTimeoutMs: number;
   // Storage
   mongodbUri: string;
   mongodbDb: string;
@@ -117,10 +122,14 @@ export function parseGradeThresholds(raw: string | undefined): GradeThresholds {
 const EnvSchema = z.object({
   GEMINI_API_KEY: str(''),
   GEMINI_MODEL: str('gemini-2.5-flash'),
+  OPENAI_API_KEY: str(''),
+  OPENAI_MODEL: str('gpt-5.6-luna'),
+  OPENAI_EMBEDDING_MODEL: str('text-embedding-3-small'),
   LLM_PROVIDER: str(''),
   EMBEDDING_MODEL: str('gemini-embedding-001'),
   EMBEDDING_DIMS: int(768, 1),
   LLM_TIMEOUT_MS: int(30000, 1),
+  INGEST_LLM_TIMEOUT_MS: num(180000, n => Number.isInteger(n) && n >= 1000 && n <= 600000),
   MONGODB_URI: str(''),
   MONGODB_DB: str('teach_or_perish'),
   ATLAS_VECTOR_INDEX: str('chunks_vector'),
@@ -163,23 +172,31 @@ export function loadConfig(env: Env = {}): Config {
   const e = parsed.data;
 
   const provider = e.LLM_PROVIDER.toLowerCase();
-  if (provider !== '' && provider !== 'gemini' && provider !== 'mock') {
-    throw new Error(`Invalid configuration: LLM_PROVIDER must be "gemini" or "mock", got "${e.LLM_PROVIDER}"`);
+  if (provider !== '' && provider !== 'gemini' && provider !== 'openai' && provider !== 'mock') {
+    throw new Error('Invalid configuration: LLM_PROVIDER must be "gemini", "openai" or "mock"');
   }
-  // No explicit provider: use Gemini when there is a key, otherwise mocks.
+  // No explicit provider: prefer an available Gemini key, then OpenAI, then offline mocks.
   const llmProvider: Config['llmProvider'] =
-    provider === '' ? (e.GEMINI_API_KEY ? 'gemini' : 'mock') : (provider as Config['llmProvider']);
+    provider === '' ? (e.GEMINI_API_KEY ? 'gemini' : e.OPENAI_API_KEY ? 'openai' : 'mock') : (provider as Config['llmProvider']);
   if (llmProvider === 'gemini' && !e.GEMINI_API_KEY) {
     throw new Error('Invalid configuration: LLM_PROVIDER=gemini needs GEMINI_API_KEY');
+  }
+  if (llmProvider === 'openai' && !e.OPENAI_API_KEY) {
+    throw new Error('Invalid configuration: LLM_PROVIDER=openai needs OPENAI_API_KEY');
   }
 
   const config: Config = {
     geminiApiKey: e.GEMINI_API_KEY,
     geminiModel: e.GEMINI_MODEL,
+    geminiEmbeddingModel: e.EMBEDDING_MODEL,
+    openaiApiKey: e.OPENAI_API_KEY,
+    openaiModel: e.OPENAI_MODEL,
+    openaiEmbeddingModel: e.OPENAI_EMBEDDING_MODEL,
     llmProvider,
-    embeddingModel: e.EMBEDDING_MODEL,
+    embeddingModel: llmProvider === 'openai' ? e.OPENAI_EMBEDDING_MODEL : e.EMBEDDING_MODEL,
     embeddingDims: e.EMBEDDING_DIMS,
     llmTimeoutMs: e.LLM_TIMEOUT_MS,
+    ingestLlmTimeoutMs: e.INGEST_LLM_TIMEOUT_MS,
     mongodbUri: e.MONGODB_URI,
     mongodbDb: e.MONGODB_DB,
     atlasVectorIndex: e.ATLAS_VECTOR_INDEX,

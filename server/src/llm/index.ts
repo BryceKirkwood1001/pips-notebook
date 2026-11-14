@@ -1,4 +1,6 @@
 export { createGeminiClient } from './gemini-client';
+export { createOpenAiClient } from './openai-client';
+export { createLlmClient } from './provider';
 export { createFakeLlmClient, fakeEmbed } from './fake-client';
 export {
   createGameplayTasks,

@@ -58,3 +58,29 @@ The root type check does not include the actual Phaser game. Its native build an
 2. `game/course/battle.ts` appends a correct help note to the end of the local notebook. During a multi-concept boss, this can display it under the wrong concept until a refresh. Fetch the canonical run/notebook after help instead of guessing the section.
 
 These issues predate this merge. They are documented here and remain unchanged in the combined source.
+
+## Subsequent OpenAI / Settings implementation
+
+The merged source now has an OpenAI provider and a `Settings` scene at the user's request. See [API_SETTINGS.md](API_SETTINGS.md) for controls, write-only credentials, local persistence, course embedding compatibility, implementation map and test results. The same styled form can be opened at `http://localhost:5174/api-settings.html` without the missing native runtime. The provider switch preserves courses/runs; changing the backend origin starts a new client session. Browser-only `?mock=1` continues to use canned practice data.
+
+After this addition, 341 tests across 31 files pass, both sample HTTP workflows pass, and the shared/backend/harness type check plus harness/setup-page production build pass. Native Phaser validation is still blocked by the missing runtime. No live provider call, Atlas check or Phaser publish was performed.
+
+## Runtime restored and styled game running
+
+After the user asked to run the actual frontend, downloaded the official pinned `@phaser-ae/cli@0.8.0` from npm. Ran its `update` command from the inner game folder. The user completed Phaser sign-in/CLI authorization; the CLI installed engine `v3-82bf126`, its build dependencies and the local CLI. `node restore-packs.mjs` restored the existing manifest's packs/fonts. These generated runtime/pack files remain ignored by Git; credentials remain in the CLI's private user configuration.
+
+`npm run build` now succeeds in the inner folder. `npm run serve` is left running at `http://localhost:4173/`, rebuilding on source changes. Backend port 8787 and reference harness port 5174 remain available. The CLI also changed `.claude/launch.json` from a Windows-specific Node path to portable `node`.
+
+In the built-in browser, verified the actual title screen, Settings opening, OpenAI fields, Back navigation and Play loading both sample courses from the local backend. The game uses live HTTP mode with the backend's Offline model setting. No real model key/call, full native gameplay walkthrough, native smoke suite or publish was performed. Earlier missing-runtime statements in this document record the initial integration checkpoint; that startup blocker is now resolved.
+
+## Later PDF timeout correction
+
+After the user selected OpenAI `gpt-6-luna`, a 108-page upload hit the old 30-second request deadline. Added a separate configurable preparation budget (180 seconds by default), bounded outline batching with preserved evidence references, a Retry preparation control and operation-specific OpenAI timeouts. The original failed operation was not recorded by the old code. 348 tests, root type check, both frontend builds and the offline HTTP workflow pass. Restarted the backend with the user's saved provider/key retained; the PDF needs re-uploading. Full live ingestion of that document remains unverified. See [API_SETTINGS.md](API_SETTINGS.md) and the continuation log for all files and verification.
+
+The subsequent Thinking-panel request is also implemented: optional public course activity drives a panel directly below Stage, with real page/task progress and available public OpenAI outline reasoning summaries. Active streams extend the idle timeout, with a ten-minute request cap. A real small GPT-6 Luna probe produced 85 summary updates and valid output in about 3.8 seconds. Current verification is 356 tests / 32 files, passing type check/native+harness builds and offline HTTP gauntlet. The screenshot in verification is an explicitly labeled synthetic UI fixture; the original PDF's full ingest is still unverified. Details and limitations are in the settings guide/log.
+
+## Source-alignment and battle-feedback refinement
+
+The user subsequently supplied the actual slide deck and asked to refine question prompts. [QUESTION_QUALITY.md](QUESTION_QUALITY.md) covers the new source-alignment policy, independent usefulness gate, rubric fix and live source-backed evaluation. Three relevant generated questions passed evidence/quality/key checks; the rhetorical machine-model question was rejected. The native battle now separates its title/status, fixes scrolling controls and renders distinct feedback/damage cards. Canonical post-help notebook refresh resolves the second frontend follow-up noted above; the timed empty short-text help timeout follow-up remains.
+
+Current checks: 360 tests / 32 files, type check, native/harness builds and isolated offline HTTP workflow pass. The active run was inspected read-only and kept intact. New frontend is built; backend activation is pending the user's restart choice because a restart clears in-memory courses/runs. Existing banks need fresh preparation to reflect new prompts. No commit/push/publish was made for this refinement.

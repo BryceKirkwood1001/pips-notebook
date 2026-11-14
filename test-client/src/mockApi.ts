@@ -267,6 +267,9 @@ export function createMockApi(): ApiClient {
       return view();
     },
     getResults: async () => (need('results'), RESULTS),
+    getApiSettings: async () => { throw new ApiError(501, 'not_implemented', 'API setup uses the local backend.'); },
+    updateApiSettings: async () => { throw new ApiError(501, 'not_implemented', 'API setup uses the local backend.'); },
+    testApiSettings: async () => { throw new ApiError(501, 'not_implemented', 'API setup uses the local backend.'); },
     getDebug: async () => ({
       misconceptionStates: [{ id: 'm1', state: 'active', origin: 'skipped' }],
       currentQuestionAnswerKeys: HELP.map((h) => ({ id: h.q.id, key: h.key })),

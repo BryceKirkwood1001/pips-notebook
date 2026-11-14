@@ -20,6 +20,8 @@ export const typeSync: {
   publicCourse: Mutual<S.PublicCourse, A.PublicCourse>;
   createRunBody: Mutual<S.CreateRunBody, A.CreateRunBody>;
   teachResponse: Mutual<S.TeachResponse, A.TeachResponse>;
+  apiSettings: Mutual<S.ApiSettings, A.ApiSettings>;
+  apiSettingsUpdate: Mutual<S.UpdateApiSettingsBody, A.UpdateApiSettingsBody>;
 } = {
   questionType: true,
   targetGrade: true,
@@ -33,4 +35,6 @@ export const typeSync: {
   publicCourse: true,
   createRunBody: true,
   teachResponse: true,
+  apiSettings: true,
+  apiSettingsUpdate: true,
 };

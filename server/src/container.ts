@@ -10,6 +10,8 @@ import { loadConfig, loadConfigFromProcess, type Config, type Env } from './conf
 import { systemClock, type Clock } from './engine/types';
 import type { Services } from './services/types';
 import { wire } from './wiring';
+import { fileURLToPath } from 'node:url';
+import { createApiSettingsManager, type ApiSettingsManager, type LlmFactory } from './settings';
 
 export interface ContainerOptions {
   /** Read config from this object instead of `.env` + `process.env`. Tests always pass this. */
@@ -20,12 +22,16 @@ export interface ContainerOptions {
   seed?: number;
   /** Where `<sample>.md` and `cache/<sample>.json` live. Default: the repo's `samples/` folder. */
   samplesDir?: string;
+  /** Tests default to session-only settings. The server persists to the ignored .local folder. */
+  settingsFile?: string | false;
+  llmFactory?: LlmFactory;
 }
 
 export interface Container {
   config: Config;
   clock: Clock;
   services: Services;
+  settings: ApiSettingsManager;
   /** Closes the database connection, if any. */
   close(): Promise<void>;
 }
@@ -33,11 +39,14 @@ export interface Container {
 export async function createContainer(options: ContainerOptions = {}): Promise<Container> {
   const config = options.env ? loadConfig(options.env) : loadConfigFromProcess();
   const clock = options.clock ?? systemClock;
-  const wired = await wire({ config, clock, seed: options.seed, samplesDir: options.samplesDir });
+  const file = options.settingsFile === false ? undefined : options.settingsFile ?? (options.env ? undefined : fileURLToPath(new URL('../../.local/api-settings.json', import.meta.url)));
+  const settings = await createApiSettingsManager(config, { file, llmFactory: options.llmFactory });
+  const wired = await wire({ config, clock, settings, llmFactory: options.llmFactory, seed: options.seed, samplesDir: options.samplesDir });
   return {
     config,
     clock,
     services: wired.services,
+    settings,
     close: wired.close,
   };
 }

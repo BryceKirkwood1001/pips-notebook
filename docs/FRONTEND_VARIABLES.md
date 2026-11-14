@@ -19,9 +19,10 @@ Use [api-client.ts](../shared/src/api-client.ts) for the exact TypeScript types 
 | Boss/exam | `BossScene` via `BattleScene` | `Boss` (`course/battle.ts`) | `run.boss`, health, `TurnResult`, final `results` | `turn`, `help` |
 | Results/study guide | `ResultsScene` | `Results` (`course/Results.ts`) | `Results`, accuracy, help stats, costly misconceptions, material references | `getResults` |
 | Pause | No separate test scene | Dialog (`course/page.ts`) | Existing `runId` and current phase | No API needed; timed deadlines keep running |
+| API setup | `api-settings.html` / `settings-preview.ts` | `Settings` (`course/Settings.ts`, `course/settings-view.ts`) | Provider, model fields, write-only key inputs, backend origin, timeout, saved-key flags, connection status | `getApiSettings`, `testApiSettings`, `updateApiSettings` |
 | Development overlay | `debug.ts` | Optional dev-only overlay | `run`, `pack`, `questions`, `stats`, `timeBudgets` from debug | `getDebug` |
 
-The integrated game registers `Title`, `Upload`, `Learning`, `Fight`, `Boss`, `Results`. Both its source and the backend are present on `integration`. State names and rendering-local inventories elsewhere in this document refer to the reference test client unless explicitly marked as integrated-game paths; the public API fields are shared by both implementations.
+The integrated game registers `Title`, `Upload`, `Learning`, `Fight`, `Boss`, `Results`, `Settings`. Both its source and the backend are present on `integration`. State names and rendering-local inventories elsewhere in this document refer to the reference test client unless explicitly marked as integrated-game paths; the public API fields are shared by both implementations.
 
 ## Shared frontend state and configuration
 
@@ -43,7 +44,38 @@ The integrated game registers `Title`, `Upload`, `Learning`, `Fight`, `Boss`, `R
 | `SCENE_STARTED`, `SCENE_SLEEPING` | `2`, `7` | Harness navigation | Phaser 3 lifecycle bounds; not needed in Phaser AE |
 | `ApiError.status`, `.code`, `.message` | `number`, `string`, `string` | Error banner on every screen | Show/handle failed requests; status `0` denotes a network error |
 
-No Gemini key, MongoDB URI, hidden misconception state or answer key belongs in browser configuration. Gameplay settings come from `run.rules`; set server environment variables on the backend.
+No API key, MongoDB URI, hidden misconception state or answer key belongs in browser configuration or local storage. Settings accepts keys only as temporary password inputs sent to the local backend; the read API exposes only `hasApiKey`. Gameplay settings come from `run.rules`; set server environment variables on the backend.
+
+## API Settings fields and source variables
+
+The real game and the standalone setup page render the same `teach-or-perish/game/course/settings-view.ts` component. `Settings.ts` mounts it in the game's frame. `test-client/src/settings-preview.ts` mounts it independently. See [API_SETTINGS.md](API_SETTINGS.md) for setup and storage rules.
+
+| Name/field | Type | Use |
+|---|---|---|
+| `selected` / request `provider` | `'openai' \| 'gemini' \| 'mock'` | Selected provider card; Save/Test body |
+| `profiles[provider].model` / `model` | Input / string | Generation model |
+| `profiles[provider].embedding` / `embeddingModel` | Input / string | Embedding model for new ingests |
+| `profiles[provider].key` / `apiKey` | Password input / optional string or null | Blank omits the key (keep saved); nonblank replaces; `remove` sends null |
+| `profiles[provider].remove` | Checkbox | Remove saved provider key |
+| `profiles[provider].state` / `providers[provider].hasApiKey` | Status element / boolean | Key-presence indicator; never the key itself |
+| `timeout` / `timeoutMs` | Seconds input / integer milliseconds | UI accepts 1–180 whole seconds |
+| `ingestTimeout` / `ingestTimeoutMs` | Seconds input / integer milliseconds | Per-request course preparation budget; 1–600 whole seconds, default 180; separate from interactive turns |
+| `origin` / `apiOrigin` | URL input / string | Backend origin; query parameter overrides `top.apiOrigin` in localStorage, then localhost default |
+| `persistence` / response `persistence` | Paragraph / `'local' \| 'session'` | Backend persistence feedback |
+| `dimensions` / response `embeddingDims` | Paragraph / number | Read-only retrieval dimensions |
+| `loaded`, `active` | boolean | Gate Save/Test until load; ignore responses after scene closes |
+| `controller` | AbortController | Cancel browser requests when leaving Settings; each request also has a deadline |
+| `root`, `status`, `keyStatus`, `providerCards`, `cards`, `fields`, `offline` | DOM handles / map | Component structure, selected state and request feedback |
+| `connection`, `clientFor` | API client / factory | Read, test or save settings against the chosen origin |
+| `save`, `test`, `load`, `back`, `advanced` | DOM handles | Component controls; Back remains usable while a request runs |
+| `currentScreen`, `settingsReturn` | Game `Screen` | Return from Settings to the previous page or current run phase |
+| `setApiOrigin`, `openSettings`, `backFromSettings` | Game app helpers | Update the shared client, clear a run when changing servers, navigate |
+
+These setup responses do not belong in `PublicRun`. Changing a provider keeps existing runs; changing the backend origin starts a new client session. The browser's `?mock=1` canned practice mode remains independent of the backend provider.
+
+The actual game's battle feedback now lives in `course/battle-feedback.ts`: `turnCard(event)` renders one completed event with labeled answer/reasoning/evidence/expected-answer fields and a separate damage footer. `course/battle.ts` keeps title, hearts/attempt/answered counts and actions separate and refreshes the canonical run after completed turns. Question headings can be suppressed by `questionEl(question, false)` when the card summary already displays the prompt. See [QUESTION_QUALITY.md](QUESTION_QUALITY.md) for the associated layout and prompt fixes.
+
+The actual game's `UploadScene.retryUpload` retains the submitted file array or notes/title while that scene stays open. An ingest error exposes **Retry preparation**, which submits a new course and clears stale room selections. Leaving/reloading Upload releases those inputs. A failed course keeps Start disabled and shows a preparation-error hint, rather than asking the player to select nonexistent rooms.
 
 ## Course picker and upload inputs
 
@@ -67,6 +99,10 @@ File formats are `.pdf`, `.txt`, `.md` (`.markdown` is also accepted by the serv
 | `course.status.stage` | `parsing \| outline \| style \| concepts \| ready \| error` | Progress indicator; stop polling on `ready` or `error` |
 | `course.status.conceptsReady[]` | `string[]` | Ready concept ids; room/concept booleans below are convenient public projections |
 | `course.status.error?` | `string` | Ingest error message |
+| `course.status.activity?` | `{ message: string; summary?: string; completed?: number; total?: number }` | Actual-game Thinking panel directly below Stage; refreshed by the existing poll |
+| `activity.message` | Up to 240 characters | Current actual task/page-batch progress, also available without OpenAI summaries |
+| `activity.summary?` | Latest 1200 characters | Public OpenAI document-analysis summary, labeled “Latest OpenAI reasoning summary”; render as text |
+| `activity.completed?`, `.total?` | Integers | Counts for the current task, when known; do not infer a full-course percentage |
 | `course.files[].id` | `string` | File identity for evidence references |
 | `course.files[].name` | `string` | Uploaded filename |
 | `course.files[].type` | `pdf \| txt \| md` | File type badge |

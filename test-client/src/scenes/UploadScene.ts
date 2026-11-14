@@ -39,6 +39,10 @@ export class UploadScene extends Phaser.Scene {
     this.polling = false;
     title(this, 'Teach or Perish: test client');
     const root = el('div', '', this.sourceEl, this.courseEl);
+    const setup = el('a', '', 'API settings');
+    setup.href = '/api-settings.html' + location.search;
+    setup.style.color = '#ffd166';
+    root.prepend(setup);
     panel(this, 20, 56, 1060, 650, root);
     this.courseEl.style.display = 'none';
     this.buildSource();

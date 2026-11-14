@@ -222,10 +222,17 @@ export interface PublicRun {
   updatedAt: string;
 }
 
+export interface CourseActivity {
+  message: string;
+  summary?: string;
+  completed?: number;
+  total?: number;
+}
+
 export interface PublicCourse {
   id: string;
   title: string;
-  status: { stage: IngestStage; conceptsReady: string[]; error?: string };
+  status: { stage: IngestStage; conceptsReady: string[]; error?: string; activity?: CourseActivity };
   files: { id: string; name: string; type: 'pdf' | 'txt' | 'md'; pages: number }[];
   units: { id: string; title: string; concepts: { id: string; title: string; ready: boolean }[] }[];
   rooms: { id: string; title: string; conceptIds: string[]; ready: boolean }[];
@@ -278,6 +285,25 @@ export interface UploadFile {
 
 export type ApiClient = ReturnType<typeof createApiClient>;
 
+export type LlmProvider = 'mock' | 'gemini' | 'openai';
+export interface ApiProviderSettings { model: string; embeddingModel: string; hasApiKey: boolean }
+export interface ApiSettings {
+  provider: LlmProvider;
+  providers: { openai: ApiProviderSettings; gemini: ApiProviderSettings };
+  timeoutMs: number;
+  ingestTimeoutMs: number;
+  embeddingDims: number;
+  persistence: 'local' | 'session';
+}
+export interface UpdateApiSettingsBody {
+  provider: LlmProvider;
+  openai?: { model?: string; embeddingModel?: string; apiKey?: string | null };
+  gemini?: { model?: string; embeddingModel?: string; apiKey?: string | null };
+  timeoutMs?: number;
+  ingestTimeoutMs?: number;
+}
+export interface TestApiSettingsResponse { ok: boolean; provider: LlmProvider; message: string }
+
 export function createApiClient(options: ApiClientOptions = {}) {
   const base = (options.baseUrl ?? 'http://localhost:8787').replace(/\/+$/, '') + '/api';
   const doFetch: typeof fetch = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
@@ -315,6 +341,10 @@ export function createApiClient(options: ApiClientOptions = {}) {
   const enc = encodeURIComponent;
 
   return {
+    /** Local backend setup. Keys are write-only; blank key inputs should be omitted. */
+    getApiSettings: () => request<ApiSettings>('GET', '/settings/api'),
+    updateApiSettings: (body: UpdateApiSettingsBody) => request<ApiSettings>('POST', '/settings/api', body),
+    testApiSettings: (body: UpdateApiSettingsBody) => request<TestApiSettingsResponse>('POST', '/settings/api/test', body),
     /** GET /health */
     health: () => request<{ ok: boolean; llmProvider: string; storage: string; debug: boolean }>('GET', '/health'),
 

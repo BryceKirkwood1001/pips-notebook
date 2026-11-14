@@ -88,6 +88,11 @@ async function main() {
   try {
     // Fail early and clearly while the routes are still stubs.
     seen(await api.health());
+    if (flag('capture-file')) {
+      seen(await api.getApiSettings());
+      seen(await api.testApiSettings({ provider: 'mock' }));
+      seen(await api.updateApiSettings({ provider: 'mock' }));
+    }
     seen(await api.listSamples());
     head(`Seed "${sample}" and create a run (target B)`);
     const { courseId } = await api.seedCourse(sample);

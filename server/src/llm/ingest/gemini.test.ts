@@ -18,6 +18,7 @@ import { DATA_RULE } from '../../prompts/gameplay/safety';
 import type { ParsedFile, RetrievedChunk } from '../../rag/types';
 import { createFakeLlmClient } from '../fake-client';
 import { createIngestTasks } from './gemini';
+import { outlineBatches, OUTLINE_BATCH_CHARS } from './outline-batches';
 
 const config = testConfig();
 const EV = { chunkId: 'c1', fileId: 'f1', page: 1, quote: 'Seasons are caused by the tilt of the axis.' };
@@ -168,7 +169,7 @@ describe('prompts: injection safety', () => {
     convertItems: () => ({ questions: [] }),
     adaptQuestions: () => ({ questions: [] }),
     generateQuestions: () => ({ questions: [] }),
-    verifyQuestion: () => ({ dontKnow: true, workedSteps: [], difficulty: 3 }),
+    verifyQuestion: () => ({ usable: true, qualityIssue: '', dontKnow: true, workedSteps: [], difficulty: 3 }),
     judgeAgreement: () => ({ agrees: true, why: 'same' }),
   });
   const gi = { exemplars: [evil], gaps: [GAP], concepts: [CONCEPT], styleProfile: STYLE, evidence: [evilChunk] };
@@ -197,6 +198,47 @@ describe('prompts: injection safety', () => {
 });
 
 describe('extractOutline', () => {
+  it('covers all 108 pages in bounded requests and merges repeated concepts with cross-batch prerequisites', async () => {
+    const file: ParsedFile = { fileId: 'f1', name: 'lecture.pdf', type: 'pdf', uploaded: { uri: 'file-full-pdf', name: 'file-full-pdf', mimeType: 'application/pdf' },
+      pages: Array.from({ length: 108 }, (_, i) => ({ page: i + 1, text: `Evidence on page ${i + 1}.`, lowText: false })) };
+    const { llm, tasks } = tasksWith({ extractOutline: prompt => {
+      const pages = [...(prompt.split('Course material:')[1] ?? prompt).matchAll(/\[file f1 page (\d+)\]/g)].map(m => Number(m[1]));
+      const point = (page: number) => ({ statement: `point ${page}`, quote: `Evidence on page ${page}.`, fileId: 'f1', page });
+      return { title: 'Memory', units: [{ title: 'Memory hierarchy', concepts: [
+        { title: 'Cache', summary: 's', prerequisites: ['RAM'], keyPoints: pages.map(point) },
+        ...(pages.includes(13) ? [{ title: 'RAM', summary: 's', keyPoints: [point(13)] }] : []),
+      ] }], materialItems: [{ kind: 'definition', text: 'Cache', conceptTitles: ['Cache'], quote: `Evidence on page ${pages[0]}.`, fileId: 'f1', page: pages[0] }] };
+    } });
+    const outline = await tasks.extractOutline({ files: [file] });
+    expect(llm.calls).toHaveLength(9);
+    expect(llm.calls.every(c => c.opts.files === undefined)).toBe(true);
+    expect(outline.units).toHaveLength(1);
+    expect(outline.units[0].concepts).toHaveLength(2);
+    const cache = outline.units[0].concepts.find(c => c.title === 'Cache')!;
+    expect(cache.keyPoints.map(k => k.evidence.page)).toEqual(Array.from({ length: 108 }, (_, i) => i + 1));
+    expect(cache.prerequisites).toEqual(['RAM']);
+    expect(outline.materialItems).toHaveLength(9);
+    expect(file.uploaded!.uri).toBe('file-full-pdf');
+  });
+
+  it('splits a long single page without losing text or evidence coordinates', () => {
+    const text = 'word '.repeat(15000);
+    const file: ParsedFile = { fileId: 'f2', name: 'notes.md', type: 'md', pages: [{ page: 42, text, lowText: false }] };
+    const parts = outlineBatches([file]);
+    expect(parts.length).toBeGreaterThan(1);
+    const pages = parts.flatMap(part => part.flatMap(f => f.pages));
+    expect(pages.map(p => p.text).join('')).toBe(text);
+    expect(pages.every(p => p.page === 42 && p.text.length <= OUTLINE_BATCH_CHARS)).toBe(true);
+  });
+
+  it('stops batching on failure instead of issuing remaining paid requests', async () => {
+    let count = 0;
+    const { llm, tasks } = tasksWith({ extractOutline: () => { if (++count === 2) throw new Error('provider timeout'); return { title: 't', units: [], materialItems: [] }; } });
+    const file: ParsedFile = { fileId: 'f1', name: 'a.pdf', type: 'pdf', pages: Array.from({ length: 36 }, (_, i) => ({ page: i + 1, text: 'some text', lowText: false })) };
+    await expect(tasks.extractOutline({ files: [file] })).rejects.toThrow('provider timeout');
+    expect(llm.calls).toHaveLength(2);
+  });
+
   it('passes uploaded files and includes page text with markers, and converts the flat reply', async () => {
     const files: ParsedFile[] = [
       { fileId: 'f1', name: 'a.pdf', type: 'pdf', pages: [{ page: 1, text: 'Page one text.', lowText: false }, { page: 2, text: 'Page two text.', lowText: false }], uploaded: { uri: 'fake://1', mimeType: 'application/pdf', name: 'files/1' } },
@@ -259,10 +301,16 @@ describe('style profile and misconceptions', () => {
 });
 
 describe('verifyQuestion and judgeAgreement', () => {
+  it('returns an explicit quality rejection even when a rhetorical question can be answered', async () => {
+    const { tasks } = tasksWith({ verifyQuestion: () => ({ usable: false, qualityIssue: 'Tests a rhetorical hook instead of the taught concept.', text: 'Can we speed up memory access?', workedSteps: [], difficulty: 1 }) });
+    const question: PublicQuestion = { id: 'q', type: 'short_text', prompt: 'What question does the machine model raise about memory access?', payload: {}, difficulty: 1, timeBudgetSec: 45 };
+    expect((await tasks.verifyQuestion({ question, evidence: [CHUNK] })).quality).toEqual({ acceptable: false, reason: 'Tests a rhetorical hook instead of the taught concept.' });
+  });
+
   it('never puts an answer key in the verifier prompt and converts the reply', async () => {
     const pq: PublicQuestion = { id: 'q', type: 'mcq', prompt: 'What causes seasons?', difficulty: 2, timeBudgetSec: 20, payload: { options: ['distance', 'tilt'] } };
     const { llm, tasks } = tasksWith({
-      verifyQuestion: () => ({ choiceIndex: 1, workedSteps: [{ text: 'recall', kind: 'recall' }, { text: 'x', kind: 'nonsense' }], difficulty: 7 }),
+      verifyQuestion: () => ({ usable: true, qualityIssue: '', choiceIndex: 1, workedSteps: [{ text: 'recall', kind: 'recall' }, { text: 'x', kind: 'nonsense' }], difficulty: 7 }),
     });
     const r = await tasks.verifyQuestion({ question: pq, evidence: [CHUNK] });
     expect(r.answer).toEqual({ choiceIndex: 1 });
@@ -278,13 +326,13 @@ describe('verifyQuestion and judgeAgreement', () => {
 
   it('turns an out-of-range or missing answer into dontKnow', async () => {
     const pq: PublicQuestion = { id: 'q', type: 'mcq', prompt: 'p', difficulty: 2, timeBudgetSec: 20, payload: { options: ['a', 'b'] } };
-    const { tasks } = tasksWith({ verifyQuestion: () => ({ choiceIndex: 9, workedSteps: [], difficulty: 2 }) });
+    const { tasks } = tasksWith({ verifyQuestion: () => ({ usable: true, qualityIssue: '', choiceIndex: 9, workedSteps: [], difficulty: 2 }) });
     expect((await tasks.verifyQuestion({ question: pq, evidence: [] })).answer).toEqual({ dontKnow: true });
   });
 
   it('converts numeric, ordering and true/false answers', async () => {
     const mk = (type: string, payload: unknown): PublicQuestion => ({ id: 'q', type, prompt: 'p', difficulty: 2, timeBudgetSec: 20, payload }) as PublicQuestion;
-    const { tasks } = tasksWith({ verifyQuestion: () => ({ numberValue: 5, boolValue: true, order: [1, 0], workedSteps: [], difficulty: 2 }) });
+    const { tasks } = tasksWith({ verifyQuestion: () => ({ usable: true, qualityIssue: '', numberValue: 5, boolValue: true, order: [1, 0], workedSteps: [], difficulty: 2 }) });
     expect((await tasks.verifyQuestion({ question: mk('numeric', { unit: null }), evidence: [] })).answer).toEqual({ value: 5 });
     expect((await tasks.verifyQuestion({ question: mk('true_false', { statement: 's' }), evidence: [] })).answer).toEqual({ value: true });
     expect((await tasks.verifyQuestion({ question: mk('ordering', { items: ['a', 'b'] }), evidence: [] })).answer).toEqual({ order: [1, 0] });

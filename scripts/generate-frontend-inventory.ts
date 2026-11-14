@@ -17,6 +17,7 @@ const pages: Record<string, string> = {
   'debug.ts': 'Development overlay on every page',
   'helpModal.ts': 'Help overlay on Fight and Boss',
   'main.ts': 'Application startup',
+  'settings-preview.ts': 'Standalone preview of the actual game API Settings component',
   'mockApi.ts': 'Browser-only canned mock implementation (`?mock=1`)',
   'ui.ts': 'Shared presentation helpers on every page',
   'scenes/BootScene.ts': 'Boot/resume',

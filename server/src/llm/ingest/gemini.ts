@@ -40,6 +40,7 @@ import {
   buildVerifyQuestionPrompt,
 } from '../../prompts/ingest';
 import type { IngestTasks, LlmClient, MisconceptionDraft, OutlineDraft, QuestionDraft, QuoteRef } from '../types';
+import { outlineBatches } from './outline-batches';
 
 // ── small helpers ───────────────────────────────────────────────────────────
 
@@ -121,6 +122,39 @@ const OutlineSchema = z.object({
   ),
   examTimeHint: z.object({ totalMinutes: num, questionCount: num, totalPoints: num }).nullish(),
 });
+
+type FlatOutline = z.infer<typeof OutlineSchema>;
+function mergeOutlines(parts: FlatOutline[]): FlatOutline {
+  const merged: FlatOutline = { title: parts[0]?.title ?? 'Untitled course', language: parts[0]?.language, units: [], materialItems: [], examTimeHint: parts.find(p => p.examTimeHint)?.examTimeHint };
+  const normalize = (text: string) => text.trim().toLocaleLowerCase();
+  const units = new Map<string, FlatOutline['units'][number]>();
+  const concepts = new Map<string, FlatOutline['units'][number]['concepts'][number]>();
+  const items = new Set<string>();
+  for (const part of parts) {
+    for (const u of part.units) {
+      let unit = units.get(normalize(u.title));
+      if (!unit) { unit = { title: u.title, concepts: [] }; units.set(normalize(u.title), unit); merged.units.push(unit); }
+      for (const c of u.concepts) {
+        const key = normalize(c.title);
+        const old = concepts.get(key);
+        if (!old) { const copy = structuredClone(c); concepts.set(key, copy); unit.concepts.push(copy); }
+        else {
+          old.prerequisites = [...new Set([...(old.prerequisites ?? []), ...(c.prerequisites ?? [])])];
+          const known = new Set(old.keyPoints.map(k => JSON.stringify([k.statement, k.fileId, k.page, k.quote])));
+          for (const k of c.keyPoints) { const id = JSON.stringify([k.statement, k.fileId, k.page, k.quote]); if (!known.has(id)) { old.keyPoints.push(k); known.add(id); } }
+        }
+      }
+    }
+    for (const item of part.materialItems) {
+      const key = JSON.stringify([item.kind, item.text, item.fileId, item.page, item.quote]);
+      if (!items.has(key)) { merged.materialItems.push(structuredClone(item)); items.add(key); }
+    }
+  }
+  for (const c of concepts.values()) c.prerequisites = [...new Set((c.prerequisites ?? []).map(title => concepts.get(normalize(title))?.title ?? title))].filter(title => title !== c.title);
+  for (const item of merged.materialItems) item.conceptTitles = [...new Set((item.conceptTitles ?? []).map(title => concepts.get(normalize(title))?.title ?? title))];
+  merged.units = merged.units.filter(u => u.concepts.length);
+  return merged;
+}
 
 function toOutline(out: z.infer<typeof OutlineSchema>, fileIds: string[]): OutlineDraft {
   const titles = new Set(out.units.flatMap((u) => u.concepts.map((c) => c.title)));
@@ -302,7 +336,7 @@ export function buildPayload(q: FlatQuestion, miscIds: Set<string>): unknown | n
     case 'short_text': {
       const r = ShortTextPayloadSchema.safeParse({
         acceptedAnswers: (q.acceptedAnswers ?? []).map(clean).filter(Boolean),
-        rubric: clean(q.rubric) || `The answer must match: ${clean(q.finalAnswer)}`,
+        rubric: clean(q.rubric) || `Express the required idea: ${clean(q.finalAnswer)}. Accept semantically equivalent wording.`,
         wrongAnswers: (q.wrongAnswers ?? []).flatMap((w) =>
           clean(w.pattern) && misc(w.misconceptionId) ? [{ pattern: clean(w.pattern), misconceptionId: misc(w.misconceptionId) }] : [],
         ),
@@ -383,6 +417,8 @@ export function toQuestionDrafts(flat: FlatQuestion[], ctx: QuestionContext): Qu
 // ── verify and judge ────────────────────────────────────────────────────────
 
 const VerifySchema = z.object({
+  usable: z.boolean(),
+  qualityIssue: z.string(),
   dontKnow: z.boolean().nullish(),
   choiceIndex: num,
   choiceIndexes: z.array(z.number()).nullish(),
@@ -414,14 +450,39 @@ export function createIngestTasks(llm: LlmClient, _config: Config): IngestTasks 
     [...new Set([...concepts.flatMap((c) => c.keyPoints.map((k) => k.evidence.fileId)), ...items.map((i) => i.evidence.fileId)])];
 
   return {
-    async extractOutline({ files, titleHint }) {
-      const uploaded = files.flatMap((f) => (f.uploaded ? [f.uploaded] : []));
-      const out = await llm.generateJson(OutlineSchema, buildExtractOutlinePrompt(files, titleHint), {
-        system: EXTRACT_OUTLINE_SYSTEM,
-        label: 'extractOutline',
-        temperature: 0.2,
-        ...(uploaded.length ? { files: uploaded } : {}),
-      });
+    async extractOutline({ files, titleHint, onProgress }) {
+      const parts: FlatOutline[] = [];
+      const batches = outlineBatches(files);
+      const seenScope = new Set<string>();
+      const courseScope = files.flatMap(file => file.pages.filter((page, index) => index === 0 || /learning\s+(?:objectives|outcomes)|what\s+(?:we|you)\s+(?:will|just)\s+(?:uncover|learn)|(?:course|lesson)\s+(?:goals|objectives)/i.test(page.text))
+        .filter(page => { const key = page.text.replace(/\s+/g, ' ').trim(); if (!key || seenScope.has(key)) return false; seenScope.add(key); return true; })
+        .map(page => `[file ${file.fileId} page ${page.page}]\n${page.text.slice(0, 1500)}`)).join('\n\n').slice(0, 6000);
+      // Sequential batches bound rate/concurrency and stop immediately if a provider call fails.
+      for (let i = 0; i < batches.length; i++) {
+        const batch = batches[i];
+        const pages = batch.flatMap(f => f.pages.map(p => p.page));
+        const range = batch.length === 1 ? `pages ${Math.min(...pages)}–${Math.max(...pages)}` : `${pages.length} page segments`;
+        const message = `Reading ${range}, part ${i + 1} of ${batches.length}.`;
+        await onProgress?.({ message, completed: i, total: batches.length });
+        let latestSummary = '', lastUpdate = 0;
+        const uploaded = batch.flatMap(f => f.uploaded ? [f.uploaded] : []);
+        const context = batches.length > 1 ? `\nThis is course-material part ${i + 1} of ${batches.length}. Extract only this part, keeping its original file ids and page numbers. Reuse standard concept/unit titles for related ideas.\n` : '';
+        parts.push(await llm.generateJson(OutlineSchema, buildExtractOutlinePrompt(batch, titleHint, courseScope) + context, {
+          system: EXTRACT_OUTLINE_SYSTEM,
+          label: 'extractOutline', temperature: 0.2,
+          ...(onProgress ? { onReasoningSummary: async (summary: string) => {
+            latestSummary = summary.slice(-1200);
+            if (Date.now() - lastUpdate >= 800) {
+              lastUpdate = Date.now();
+              await onProgress({ message, summary: latestSummary, completed: i, total: batches.length });
+            }
+          } } : {}),
+          ...(uploaded.length ? { files: uploaded } : {}),
+        }));
+        await onProgress?.({ message: `Read part ${i + 1} of ${batches.length}.`, completed: i + 1, total: batches.length,
+          ...(latestSummary ? { summary: latestSummary } : {}) });
+      }
+      const out = parts.length === 1 ? parts[0] : mergeOutlines(parts);
       return toOutline(out, files.map((f) => f.fileId));
     },
 
@@ -505,6 +566,7 @@ export function createIngestTasks(llm: LlmClient, _config: Config): IngestTasks 
       const kinds = WORKED_STEP_KINDS as readonly string[];
       return {
         answer,
+        quality: { acceptable: out.usable, reason: out.qualityIssue },
         workedSteps: out.workedSteps
           .filter((s) => clean(s.text) && kinds.includes(s.kind))
           .map((s) => ({ text: clean(s.text), kind: s.kind as (typeof WORKED_STEP_KINDS)[number] })),

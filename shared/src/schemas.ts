@@ -15,6 +15,37 @@
  */
 import { z } from 'zod';
 
+export const LlmProviderSchema = z.enum(['mock', 'gemini', 'openai']);
+export type LlmProvider = z.infer<typeof LlmProviderSchema>;
+const ApiModelNameSchema = z.string().trim().min(1).max(160).regex(/^[a-zA-Z0-9._:/-]+$/);
+const ProviderSettingsUpdateSchema = z.object({
+  model: ApiModelNameSchema.optional(),
+  embeddingModel: ApiModelNameSchema.optional(),
+  /** Omitted = keep, null = remove. Keys are write-only. */
+  apiKey: z.string().trim().min(1).max(8192).nullable().optional(),
+}).strict();
+export const UpdateApiSettingsBodySchema = z.object({
+  provider: LlmProviderSchema,
+  openai: ProviderSettingsUpdateSchema.optional(),
+  gemini: ProviderSettingsUpdateSchema.optional(),
+  timeoutMs: z.number().int().min(1000).max(180000).optional(),
+  ingestTimeoutMs: z.number().int().min(1000).max(600000).optional(),
+}).strict();
+export type UpdateApiSettingsBody = z.infer<typeof UpdateApiSettingsBodySchema>;
+const PublicProviderSettingsSchema = z.object({
+  model: z.string(), embeddingModel: z.string(), hasApiKey: z.boolean(),
+});
+export const ApiSettingsSchema = z.object({
+  provider: LlmProviderSchema,
+  providers: z.object({ openai: PublicProviderSettingsSchema, gemini: PublicProviderSettingsSchema }),
+  timeoutMs: z.number(), ingestTimeoutMs: z.number(), embeddingDims: z.number(), persistence: z.enum(['local', 'session']),
+});
+export type ApiSettings = z.infer<typeof ApiSettingsSchema>;
+export const TestApiSettingsResponseSchema = z.object({ ok: z.boolean(), provider: LlmProviderSchema, message: z.string() });
+export type TestApiSettingsResponse = z.infer<typeof TestApiSettingsResponseSchema>;
+export const CourseEmbeddingSchema = z.object({ provider: LlmProviderSchema, model: z.string(), dims: z.number().int().positive() });
+export type CourseEmbedding = z.infer<typeof CourseEmbeddingSchema>;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Primitives
 // ─────────────────────────────────────────────────────────────────────────────
@@ -82,11 +113,21 @@ export const INGEST_STAGES = ['parsing', 'outline', 'style', 'concepts', 'ready'
 export const IngestStageSchema = z.enum(INGEST_STAGES);
 export type IngestStage = z.infer<typeof IngestStageSchema>;
 
+export const CourseActivitySchema = z.object({
+  message: z.string().max(240),
+  /** Latest public provider summary of document analysis; never raw reasoning or generated answer keys. */
+  summary: z.string().max(1200).optional(),
+  completed: z.number().int().nonnegative().optional(),
+  total: z.number().int().positive().optional(),
+});
+export type CourseActivity = z.infer<typeof CourseActivitySchema>;
+
 export const CourseStatusSchema = z.object({
   stage: IngestStageSchema,
   /** Concept ids whose misconceptions and verified questions are stored. A room is ready when all its concepts are. */
   conceptsReady: z.array(z.string()),
   error: z.string().optional(),
+  activity: CourseActivitySchema.optional(),
 });
 export type CourseStatus = z.infer<typeof CourseStatusSchema>;
 
@@ -219,6 +260,8 @@ export const CoursePackSchema = z.object({
   concepts: z.array(ConceptSchema),
   rooms: z.array(RoomSchema),
   materialItems: z.array(MaterialItemSchema),
+  /** Server-only retrieval profile; provider changes must not mix vector spaces. */
+  embeddingProfile: CourseEmbeddingSchema.optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

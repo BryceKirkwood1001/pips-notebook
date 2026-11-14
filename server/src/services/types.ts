@@ -20,7 +20,7 @@ import type {
 
 export interface HealthInfo {
   ok: boolean;
-  llmProvider: 'gemini' | 'mock';
+  llmProvider: 'gemini' | 'openai' | 'mock';
   storage: 'mongodb' | 'memory';
   debug: boolean;
 }

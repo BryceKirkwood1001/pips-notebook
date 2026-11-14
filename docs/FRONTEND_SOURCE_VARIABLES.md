@@ -12,29 +12,30 @@ Page: All pages: configuration, state, errors, navigation.
 |---|---|---|---|---|
 | `params` | variable | `URLSearchParams` | module | [13](../test-client/src/app.ts#L13) |
 | `isMock` | variable | `boolean` | module | [14](../test-client/src/app.ts#L14) |
-| `api` | variable | `{ health: () => Promise<{ ok: boolean; llmProvider: string; storage: string; debug: boolean; }>; listSamples: () => Promise<{ samples: { id: string; title: string; }[]; }>; seed...` | module | [15](../test-client/src/app.ts#L15) |
-| `state` | variable | `{ run: PublicRun \| null; results: Results \| null; game: Game \| null; }` | module | [19](../test-client/src/app.ts#L19) |
-| `text` | parameter | `string` | showError | [27](../test-client/src/app.ts#L27) |
-| `b` | variable | `HTMLElement \| null` | showError | [28](../test-client/src/app.ts#L28) |
-| `close` | variable | `HTMLButtonElement` | showError | [31](../test-client/src/app.ts#L31) |
-| `msg` | variable | `HTMLSpanElement` | showError | [34](../test-client/src/app.ts#L34) |
-| `b` | variable | `HTMLElement \| null` | clearBanner | [41](../test-client/src/app.ts#L41) |
-| `err` | parameter | `unknown` | describeError | [45](../test-client/src/app.ts#L45) |
-| `pre` | variable | `"Not ready yet. " \| ""` | describeError | [47](../test-client/src/app.ts#L47) |
-| `inflight` | variable | `boolean` | module | [55](../test-client/src/app.ts#L55) |
-| `fn` | parameter | `() => Promise<T>` | call | [58](../test-client/src/app.ts#L58) |
-| `err` | variable | `unknown` | call | [65](../test-client/src/app.ts#L65) |
-| `run` | variable | `PublicRun` | call | [70](../test-client/src/app.ts#L70) |
-| `e2` | variable | `unknown` | call | [73](../test-client/src/app.ts#L73) |
-| `p` | parameter | `RunPhase` | sceneForPhase | [86](../test-client/src/app.ts#L86) |
-| `run` | parameter | `PublicRun \| null` | setRun | [101](../test-client/src/app.ts#L101) |
-| `u` | variable | `URL` | setRun | [103](../test-client/src/app.ts#L103) |
-| `SCENE_STARTED` | variable | `2` | module | [110](../test-client/src/app.ts#L110) |
-| `SCENE_SLEEPING` | variable | `7` | module | [111](../test-client/src/app.ts#L111) |
-| `key` | parameter | `string` | goTo | [118](../test-client/src/app.ts#L118) |
-| `game` | variable | `Game \| null` | goTo | [119](../test-client/src/app.ts#L119) |
-| `scene` | variable | `Scene` | goTo | [121](../test-client/src/app.ts#L121) |
-| `status` | variable | `number` | goTo | [122](../test-client/src/app.ts#L122) |
+| `apiOrigin` | variable | `string` | module | [15](../test-client/src/app.ts#L15) |
+| `api` | variable | `{ getApiSettings: () => Promise<ApiSettings>; updateApiSettings: (body: UpdateApiSettingsBody) => Promise<ApiSettings>; testApiSettings: (body: UpdateApiSettingsBody) => Promise...` | module | [17](../test-client/src/app.ts#L17) |
+| `state` | variable | `{ run: PublicRun \| null; results: Results \| null; game: Game \| null; }` | module | [21](../test-client/src/app.ts#L21) |
+| `text` | parameter | `string` | showError | [29](../test-client/src/app.ts#L29) |
+| `b` | variable | `HTMLElement \| null` | showError | [30](../test-client/src/app.ts#L30) |
+| `close` | variable | `HTMLButtonElement` | showError | [33](../test-client/src/app.ts#L33) |
+| `msg` | variable | `HTMLSpanElement` | showError | [36](../test-client/src/app.ts#L36) |
+| `b` | variable | `HTMLElement \| null` | clearBanner | [43](../test-client/src/app.ts#L43) |
+| `err` | parameter | `unknown` | describeError | [47](../test-client/src/app.ts#L47) |
+| `pre` | variable | `"Not ready yet. " \| ""` | describeError | [49](../test-client/src/app.ts#L49) |
+| `inflight` | variable | `boolean` | module | [57](../test-client/src/app.ts#L57) |
+| `fn` | parameter | `() => Promise<T>` | call | [60](../test-client/src/app.ts#L60) |
+| `err` | variable | `unknown` | call | [67](../test-client/src/app.ts#L67) |
+| `run` | variable | `PublicRun` | call | [72](../test-client/src/app.ts#L72) |
+| `e2` | variable | `unknown` | call | [75](../test-client/src/app.ts#L75) |
+| `p` | parameter | `RunPhase` | sceneForPhase | [88](../test-client/src/app.ts#L88) |
+| `run` | parameter | `PublicRun \| null` | setRun | [103](../test-client/src/app.ts#L103) |
+| `u` | variable | `URL` | setRun | [105](../test-client/src/app.ts#L105) |
+| `SCENE_STARTED` | variable | `2` | module | [112](../test-client/src/app.ts#L112) |
+| `SCENE_SLEEPING` | variable | `7` | module | [113](../test-client/src/app.ts#L113) |
+| `key` | parameter | `string` | goTo | [120](../test-client/src/app.ts#L120) |
+| `game` | variable | `Game \| null` | goTo | [121](../test-client/src/app.ts#L121) |
+| `scene` | variable | `Scene` | goTo | [123](../test-client/src/app.ts#L123) |
+| `status` | variable | `number` | goTo | [124](../test-client/src/app.ts#L124) |
 
 ## battle.ts
 
@@ -193,6 +194,23 @@ Page: Application startup.
 
 No local variable/field/parameter declarations; see the base class.
 
+## settings-preview.ts
+
+Page: Standalone preview of the actual game API Settings component.
+
+| Name | Kind | Type | Scope | Line |
+|---|---|---|---|---|
+| `params` | variable | `URLSearchParams` | module | [6](../test-client/src/settings-preview.ts#L6) |
+| `origin` | variable | `string` | module | [7](../test-client/src/settings-preview.ts#L7) |
+| `stage` | variable | `HTMLElement` | module | [9](../test-client/src/settings-preview.ts#L9) |
+| `header` | variable | `HTMLElement` | module | [11](../test-client/src/settings-preview.ts#L11) |
+| `sheet` | variable | `HTMLElement` | module | [12](../test-client/src/settings-preview.ts#L12) |
+| `view` | variable | `{ el: HTMLElement; stop: () => void; }` | module | [13](../test-client/src/settings-preview.ts#L13) |
+| `next` | parameter | `string` | onOriginChange | [14](../test-client/src/settings-preview.ts#L14) |
+| `url` | variable | `URL` | onOriginChange | [16](../test-client/src/settings-preview.ts#L16) |
+| `fit` | variable | `() => void` | module | [21](../test-client/src/settings-preview.ts#L21) |
+| `scale` | variable | `number` | fit | [21](../test-client/src/settings-preview.ts#L21) |
+
 ## mockApi.ts
 
 Page: Browser-only canned mock implementation (`?mock=1`).
@@ -238,7 +256,7 @@ Page: Browser-only canned mock implementation (`?mock=1`).
 | `f` | variable | `{ turn: number; totalTurns: number; health: number; helpMeUsed: number; log: TurnResult[]; } \| { attempt: number; turn: number; totalTurns: number; hearts: number; maxHearts: nu...` | createMockApi → settle | [108](../test-client/src/mockApi.ts#L108) |
 | `damage` | variable | `0 \| 1 \| 17` | createMockApi → settle | [110](../test-client/src/mockApi.ts#L110) |
 | `done` | variable | `boolean` | createMockApi → settle | [113](../test-client/src/mockApi.ts#L113) |
-| `api` | variable | `{ health: () => Promise<{ ok: boolean; llmProvider: string; storage: string; debug: boolean; }>; listSamples: () => Promise<{ samples: { id: string; title: string; }[]; }>; seed...` | createMockApi | [119](../test-client/src/mockApi.ts#L119) |
+| `api` | variable | `{ getApiSettings: () => Promise<ApiSettings>; updateApiSettings: (body: UpdateApiSettingsBody) => Promise<ApiSettings>; testApiSettings: (body: UpdateApiSettingsBody) => Promise...` | createMockApi | [119](../test-client/src/mockApi.ts#L119) |
 | `stage` | variable | `"parsing" \| "outline" \| "concepts" \| "ready"` | createMockApi → (callback) | [128](../test-client/src/mockApi.ts#L128) |
 | `ready` | variable | `(id: string) => boolean` | createMockApi → (callback) | [129](../test-client/src/mockApi.ts#L129) |
 | `id` | parameter | `string` | createMockApi → (callback) → ready | [129](../test-client/src/mockApi.ts#L129) |
@@ -283,7 +301,7 @@ Page: Browser-only canned mock implementation (`?mock=1`).
 | `correct` | variable | `boolean` | createMockApi → (callback) | [235](../test-client/src/mockApi.ts#L235) |
 | `d` | variable | `{ damage: number; hearts: number \| undefined; health: number \| undefined; phaseAfter: RunPhase; }` | createMockApi → (callback) | [237](../test-client/src/mockApi.ts#L237) |
 | `res` | variable | `TurnResult` | createMockApi → (callback) | [238](../test-client/src/mockApi.ts#L238) |
-| `h` | parameter | `{ q: PublicQuestion; key: Answer; text: string; }` | createMockApi → (callback) → (callback) | [272](../test-client/src/mockApi.ts#L272) |
+| `h` | parameter | `{ q: PublicQuestion; key: Answer; text: string; }` | createMockApi → (callback) → (callback) | [275](../test-client/src/mockApi.ts#L275) |
 
 ## ui.ts
 
@@ -355,46 +373,47 @@ Page: Course picker, upload, ingest, run setup.
 | `startBtn` | field | `HTMLButtonElement` | UploadScene | [21](../test-client/src/scenes/UploadScene.ts#L21) |
 | `hintEl` | field | `HTMLElement` | UploadScene | [22](../test-client/src/scenes/UploadScene.ts#L22) |
 | `root` | variable | `HTMLDivElement` | UploadScene → create | [41](../test-client/src/scenes/UploadScene.ts#L41) |
-| `samples` | variable | `HTMLDivElement` | UploadScene → buildSource | [52](../test-client/src/scenes/UploadScene.ts#L52) |
-| `res` | parameter | `{ samples: { id: string; title: string; }[]; } \| undefined` | UploadScene → buildSource → (callback) | [53](../test-client/src/scenes/UploadScene.ts#L53) |
-| `s` | variable | `{ id: string; title: string; }` | UploadScene → buildSource → (callback) | [56](../test-client/src/scenes/UploadScene.ts#L56) |
-| `files` | variable | `HTMLInputElement` | UploadScene → buildSource | [62](../test-client/src/scenes/UploadScene.ts#L62) |
-| `fileTitle` | variable | `HTMLInputElement` | UploadScene → buildSource | [66](../test-client/src/scenes/UploadScene.ts#L66) |
-| `upload` | variable | `HTMLButtonElement` | UploadScene → buildSource | [69](../test-client/src/scenes/UploadScene.ts#L69) |
-| `list` | variable | `File[]` | UploadScene → buildSource → (callback) | [70](../test-client/src/scenes/UploadScene.ts#L70) |
-| `f` | parameter | `File` | UploadScene → buildSource → (callback) → (callback) → (callback) | [72](../test-client/src/scenes/UploadScene.ts#L72) |
-| `text` | variable | `HTMLTextAreaElement` | UploadScene → buildSource | [75](../test-client/src/scenes/UploadScene.ts#L75) |
-| `textTitle` | variable | `HTMLInputElement` | UploadScene → buildSource | [78](../test-client/src/scenes/UploadScene.ts#L78) |
-| `create` | variable | `HTMLButtonElement` | UploadScene → buildSource | [81](../test-client/src/scenes/UploadScene.ts#L81) |
-| `res` | parameter | `{ courseId: string; } \| undefined` | UploadScene → begin | [97](../test-client/src/scenes/UploadScene.ts#L97) |
-| `grade` | variable | `HTMLSelectElement` | UploadScene → buildCourse | [109](../test-client/src/scenes/UploadScene.ts#L109) |
-| `g` | variable | `TargetGrade` | UploadScene → buildCourse | [110](../test-client/src/scenes/UploadScene.ts#L110) |
-| `emojis` | variable | `HTMLDivElement` | UploadScene → buildCourse | [113](../test-client/src/scenes/UploadScene.ts#L113) |
-| `drawEmojis` | variable | `() => void` | UploadScene → buildCourse | [114](../test-client/src/scenes/UploadScene.ts#L114) |
-| `e` | parameter | `"🤖" \| "🐙" \| "🦉" \| "🐸" \| "👾"` | UploadScene → buildCourse → drawEmojis → (callback) | [116](../test-client/src/scenes/UploadScene.ts#L116) |
-| `setup` | variable | `HTMLDivElement` | UploadScene → buildCourse | [126](../test-client/src/scenes/UploadScene.ts#L126) |
-| `r` | variable | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → poll | [144](../test-client/src/scenes/UploadScene.ts#L144) |
-| `stage` | variable | `IngestStage` | UploadScene → poll | [152](../test-client/src/scenes/UploadScene.ts#L152) |
-| `err` | variable | `unknown` | UploadScene → poll | [154](../test-client/src/scenes/UploadScene.ts#L154) |
-| `c` | variable | `PublicCourse \| null` | UploadScene → renderProgress | [162](../test-client/src/scenes/UploadScene.ts#L162) |
-| `mark` | variable | `(ok: boolean) => "✅" \| "⏳"` | UploadScene → renderProgress | [164](../test-client/src/scenes/UploadScene.ts#L164) |
-| `ok` | parameter | `boolean` | UploadScene → renderProgress → mark | [164](../test-client/src/scenes/UploadScene.ts#L164) |
-| `stage` | variable | `IngestStage` | UploadScene → renderProgress | [165](../test-client/src/scenes/UploadScene.ts#L165) |
-| `stageLine` | variable | `HTMLDivElement` | UploadScene → renderProgress | [166](../test-client/src/scenes/UploadScene.ts#L166) |
-| `s` | variable | `string` | UploadScene → renderProgress | [167](../test-client/src/scenes/UploadScene.ts#L167) |
-| `u` | variable | `{ id: string; title: string; concepts: { id: string; title: string; ready: boolean; }[]; }` | UploadScene → renderProgress | [171](../test-client/src/scenes/UploadScene.ts#L171) |
-| `k` | variable | `{ id: string; title: string; ready: boolean; }` | UploadScene → renderProgress | [173](../test-client/src/scenes/UploadScene.ts#L173) |
-| `r` | variable | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → renderProgress | [176](../test-client/src/scenes/UploadScene.ts#L176) |
-| `c` | variable | `PublicCourse \| null` | UploadScene → renderRooms | [180](../test-client/src/scenes/UploadScene.ts#L180) |
-| `r` | variable | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → renderRooms | [183](../test-client/src/scenes/UploadScene.ts#L183) |
-| `cb` | variable | `HTMLInputElement` | UploadScene → renderRooms | [184](../test-client/src/scenes/UploadScene.ts#L184) |
-| `label` | variable | `HTMLLabelElement` | UploadScene → renderRooms | [192](../test-client/src/scenes/UploadScene.ts#L192) |
-| `first` | variable | `{ id: string; title: string; conceptIds: string[]; ready: boolean; } \| undefined` | UploadScene → renderRooms | [195](../test-client/src/scenes/UploadScene.ts#L195) |
-| `r` | parameter | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → renderRooms → (callback) | [195](../test-client/src/scenes/UploadScene.ts#L195) |
-| `roomIds` | variable | `string[]` | UploadScene → start | [206](../test-client/src/scenes/UploadScene.ts#L206) |
-| `r` | parameter | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → start → (callback) | [206](../test-client/src/scenes/UploadScene.ts#L206) |
-| `r` | parameter | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → start → (callback) | [206](../test-client/src/scenes/UploadScene.ts#L206) |
-| `run` | variable | `PublicRun \| undefined` | UploadScene → start | [207](../test-client/src/scenes/UploadScene.ts#L207) |
+| `setup` | variable | `HTMLAnchorElement` | UploadScene → create | [42](../test-client/src/scenes/UploadScene.ts#L42) |
+| `samples` | variable | `HTMLDivElement` | UploadScene → buildSource | [56](../test-client/src/scenes/UploadScene.ts#L56) |
+| `res` | parameter | `{ samples: { id: string; title: string; }[]; } \| undefined` | UploadScene → buildSource → (callback) | [57](../test-client/src/scenes/UploadScene.ts#L57) |
+| `s` | variable | `{ id: string; title: string; }` | UploadScene → buildSource → (callback) | [60](../test-client/src/scenes/UploadScene.ts#L60) |
+| `files` | variable | `HTMLInputElement` | UploadScene → buildSource | [66](../test-client/src/scenes/UploadScene.ts#L66) |
+| `fileTitle` | variable | `HTMLInputElement` | UploadScene → buildSource | [70](../test-client/src/scenes/UploadScene.ts#L70) |
+| `upload` | variable | `HTMLButtonElement` | UploadScene → buildSource | [73](../test-client/src/scenes/UploadScene.ts#L73) |
+| `list` | variable | `File[]` | UploadScene → buildSource → (callback) | [74](../test-client/src/scenes/UploadScene.ts#L74) |
+| `f` | parameter | `File` | UploadScene → buildSource → (callback) → (callback) → (callback) | [76](../test-client/src/scenes/UploadScene.ts#L76) |
+| `text` | variable | `HTMLTextAreaElement` | UploadScene → buildSource | [79](../test-client/src/scenes/UploadScene.ts#L79) |
+| `textTitle` | variable | `HTMLInputElement` | UploadScene → buildSource | [82](../test-client/src/scenes/UploadScene.ts#L82) |
+| `create` | variable | `HTMLButtonElement` | UploadScene → buildSource | [85](../test-client/src/scenes/UploadScene.ts#L85) |
+| `res` | parameter | `{ courseId: string; } \| undefined` | UploadScene → begin | [101](../test-client/src/scenes/UploadScene.ts#L101) |
+| `grade` | variable | `HTMLSelectElement` | UploadScene → buildCourse | [113](../test-client/src/scenes/UploadScene.ts#L113) |
+| `g` | variable | `TargetGrade` | UploadScene → buildCourse | [114](../test-client/src/scenes/UploadScene.ts#L114) |
+| `emojis` | variable | `HTMLDivElement` | UploadScene → buildCourse | [117](../test-client/src/scenes/UploadScene.ts#L117) |
+| `drawEmojis` | variable | `() => void` | UploadScene → buildCourse | [118](../test-client/src/scenes/UploadScene.ts#L118) |
+| `e` | parameter | `"🤖" \| "🐙" \| "🦉" \| "🐸" \| "👾"` | UploadScene → buildCourse → drawEmojis → (callback) | [120](../test-client/src/scenes/UploadScene.ts#L120) |
+| `setup` | variable | `HTMLDivElement` | UploadScene → buildCourse | [130](../test-client/src/scenes/UploadScene.ts#L130) |
+| `r` | variable | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → poll | [148](../test-client/src/scenes/UploadScene.ts#L148) |
+| `stage` | variable | `IngestStage` | UploadScene → poll | [156](../test-client/src/scenes/UploadScene.ts#L156) |
+| `err` | variable | `unknown` | UploadScene → poll | [158](../test-client/src/scenes/UploadScene.ts#L158) |
+| `c` | variable | `PublicCourse \| null` | UploadScene → renderProgress | [166](../test-client/src/scenes/UploadScene.ts#L166) |
+| `mark` | variable | `(ok: boolean) => "✅" \| "⏳"` | UploadScene → renderProgress | [168](../test-client/src/scenes/UploadScene.ts#L168) |
+| `ok` | parameter | `boolean` | UploadScene → renderProgress → mark | [168](../test-client/src/scenes/UploadScene.ts#L168) |
+| `stage` | variable | `IngestStage` | UploadScene → renderProgress | [169](../test-client/src/scenes/UploadScene.ts#L169) |
+| `stageLine` | variable | `HTMLDivElement` | UploadScene → renderProgress | [170](../test-client/src/scenes/UploadScene.ts#L170) |
+| `s` | variable | `string` | UploadScene → renderProgress | [171](../test-client/src/scenes/UploadScene.ts#L171) |
+| `u` | variable | `{ id: string; title: string; concepts: { id: string; title: string; ready: boolean; }[]; }` | UploadScene → renderProgress | [175](../test-client/src/scenes/UploadScene.ts#L175) |
+| `k` | variable | `{ id: string; title: string; ready: boolean; }` | UploadScene → renderProgress | [177](../test-client/src/scenes/UploadScene.ts#L177) |
+| `r` | variable | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → renderProgress | [180](../test-client/src/scenes/UploadScene.ts#L180) |
+| `c` | variable | `PublicCourse \| null` | UploadScene → renderRooms | [184](../test-client/src/scenes/UploadScene.ts#L184) |
+| `r` | variable | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → renderRooms | [187](../test-client/src/scenes/UploadScene.ts#L187) |
+| `cb` | variable | `HTMLInputElement` | UploadScene → renderRooms | [188](../test-client/src/scenes/UploadScene.ts#L188) |
+| `label` | variable | `HTMLLabelElement` | UploadScene → renderRooms | [196](../test-client/src/scenes/UploadScene.ts#L196) |
+| `first` | variable | `{ id: string; title: string; conceptIds: string[]; ready: boolean; } \| undefined` | UploadScene → renderRooms | [199](../test-client/src/scenes/UploadScene.ts#L199) |
+| `r` | parameter | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → renderRooms → (callback) | [199](../test-client/src/scenes/UploadScene.ts#L199) |
+| `roomIds` | variable | `string[]` | UploadScene → start | [210](../test-client/src/scenes/UploadScene.ts#L210) |
+| `r` | parameter | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → start → (callback) | [210](../test-client/src/scenes/UploadScene.ts#L210) |
+| `r` | parameter | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → start → (callback) | [210](../test-client/src/scenes/UploadScene.ts#L210) |
+| `run` | variable | `PublicRun \| undefined` | UploadScene → start | [211](../test-client/src/scenes/UploadScene.ts#L211) |
 
 ## scenes/LearningScene.ts
 
@@ -459,4 +478,4 @@ Page: Results/study guide.
 | `m` | variable | `CostlyMisconception` | ResultsScene → render | [41](../test-client/src/scenes/ResultsScene.ts#L41) |
 | `ref` | variable | `MaterialRef` | ResultsScene → render | [42](../test-client/src/scenes/ResultsScene.ts#L42) |
 
-Total: 367 declarations.
+Total: 379 declarations.

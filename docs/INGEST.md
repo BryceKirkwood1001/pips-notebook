@@ -1,5 +1,7 @@
 # Ingest and RAG
 
+For the later source-alignment prompt, independent question-quality gate, and Memory Hierarchy reference evaluation, see [QUESTION_QUALITY.md](QUESTION_QUALITY.md). Cached/existing question banks are not rewritten by a prompt change.
+
 How uploaded course material becomes a course pack: an outline, a style profile, misconceptions and a verified question bank. The code is in `server/src/ingest/` (pipeline), `server/src/llm/ingest/` (model tasks), `server/src/rag/` (parsing, chunks, retrieval) and `server/src/core/timeBudget.ts`.
 
 ## Pipeline stages

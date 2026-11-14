@@ -1,3 +1,14 @@
+export const QUESTION_QUALITY_RULES = [
+  'Learning-material alignment: assess only concepts explicitly taught in the supplied uploaded material. Every required fact, relationship, formula and answer must be supported by the cited passages; do not fill gaps from general knowledge.',
+  'Test understanding of a learning objective: explain a mechanism, apply a stated rule, compare supported alternatives, predict an outcome, or solve a representative exercise. Essential definitions are valid, but do not manufacture trivia from incidental wording, diagram labels or decorative numbers.',
+  'Ask about the subject, not the presentation. Do not ask which question a slide raises, what the lecturer asks next, what a heading says, or what appears on a particular slide. Rhetorical hooks and agenda questions are not answer keys.',
+  'Ignore announcements, due dates, instructor names, greetings, course logistics and unrelated previous-lesson review. Prefer the current lesson objectives; repeated reveal/animation slides are one idea, not new objectives.',
+  'Questions must be self-contained: include necessary code, data and assumptions. Do not refer to an unseen diagram, the example, or the above unless the required information is reproduced in the question.',
+  'Preserve bounds and assumptions: 100+ is not exactly 100. Use numbers to test a taught relationship, not arbitrary arithmetic on illustration labels. Adapted numbers must be explicitly given in the new question and must not change the underlying taught rule.',
+  'Written-answer rubrics specify the required ideas and accept equivalent wording, abbreviations and valid explanations. They must not require copying the source sentence verbatim. A correct answer must not be penalized solely for a different phrasing.',
+  'If the excerpts do not support a meaningful, unambiguous question, omit that candidate. Never invent a question merely to fill a requested count.',
+].join('\n');
+
 /** The flat question format shared by convertItems, adaptQuestions and generateQuestions. */
 export const FLAT_QUESTION_SPEC = [
   'Each question is ONE flat JSON object with a "type" and only the fields that type uses (leave the others out or null):',

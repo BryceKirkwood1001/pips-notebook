@@ -32,6 +32,9 @@ export function validateQuestion(question: Question, pack: CoursePack): string[]
   }
   if (origin === 'verbatim' && !materialItemId) problems.push('a verbatim question needs a materialItemId');
   if (evidence.quote.trim() === '') problems.push('empty evidence quote');
+  if (/\b(?:what|which)\b.{0,80}\b(?:slide|lecturer|instructor|presentation)\b.{0,80}\b(?:say|says|said|ask|asks|asked|mention|mentions|mentioned|raise|raises|raised)\b/i.test(question.prompt)) {
+    problems.push('question tests presentation wording instead of subject understanding');
+  }
 
   if (question.type === 'ordering' && question.payload.correctOrder.every((x, i) => x === i)) {
     problems.push('ordering: items are not shuffled (correctOrder is 0, 1, 2, ...)');
