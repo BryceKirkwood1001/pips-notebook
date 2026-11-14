@@ -25,5 +25,15 @@
         "namespace": "teach-or-perish"
       }
     }
+  ],
+  "assets": [
+    "media/boss_room_background.png",
+    "media/concept_room_background.png",
+    "media/game.css",
+    "media/student_fighting.png",
+    "media/student_finished.png",
+    "media/student_learning.png",
+    "media/font.css",
+    "media/OFL-PixelifySans.txt"
   ]
 }
