@@ -8,20 +8,20 @@ Use [api-client.ts](../shared/src/api-client.ts) for the exact TypeScript types 
 
 ## Screen map
 
-| Screen/page | Working test-client scene | Teammate's game | Main variables | API methods |
+| Screen/page | Working test-client scene | Integrated Phaser game | Main variables | API methods |
 |---|---|---|---|---|
-| Boot/resume | `BootScene` | Startup or `title` | `runId`, `run.phase`, `run.results`, `run.pendingHelpMe` | `getRun` |
-| Course picker/upload | `UploadScene` | Add `upload` | `samples`, uploaded `files`, pasted `text`, optional `title`, `courseId` | `listSamples`, `seedCourse`, `uploadCourse`, `createCourseFromText` |
-| Ingest progress/run setup | `UploadScene` | Same `upload` page | `course`, `status`, units, rooms, selected room ids, `targetGrade`, `studentEmoji` | `getCourse`, `createRun` |
-| Learning/notebook | `LearningScene` | Add `learning` | `run`, `currentRoom`, `notebookMd`, `explanation`, student questions, answer text, `resolved` | `teach`, `answerQuestion`, `skipQuestion`, `ready` |
-| Room fight/failure/retry | `FightScene` via `BattleScene` | Wire into `play` | `run.room`, `TurnResult`, hearts, reasoning, cited notes, `passed`, `failedTurns` | `turn`, `help`, `retry`, `continueRun` |
-| Help modal | `buildHelp` in `helpModal.ts` | Overlay on `play`/boss | `eventId`, public `question`, typed `answer`, `timeBudgetSec`, `deadline`, derived time left | `help` |
-| Boss/exam | `BossScene` via `BattleScene` | `play` in boss mode, or add `boss` | `run.boss`, health, `TurnResult`, final `results` | `turn`, `help` |
-| Results/study guide | `ResultsScene` | Wire into `gameover` | `Results`, accuracy, help stats, costly misconceptions, material references | `getResults` |
-| Pause | No separate test scene | Existing `pause` | Existing `runId` and current phase | No API needed; timed deadlines keep running |
+| Boot/resume | `BootScene` | `Title` (`game/main.ts`) | `runId`, `run.phase`, `run.results`, `run.pendingHelpMe` | `getRun` |
+| Course picker/upload | `UploadScene` | `Upload` (`course/Upload.ts`) | `samples`, uploaded `files`, pasted `text`, optional `title`, `courseId` | `listSamples`, `seedCourse`, `uploadCourse`, `createCourseFromText` |
+| Ingest progress/run setup | `UploadScene` | Same `Upload` page | `course`, `status`, units, rooms, selected room ids, `targetGrade`, `studentEmoji` | `getCourse`, `createRun` |
+| Learning/notebook | `LearningScene` | `Learning` (`course/Learning.ts`) | `run`, `currentRoom`, `notebookMd`, `explanation`, student questions, answer text, `resolved` | `teach`, `answerQuestion`, `skipQuestion`, `ready` |
+| Room fight/failure/retry | `FightScene` via `BattleScene` | `Fight` (`course/battle.ts`) | `run.room`, `TurnResult`, hearts, reasoning, cited notes, `passed`, `failedTurns` | `turn`, `help`, `retry`, `continueRun` |
+| Help modal | `buildHelp` in `helpModal.ts` | `course/help.ts` overlay on Fight/Boss | `eventId`, public `question`, typed `answer`, `timeBudgetSec`, `deadline`, derived time left | `help` |
+| Boss/exam | `BossScene` via `BattleScene` | `Boss` (`course/battle.ts`) | `run.boss`, health, `TurnResult`, final `results` | `turn`, `help` |
+| Results/study guide | `ResultsScene` | `Results` (`course/Results.ts`) | `Results`, accuracy, help stats, costly misconceptions, material references | `getResults` |
+| Pause | No separate test scene | Dialog (`course/page.ts`) | Existing `runId` and current phase | No API needed; timed deadlines keep running |
 | Development overlay | `debug.ts` | Optional dev-only overlay | `run`, `pack`, `questions`, `stats`, `timeBudgets` from debug | `getDebug` |
 
-The teammate's registered scenes are currently `title`, `play`, `pause`, `gameover`; the upload/learning/boss names above are proposed integration targets. Their game files were only read during this continuation.
+The integrated game registers `Title`, `Upload`, `Learning`, `Fight`, `Boss`, `Results`. Both its source and the backend are present on `integration`. State names and rendering-local inventories elsewhere in this document refer to the reference test client unless explicitly marked as integrated-game paths; the public API fields are shared by both implementations.
 
 ## Shared frontend state and configuration
 

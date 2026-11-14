@@ -1,28 +1,31 @@
-// The game starts here. Its pictures are painted, the files the title screen shows load under the loading screen,
-// the scenes are registered and the title begins; then the rest of the game loads quietly while the title is up.
-// The game is READY (`game.ready`) once that has landed too.
-// A new screen is a file in scenes/, registered below. The debug controls are added here too, before the first scene.
 import { game } from './engine.js';
-import assets from './assets.json';
-import { paintArt } from './art.js';
-import { addDebugControls } from './debug.js';
-import { Title } from './scenes/Title.js';
-import { Play } from './scenes/Play.js';
-import { GameOver } from './scenes/GameOver.js';
-import { Pause } from './scenes/Pause.js';
+import { loadArt } from './art.js';
+import { goTo, resume, setRun, state, type Screen } from './course/app.js';
+import { frame, mount, Page, panel } from './course/page.js';
+import { btn, el } from './course/ui.js';
+import { UploadScene } from './course/Upload.js';
+import { LearningScene } from './course/Learning.js';
+import { ResultsScene } from './course/Results.js';
+import { arena, Battle } from './course/battle.js';
 
-paintArt();
-// The menus wear the candy skin (ui-skin-candy in the manifest), chosen now so its font loads under the loading screen.
-game.ui.theme = 'candy';
-await game.assets.load(assets, { pack: 'title' });
-
-game.scenes.register(Title);
-game.scenes.register(Play);
-game.scenes.register(GameOver);
-game.scenes.register(Pause);
-addDebugControls();
-
-await game.start();
-game.scenes.go('title');
-
-game.assets.load(assets, { pack: 'game' });
+mount();
+const screens:Screen[]=['Title','Upload','Learning','Fight','Boss','Results'];
+let page:Page;
+for(const name of screens) game.scenes.register({name,enter(){
+    const screen={Title:'title',Upload:'setup',Learning:'room',Fight:'room',Boss:'boss',Results:'report'}[name];
+    frame(screen);arena(state.run,screen);
+    if(name==='Title'){
+        page=new Page();
+        const id=new URLSearchParams(location.search).get('run');
+        const heading=el('h1','','Teach',el('br'),el('em','','or'),' Perish');
+        panel(page,el('div','',heading,el('p','','Your apprentice must face the dungeon alone. All Pip can carry is what you teach.'),
+            btn(id?'Resume run':'Play →',()=>id?void resume(id):goTo('Upload')),
+            id?btn('New lesson',()=>{setRun(null);goTo('Upload');},'alt'):null));
+        if(id)void resume(id);
+    }else {
+        const next=name==='Upload'?new UploadScene():name==='Learning'?new LearningScene():name==='Results'?new ResultsScene():new Battle(name==='Boss');
+        page=next;void next.create();
+    }
+},exit(){page?.close();}});
+game.inspect.state(()=>({screen:state.run?.phase??'menu',room:state.run?.roomIndex}));
+await loadArt();await game.start();goTo('Title');

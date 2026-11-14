@@ -2,9 +2,9 @@
 
 Choices made where the build brief left a detail open. Newest sections are added at the bottom.
 
-## The teammate's game (read-only)
+## The teammate's game (original backend-only scope)
 
-`teach-or-perish/` is the front-end teammate's Phaser AE game (`@phaser-ae/cli`, preview on port 4173). We read it and never edit, install, build or run anything in it.
+`teach-or-perish/` is the front-end teammate's Phaser AE game (`@phaser-ae/cli`, preview on port 4173). During the original backend-only work it was read-only. The user's subsequent request to combine frontend/backend is handled on `integration`; see [INTEGRATION.md](INTEGRATION.md). The scene snapshot below records the original checkout, before that merge.
 
 Scenes registered in `teach-or-perish/game/main.ts` as of the first read (Nov 13):
 
@@ -15,7 +15,7 @@ Scenes registered in `teach-or-perish/game/main.ts` as of the first read (Nov 13
 | `pause` | `game/scenes/Pause.ts` | Pushed over `play`. Resume, Restart, Title. |
 | `gameover` | `game/scenes/GameOver.ts` | "Game over", Play again, Title. |
 
-Flow today: `title → play → gameover`, with `pause` pushed on top of `play`. There are no upload, learning, fight, boss or results scenes yet. `docs/PHASER_INTEGRATION.md` maps these scenes (and the ones the teammate still has to add) to our endpoints.
+Original flow: `title → play → gameover`, with `pause` pushed on top of `play`. That checkout had no upload, learning, fight, boss or results scenes. The current integration guide now maps the merged game's implemented screens.
 
 The remote branch `origin/codex/playable-prototype` only adds a standalone `prototype/index.html`; it has the same four scenes.
 

@@ -25,7 +25,7 @@ import { core2d } from '@phaser-ae/core-2d';
 import { uiSkins } from '@phaser-ae/ui-skins';
 import { uiSkinCandy } from '@phaser-ae/ui-skin-candy';
 
-export const composed = createGame({"width":1280,"height":720,"fit":"letterbox","background":"#000000","backgroundPolicy":"pause","seed":45196})
+export const composed = createGame({"width":1280,"height":720,"fit":"letterbox","pixelArt":true,"background":"#000000","backgroundPolicy":"pause","seed":45196})
     .use(renderer())
     .use(side())
     .use(screen())

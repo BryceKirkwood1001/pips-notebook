@@ -2,6 +2,8 @@
 
 For the front-end teammate. Everything the game needs from the backend goes through one file, `shared/src/api-client.ts`. The server keeps all game state, so the game only has to show what the server returns and send the player's actions.
 
+On the `integration` branch, both implementations are present in this checkout. The actual game screens are in `teach-or-perish/game/course/`, and their API client currently matches the shared client exactly. See [INTEGRATION.md](INTEGRATION.md) for merge verification and remaining frontend issues.
+
 Related docs: [API.md](API.md) has a real request and response for every endpoint, and [STATE_MACHINE.md](STATE_MACHINE.md) shows which action is allowed when.
 
 [FRONTEND_VARIABLES.md](FRONTEND_VARIABLES.md) lists the variables, types and state updates for each screen. [FRONTEND_SOURCE_VARIABLES.md](FRONTEND_SOURCE_VARIABLES.md) is the generated inventory of every variable, field and parameter in the test client.
@@ -16,17 +18,17 @@ Related docs: [API.md](API.md) has a real request and response for every endpoin
 
 To allow another origin, set `CORS_ORIGINS` in `.env` (comma-separated).
 
-**Copy the client into the game.** `shared/src/api-client.ts` has no imports and only needs `fetch`:
+**Keep the game's client in sync.** `shared/src/api-client.ts` has no imports and only needs `fetch`. Its existing game copy can be refreshed with:
 
 ```sh
-cp shared/src/api-client.ts teach-or-perish/game/api-client.ts
+cp shared/src/api-client.ts teach-or-perish/game/course/api-client.ts
 ```
 
 Then, from a scene (your imports use `.js` extensions):
 
 ```ts
-import { createApiClient, ApiError } from '../api-client.js';
-import type { PublicRun, TurnResult, PublicQuestion, Answer } from '../api-client.js';
+import { createApiClient, ApiError } from './api-client.js';
+import type { PublicRun, TurnResult, PublicQuestion, Answer } from './api-client.js';
 
 export const api = createApiClient({ baseUrl: 'http://localhost:8787' });
 ```
@@ -37,23 +39,23 @@ With no keys in `.env` the server runs on built-in mocks and two sample courses,
 
 ## 2. Your scenes and our endpoints
 
-Your game registers four scenes today (`game/main.ts`): `title`, `play`, `pause` and `gameover`. The game loop needs five screens. This is one way to map them; the names of new scenes are suggestions.
+The integrated `game/main.ts` registers six screens: `Title`, `Upload`, `Learning`, `Fight`, `Boss`, `Results`. Course pages are implemented under `game/course/`; Fight and Boss share `Battle`. Pause is a dialog rather than a registered scene.
 
 | Screen | Scene | Calls | Leaves when |
 |---|---|---|---|
-| Title | `title` (yours) | `api.health()` to show whether the server is up | Play → `upload` |
-| Course and run setup | `upload` (new) | `listSamples()`, `seedCourse(sample)` or `uploadCourse(files)`, then poll `getCourse(id)`, then `createRun({ courseId, targetGrade, studentEmoji, scope })` | `createRun` succeeds → `learning` |
-| Learning phase | `learning` (new) | `teach(runId, text)`, `answerQuestion(runId, qid, text)`, `skipQuestion(runId, qid)`, `ready(runId)` | `ready` succeeds → `play` |
-| Room fight | `play` (yours) | `turn(runId)`, `help(runId, eventId, answer)`, then `retry(runId)` or `continueRun(runId)` | retry → `learning`; continue → `learning` or the boss |
-| Boss | `play` in boss mode, or `boss` (new) | `turn(runId)`, `help(runId, eventId, answer)` | `boss_end` → `gameover` |
-| Results | `gameover` (yours) | `getResults(runId)` (also inside the `boss_end` turn result) | Play again → `upload` |
-| Pause | `pause` (yours) | none | |
+| Title/resume | `Title` in `main.ts` | `getRun(id)` when a run id is in the URL | Play → `Upload`; resume → current phase |
+| Course and run setup | `Upload` (`course/Upload.ts`) | `listSamples()`, `seedCourse(sample)` or `uploadCourse(files)`, poll `getCourse(id)`, `createRun({ courseId, targetGrade, studentEmoji, scope })` | `createRun` succeeds → `Learning` |
+| Learning phase | `Learning` (`course/Learning.ts`) | `teach`, `answerQuestion`, `skipQuestion`, `ready` | `ready` succeeds → `Fight` |
+| Room fight | `Fight` (`course/battle.ts`) | `turn`, `help`, `retry`, `continueRun` | retry → `Learning`; continue → `Learning` or `Boss` |
+| Boss | `Boss` (`course/battle.ts`) | `turn`, `help` | `boss_end` → `Results` |
+| Results | `Results` (`course/Results.ts`) | Cached `boss_end.results`, `run.results`, or `getResults` | Start over → `Upload` |
+| Pause | Dialog in `course/page.ts` | none | Resume closes the dialog |
 
 Notes on your existing scenes:
 
-- **`pause`** needs no API call. The fight only advances when the game calls `turn`, so pausing is always safe. The one exception is a timed "Help me!" question: its deadline is on the server and keeps running.
-- **Restart** in the pause menu currently does `game.scenes.go('play')`. With the backend, a restart means creating a new run (`createRun`) and going to `learning`.
-- **Which scene to show** is always decided by `run.phase`: `learning` → learning, `room` and `room_result` → fight, `boss` → boss, `results` → results. Keep the run id (for example in the URL or in your save data) and call `getRun(runId)` on load to resume.
+- **Pause** needs no API call. The fight advances on `turn`; a timed help deadline still runs on the server while paused.
+- **Restarting** means creating a new run (`createRun`) and entering `Learning`. The integrated Results page clears the current run and returns to setup.
+- **Which scene to show** is decided by `run.phase`: `learning` → `Learning`, `room` and `room_result` → `Fight`, `boss` → `Boss`, `results` → `Results`. Keep the run id and call `getRun(runId)` on load to resume.
 
 ## 3. Course setup and ingest progress
 

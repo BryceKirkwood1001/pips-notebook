@@ -28,7 +28,9 @@ cp .env.example .env
 npm run dev:server
 ```
 
-The API is now on [localhost:8787/api](http://localhost:8787/api/health). In a second terminal, start the test client and open [localhost:5174](http://localhost:5174):
+The API is now on [localhost:8787/api](http://localhost:8787/api/health). The integrated Phaser game runs on port **4173**; follow [The Phaser game](#the-phaser-game) below to restore its engine, build and serve it from this same checkout.
+
+For the reference test harness instead, open [localhost:5174](http://localhost:5174) after running:
 
 ```sh
 npm run dev:client
@@ -76,7 +78,7 @@ To refresh the examples first, run `npm run e2e -- --capture-file docs/api-examp
 
 ## Demo script
 
-1. Start the server and the test client (above) and open [localhost:5174](http://localhost:5174).
+1. Start the backend from the repository root and the Phaser game from `teach-or-perish/` (see below), then open [localhost:4173](http://localhost:4173). The reference test client on port 5174 supports the same flow.
 2. Pick the **seasons** sample. It loads instantly. Choose a target grade and a student, then start.
 3. **Learning.** Explain why Earth has seasons. Watch the student's notebook fill in, then answer its questions. Skip one on purpose: the student writes down a wrong belief that looks like any other note.
 4. **Room fight.** Press **Next turn** and watch the student answer from its notebook. Teach badly and it fails; the game shows the reasoning and the exact notes behind each wrong answer, and you go back to teach again.
@@ -97,7 +99,8 @@ For a shorter demo, set `DEMO_MODE=true`: rooms have 3 questions and the boss ha
 - [docs/INGEST.md](docs/INGEST.md): how uploaded material becomes a verified question bank.
 - [docs/SPEC.md](docs/SPEC.md) and [docs/DECISIONS.md](docs/DECISIONS.md): the game rules and the choices made along the way.
 - [docs/CONTINUATION_LOG.md](docs/CONTINUATION_LOG.md): the Codex handoff, changes, verification results and remaining live checks.
-- [docs/REVIEW.md](docs/REVIEW.md): the integration audit, fixes and limitations.
+- [docs/REVIEW.md](docs/REVIEW.md): the backend audit, fixes and limitations.
+- [docs/INTEGRATION.md](docs/INTEGRATION.md): combined branch history, launch commands, verification and remaining frontend issues.
 
 ## The Phaser game
 
@@ -126,7 +129,21 @@ Start the local preview and open [localhost:4173](http://localhost:4173). Reload
 npm run serve
 ```
 
-Edit scenes in `teach-or-perish/game/scenes/`. Run `npm run build` from `teach-or-perish/` to check your changes. For the headless smoke test, install Chromium once with `npx -y @phaser-ae/cli@0.8.0 doctor --fix`, then run `npm run smoke`.
+The integrated entry point is `teach-or-perish/game/main.ts`; the course screens are in `teach-or-perish/game/course/`. The registered screens are `Title`, `Upload`, `Learning`, `Fight`, `Boss`, and `Results`.
+
+### Connect the backend
+
+Both the frontend and backend are present on `integration`; a separate backend checkout is unnecessary. From the repository root, run `npm ci` and `npm run dev:server` in one terminal. Run `npm run serve` from the inner `teach-or-perish/` folder in another terminal after restoring/building its engine as above.
+
+Open [the game](http://localhost:4173). Live API mode is the default and uses `http://localhost:8787`. To point at another server, use `?api=https://your-server.example` (origin only) and allow the game origin in the backend's `CORS_ORIGINS`. Credentials belong on the server. The run id is stored in the URL so reload restores server state.
+
+For the browser's standalone canned demonstration, open [practice mode](http://localhost:4173/?mock=1). This differs from the backend's mock LLM mode: omit `?mock=1` to exercise the real HTTP API even when the server uses mocks.
+
+### Verify the game
+
+From the inner game folder, run `npm run build`. Install test Chromium once with `npx -y @phaser-ae/cli@0.8.0 doctor --fix`. `node tests/playthrough.mjs` exercises the browser's canned practice mode; `node tests/live-course.mjs` checks the real API's upload/teaching/first-turn/resume flow with the local backend and preview running. The latter is a smoke test, not a complete API-backed boss/results playthrough.
+
+Run `npm test`, `npm run typecheck`, `npm run e2e` and `npm run e2e -- --sample binary-search` from the repository root for the backend and reference harness.
 
 ## Credits
 
