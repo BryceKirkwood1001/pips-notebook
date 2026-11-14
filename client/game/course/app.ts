@@ -67,6 +67,8 @@ export async function continuePlaying() {
     const run=await call(()=>api.resumeRun(state.run!.id));
     if(run){setRun(run);goTo(sceneForPhase(run.phase));}
 }
+/** After Settings switched storage: the open expedition lives in the old storage, so start from the title again. */
+export function afterStorageSwitch() { setRun(null); state.results = null; settingsReturn = 'Title'; needsSync = false; }
 export function setApiOrigin(origin: string) {
     if (apiOrigin !== origin) { setRun(null); state.results = null; settingsReturn = 'Title'; needsSync = false; }
     apiOrigin = origin;

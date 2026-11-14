@@ -1,10 +1,13 @@
-/** API settings form rendered by the main game's Settings scene. */
+/** The Settings scene's content: an AI provider tab and a MongoDB (storage) tab. */
 import { createApiClient, type ApiSettings, type LlmProvider, type UpdateApiSettingsBody } from '../../../shared/src/api-client.js';
-import { btn, el } from './ui.js';
+import { buildStoragePanel } from './storage-view.js';
+import { btn, el, host } from './ui.js';
 
 export interface SettingsViewOptions {
   apiOrigin: string;
   onOriginChange: (origin: string) => void;
+  /** The server switched storage, so the open expedition belongs to the old one. */
+  onStorageChange: () => void;
   onBack: () => void;
   practice?: boolean;
 }
@@ -56,7 +59,7 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
   fields.append(offline);
   const cards = new Map<LlmProvider, HTMLButtonElement>();
   for (const [provider, label, detail] of [
-    ['openai', 'OpenAI', 'Use your OpenAI key'], ['gemini', 'Google Gemini', 'Use your Google AI key'], ['mock', 'Offline', 'Sample lessons · no key needed'],
+    ['gemini', 'Google Gemini', 'Use your Google AI key'], ['openai', 'OpenAI', 'Use your OpenAI key'], ['mock', 'Offline', 'Sample lessons · no key needed'],
   ] as const) {
     const choice = btn('', () => choose(provider), 'provider-choice');
     choice.append(el('b', '', label), el('small', '', detail));
@@ -70,7 +73,7 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
     offline.hidden = provider !== 'mock';
     keyStatus.textContent = provider === 'mock' ? 'OFFLINE' : titleFor(provider).toUpperCase();
   }
-  const showStatus = (text: string, kind = 'dim') => { if (active) { status.textContent = text; status.className = `setup-status ${kind}`; } };
+  const showStatus = (text: string, kind = 'dim') => { status.textContent = text; status.className = `setup-status ${kind}`; };
   function serverOrigin() {
     const url = new URL(origin.value.trim());
     if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
@@ -106,7 +109,7 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
     }
     return update;
   }
-  const save = btn('Save & apply', () => void act(async () => {
+  const save = btn('Save & apply', () => void act(showStatus, async () => {
     if (!loaded) throw new Error('Connect to the backend first.');
     const apiOrigin = serverOrigin();
     const settings = await clientFor(apiOrigin).updateApiSettings(body());
@@ -114,22 +117,24 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
     connection = clientFor(apiOrigin); apply(settings); options.onOriginChange(apiOrigin);
     showStatus(`${titleFor(settings.provider)} is ready. Your settings are saved and active.`, 'ok');
   }));
-  const test = btn('Test connection', () => void act(async () => {
+  const test = btn('Test connection', () => void act(showStatus, async () => {
     if (!loaded) throw new Error('Connect to the backend first.');
     const result = await clientFor(serverOrigin()).testApiSettings(body());
     showStatus(result.message, result.ok ? 'ok' : 'bad');
   }), 'alt');
   const load = btn('Load server', () => void loadSettings(), 'alt');
   const back = btn('Back to game', options.onBack, 'alt');
-  async function act(action: () => Promise<void>) {
+  /** Runs one request with every control disabled; `say` is the status line of the tab that started it. */
+  async function act(say: (text: string, kind?: string) => void, action: () => Promise<void>) {
     if (root.getAttribute('aria-busy') === 'true') return;
     root.setAttribute('aria-busy', 'true');
-    for (const control of root.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input,button')) if (control !== back) control.disabled = true;
-    showStatus('Working…');
+    for (const control of root.querySelectorAll<HTMLInputElement | HTMLButtonElement>('input,button')) if (control !== back && !tabButtons.includes(control as HTMLButtonElement)) control.disabled = true;
+    const report = (text: string, kind?: string) => { if (active) say(text, kind); };
+    report('Working…');
     try { await action(); }
-    catch (error) { showStatus(error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name)
+    catch (error) { report(error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name)
       ? 'The server took too long to respond. Check the backend URL and try again.'
-      : error instanceof Error ? error.message : 'Could not update API settings.', 'bad'); }
+      : error instanceof Error ? error.message : 'Could not update the settings.', 'bad'); }
     finally {
       if (active) {
         root.setAttribute('aria-busy', 'false');
@@ -139,18 +144,20 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
     }
   }
   async function loadSettings() {
-    await act(async () => {
+    await act(showStatus, async () => {
       const apiOrigin = serverOrigin(); connection = clientFor(apiOrigin);
       const settings = await connection.getApiSettings();
       if (!active) return;
       apply(settings); showStatus('Connected.');
     });
+    if (active) await storage.load();
   }
+  const storage = buildStoragePanel({ client: () => connection, act, field, onSwitched: options.onStorageChange, practice: options.practice });
   const advanced = el('details', 'setup-advanced', el('summary', '', 'Connection details'),
     el('div', 'connection-fields', field('Backend URL', origin, 'Changing servers starts a new game session.'), load, field('Request timeout (seconds)', timeout)),
     field('Course preparation timeout (seconds)', ingestTimeout, 'Per request while preparing your course. Active OpenAI document streams extend this idle budget, with a 10-minute request cap.'));
-  root.append(
-    el('div', 'setup-heading', el('div', '', el('span', 'setup-eyebrow', 'SETTINGS'), el('h2', '', 'Choose an AI provider'),
+  const aiPanel = el('div', 'setup-panel',
+    el('div', 'setup-heading', el('div', '', el('h2', '', 'Choose an AI provider'),
       el('p', 'dim', "This AI writes Pip's questions and notes and prepares your courses. You can switch anytime.")), keyStatus),
     providerCards,
     el('div', 'setup-grid', fields, el('aside', 'setup-aside', el('h3', '', 'How it works'),
@@ -160,9 +167,44 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
     advanced,
     el('div', 'setup-footer', el('div', 'actions', test, save), el('small', 'dim', 'Testing sends one small request to the AI, which may use a little API credit.')),
     status,
-    el('div', 'setup-back', back),
   );
+
+  // Tabs: AI provider and MongoDB. Arrow keys move between them, as in any tab list.
+  const panels = [
+    { id: 'ai', label: 'AI provider', panel: aiPanel },
+    { id: 'storage', label: 'MongoDB', panel: storage.el },
+  ];
+  const tabList = el('div', 'setup-tabs');
+  tabList.setAttribute('role', 'tablist'); tabList.setAttribute('aria-label', 'Settings');
+  const tabButtons = panels.map(({ id, label, panel }, index) => {
+    const tab = btn(label, () => show(index), 'setup-tab');
+    tab.id = `settings-tab-${id}`; tab.setAttribute('role', 'tab'); tab.setAttribute('aria-controls', `settings-panel-${id}`);
+    panel.id = `settings-panel-${id}`; panel.setAttribute('role', 'tabpanel'); panel.setAttribute('aria-labelledby', tab.id);
+    tabList.append(tab);
+    return tab;
+  });
+  function show(index: number) {
+    panels.forEach(({ panel }, i) => {
+      const on = i === index;
+      panel.hidden = !on;
+      tabButtons[i].setAttribute('aria-selected', String(on));
+      tabButtons[i].tabIndex = on ? 0 : -1;
+    });
+  }
+  tabList.addEventListener('keydown', event => {
+    const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+    if (!step) return;
+    const next = (tabButtons.indexOf(host.activeElement as HTMLButtonElement) + step + panels.length) % panels.length;
+    show(next); tabButtons[next].focus(); event.preventDefault();
+  });
+
+  root.append(
+    el('div', 'setup-top', el('div', 'setup-top-left', back, el('span', 'setup-eyebrow', 'SETTINGS')), tabList),
+    aiPanel,
+    storage.el,
+  );
+  show(0);
   choose('mock');
   void loadSettings();
-  return { el: root, stop: () => { active = false; controller.abort(); for (const p of Object.values(profiles)) p.key.value = ''; } };
+  return { el: root, stop: () => { active = false; controller.abort(); for (const p of Object.values(profiles)) p.key.value = ''; storage.clear(); } };
 }

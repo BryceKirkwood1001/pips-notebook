@@ -92,6 +92,9 @@ async function main() {
       seen(await api.getApiSettings());
       seen(await api.testApiSettings({ provider: 'mock' }));
       seen(await api.updateApiSettings({ provider: 'mock' }));
+      seen(await api.getStorageSettings());
+      seen(await api.testStorageSettings({ backend: 'local' }));
+      seen(await api.updateStorageSettings({ backend: 'local' }));
     }
     seen(await api.listSamples());
     head(`Seed "${sample}" and create a run (target B)`);

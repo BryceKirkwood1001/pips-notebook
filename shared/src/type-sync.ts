@@ -22,6 +22,10 @@ export const typeSync: {
   teachResponse: Mutual<S.TeachResponse, A.TeachResponse>;
   apiSettings: Mutual<S.ApiSettings, A.ApiSettings>;
   apiSettingsUpdate: Mutual<S.UpdateApiSettingsBody, A.UpdateApiSettingsBody>;
+  storageSettings: Mutual<S.StorageSettings, A.StorageSettings>;
+  storageSettingsUpdate: Mutual<S.UpdateStorageSettingsBody, A.UpdateStorageSettingsBody>;
+  storageSettingsSave: Mutual<S.SaveStorageSettingsResponse, A.SaveStorageSettingsResponse>;
+  storageSettingsTest: Mutual<S.TestStorageSettingsResponse, A.TestStorageSettingsResponse>;
 } = {
   questionType: true,
   targetGrade: true,
@@ -37,4 +41,8 @@ export const typeSync: {
   teachResponse: true,
   apiSettings: true,
   apiSettingsUpdate: true,
+  storageSettings: true,
+  storageSettingsUpdate: true,
+  storageSettingsSave: true,
+  storageSettingsTest: true,
 };

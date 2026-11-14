@@ -6,7 +6,7 @@ Upload your course material, teach Pip what's in it, then send Pip into the dung
 
 The final boss is an exam on the rooms you chose. The results show a predicted grade and the parts of your material to revisit. The grade is a game estimate, not a prediction of a real exam score.
 
-Built at HackPrinceton, November 13–15, 2026. Repository: [BryceKirkwood1001/pips-notebook](https://github.com/BryceKirkwood1001/pips-notebook).
+![Pip's Notebook: Pip, a small blue dragon, writing in a notebook at a library desk](docs/marketing/pips-notebook-thumbnail-3x2.png)
 
 ## Play it
 
@@ -75,7 +75,7 @@ A fresh install needs no configuration. To set things before the first start, co
 | `LLM_PROVIDER` | `openai`, `gemini` or `mock` (Offline). If unset: Gemini when `GEMINI_API_KEY` is set, otherwise OpenAI when `OPENAI_API_KEY` is set, otherwise Offline. |
 | `OPENAI_API_KEY`, `GEMINI_API_KEY` | Keys for the provider. It prepares dungeons, plays Pip, grades written answers and creates search embeddings. Live calls cost API credit. |
 | `OPENAI_MODEL`, `GEMINI_MODEL` | Models for writing and answering. Embedding models are set separately: `OPENAI_EMBEDDING_MODEL` for OpenAI, `EMBEDDING_MODEL` for Gemini. |
-| `MONGODB_URI`, `MONGODB_DB` | Optional MongoDB storage (default database `pips_notebook`). Without it, data is saved in `.local/archive/`. |
+| `MONGODB_URI`, `MONGODB_DB` | Optional MongoDB storage (default database `pips_notebook`). Without it, data is saved in `.local/archive/`. Easier: **Settings → MongoDB**. |
 | `PORT` | Port for the game and API (default 8787). |
 | `DEMO_MODE` | `true` for a shorter game: 3 questions per room, 6 in the boss, and tighter "Help me!" timers. |
 | `DEBUG` | `true` turns on the developer endpoint that shows hidden answers. Never use it for real play. |
@@ -84,7 +84,7 @@ Every other setting is explained in `.env.example`.
 
 **Settings in the game** override the AI settings in `.env` and apply immediately. The server saves them in `.local/api-settings.json`, readable only by your user account. Keys can be replaced or removed but never read back. To return to the `.env` values, stop the game, delete that file and start again.
 
-**Your saved data** lives in `.local/` (ignored by Git): prepared dungeons, notebooks and expeditions survive restarts, but your original files are not kept. With `MONGODB_URI` set, the same data goes to MongoDB instead, using Atlas Vector Search when available; if the connection fails, the server falls back to `.local/` and [the health check](http://localhost:8787/api/health) shows `storage: local`. Switching to MongoDB does not copy existing local data. Everyone who opens the game shares one archive; there are no user accounts. **Remove expedition** deletes one playthrough. **Delete dungeon** deletes the prepared course and all its expeditions, never the files on your computer.
+**Your saved data** lives in `.local/` (ignored by Git): prepared dungeons, notebooks and expeditions survive restarts, but your original files are not kept. To keep it in MongoDB instead, open **Settings → MongoDB**, paste your connection string, **Test connection**, then **Save & switch**. The game switches right away, and can copy your saved dungeons across; nothing is deleted from where they were. The choice is saved in `.local/storage-settings.json` and overrides `MONGODB_URI`. If MongoDB can't be reached when the game starts, it uses `.local/` and the MongoDB tab says why. Atlas Vector Search is used when available. Everyone who opens the game shares one archive; there are no user accounts. **Remove expedition** deletes one playthrough. **Delete dungeon** deletes the prepared course and all its expeditions, never the files on your computer.
 
 ## Commands
 

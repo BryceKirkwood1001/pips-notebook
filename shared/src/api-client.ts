@@ -342,6 +342,31 @@ export interface UpdateApiSettingsBody {
 }
 export interface TestApiSettingsResponse { ok: boolean; provider: LlmProvider; message: string }
 
+export type StorageBackend = 'local' | 'mongodb';
+export interface StorageSettings {
+  /** The saved choice. */
+  backend: StorageBackend;
+  /** What is in use now ('memory' only on test servers). Differs from `backend` after a failed MongoDB startup. */
+  active: 'local' | 'mongodb' | 'memory';
+  mongodb: { hasUri: boolean; host: string | null; database: string; vectorIndex: string };
+  /** Dungeons in the storage in use now. */
+  courses: number;
+  /** Why the saved choice is not in use, when it is not. */
+  error: string | null;
+  persistence: 'local' | 'session';
+}
+export interface UpdateStorageSettingsBody {
+  backend: StorageBackend;
+  /** `uri`: omit to keep the saved one, null to remove it. Write-only. */
+  mongodb?: { uri?: string | null; database?: string; vectorIndex?: string };
+  /** Copy the dungeons in the storage in use now into the new one. */
+  copyExisting?: boolean;
+}
+export interface SaveStorageSettingsResponse extends StorageSettings {
+  copied: { courses: number; runs: number; skipped: number } | null;
+}
+export interface TestStorageSettingsResponse { ok: boolean; message: string }
+
 export function createApiClient(options: ApiClientOptions = {}) {
   const base = (options.baseUrl ?? 'http://localhost:8787').replace(/\/+$/, '') + '/api';
   const doFetch: typeof fetch = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
@@ -383,6 +408,10 @@ export function createApiClient(options: ApiClientOptions = {}) {
     getApiSettings: () => request<ApiSettings>('GET', '/settings/api'),
     updateApiSettings: (body: UpdateApiSettingsBody) => request<ApiSettings>('POST', '/settings/api', body),
     testApiSettings: (body: UpdateApiSettingsBody) => request<TestApiSettingsResponse>('POST', '/settings/api/test', body),
+    /** Where dungeons are saved. Saving switches storage right away; the connection string is write-only. */
+    getStorageSettings: () => request<StorageSettings>('GET', '/settings/storage'),
+    updateStorageSettings: (body: UpdateStorageSettingsBody) => request<SaveStorageSettingsResponse>('POST', '/settings/storage', body),
+    testStorageSettings: (body: UpdateStorageSettingsBody) => request<TestStorageSettingsResponse>('POST', '/settings/storage/test', body),
     /** GET /health */
     health: () => request<{ ok: boolean; llmProvider: string; storage: string; debug: boolean }>('GET', '/health'),
 

@@ -30,6 +30,8 @@ export const ERROR_STATUS = {
   not_implemented: 501,
   /** The LLM failed or timed out after retries. */
   llm_error: 502,
+  /** MongoDB could not be reached or used; the storage in use did not change. */
+  storage_error: 502,
   internal_error: 500,
 } as const;
 

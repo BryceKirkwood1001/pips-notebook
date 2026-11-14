@@ -38949,6 +38949,10 @@ function createApiClient(options = {}) {
     getApiSettings: () => request("GET", "/settings/api"),
     updateApiSettings: (body) => request("POST", "/settings/api", body),
     testApiSettings: (body) => request("POST", "/settings/api/test", body),
+    /** Where dungeons are saved. Saving switches storage right away; the connection string is write-only. */
+    getStorageSettings: () => request("GET", "/settings/storage"),
+    updateStorageSettings: (body) => request("POST", "/settings/storage", body),
+    testStorageSettings: (body) => request("POST", "/settings/storage/test", body),
     /** GET /health */
     health: () => request("GET", "/health"),
     /** GET /samples: the cached sample packs that seedCourse() accepts. */
@@ -39599,6 +39603,15 @@ ${list2.map((n) => `- ${n}
     testApiSettings: async () => {
       throw new ApiError(501, "not_implemented", "API setup uses the local backend.");
     },
+    getStorageSettings: async () => {
+      throw new ApiError(501, "not_implemented", "Storage settings use the local backend.");
+    },
+    updateStorageSettings: async () => {
+      throw new ApiError(501, "not_implemented", "Storage settings use the local backend.");
+    },
+    testStorageSettings: async () => {
+      throw new ApiError(501, "not_implemented", "Storage settings use the local backend.");
+    },
     getDebug: async () => ({
       misconceptionStates: [{ id: "m1", state: "active", origin: "skipped" }],
       currentQuestionAnswerKeys: HELP.map((h) => ({ id: h.q.id, key: h.key })),
@@ -39764,6 +39777,12 @@ async function continuePlaying() {
     setRun(run);
     goTo(sceneForPhase(run.phase));
   }
+}
+function afterStorageSwitch() {
+  setRun(null);
+  state.results = null;
+  settingsReturn = "Title";
+  needsSync = false;
 }
 function setApiOrigin(origin) {
   if (apiOrigin !== origin) {
@@ -41941,6 +41960,193 @@ function arena(run, screen2) {
   });
 }
 
+// game/course/storage-view.ts
+var NAMES = { local: "this computer", mongodb: "MongoDB", memory: "memory (test server)" };
+var plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+function buildStoragePanel(deps) {
+  let current = null;
+  let selected = "local";
+  const status = el("div", "setup-status dim", "Connecting to your server\u2026");
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
+  const say = (text2, kind = "dim") => {
+    status.textContent = text2;
+    status.className = `setup-status ${kind}`;
+  };
+  const badge = el("span", "setup-badge", "THIS COMPUTER");
+  const uri = el("input");
+  uri.type = "password";
+  uri.id = "storage-uri";
+  uri.autocomplete = "off";
+  uri.spellcheck = false;
+  uri.maxLength = 4096;
+  const database = el("input");
+  database.id = "storage-database";
+  database.autocomplete = "off";
+  database.maxLength = 63;
+  const vectorIndex = el("input");
+  vectorIndex.id = "storage-vector-index";
+  vectorIndex.autocomplete = "off";
+  vectorIndex.maxLength = 63;
+  const removeUri = el("input");
+  removeUri.type = "checkbox";
+  removeUri.id = "storage-remove-uri";
+  const uriState = el("span", "dim", "No connection string saved");
+  const copy = el("input");
+  copy.type = "checkbox";
+  copy.id = "storage-copy";
+  copy.checked = true;
+  const copyLabel = el("label", "", "");
+  copyLabel.htmlFor = copy.id;
+  const copyRow = el("div", "copy-option", copy, copyLabel);
+  const mongoFields = el(
+    "section",
+    "provider-fields",
+    deps.field("Connection string", uri, "Starts with mongodb+srv:// or mongodb://. It stays on your computer and is never shown again."),
+    el("div", "key-options", uriState, el("label", "", removeUri, " Remove saved connection string")),
+    el("div", "model-fields", deps.field("Database", database), deps.field(
+      "Vector search index",
+      vectorIndex,
+      "Used to find passages in your material. Created for you when your cluster allows it."
+    ))
+  );
+  const localNote = el(
+    "section",
+    "provider-fields offline-note",
+    el("h3", "", "Saved on this computer"),
+    el("p", "", "Dungeons, notebooks and expeditions are kept in the .local folder next to the game. No account or setup needed."),
+    el("small", "dim", "Choose MongoDB to keep them in a database you can reach from other computers.")
+  );
+  const cards = /* @__PURE__ */ new Map();
+  const choices = el("div", "provider-choices storage-choices");
+  choices.setAttribute("role", "radiogroup");
+  choices.setAttribute("aria-label", "Where dungeons are saved");
+  for (const [backend, label, detail] of [
+    ["local", "This computer", "Saved in .local \xB7 no setup"],
+    ["mongodb", "MongoDB", "Atlas or your own server"]
+  ]) {
+    const choice2 = btn("", () => choose(backend), "provider-choice");
+    choice2.append(el("b", "", label), el("small", "", detail));
+    choice2.setAttribute("role", "radio");
+    choice2.setAttribute("aria-label", label);
+    cards.set(backend, choice2);
+    choices.append(choice2);
+  }
+  const inUse = el("p", "", "");
+  const problem = el("p", "warn", "");
+  problem.hidden = true;
+  function choose(backend) {
+    selected = backend;
+    for (const [id2, card] of cards) {
+      card.setAttribute("aria-checked", String(id2 === backend));
+      card.classList.toggle("selected", id2 === backend);
+    }
+    mongoFields.hidden = backend !== "mongodb";
+    localNote.hidden = backend !== "local";
+    badge.textContent = backend === "mongodb" ? "MONGODB" : "THIS COMPUTER";
+    updateCopy();
+  }
+  function updateCopy() {
+    if (!current) {
+      copyRow.hidden = true;
+      return;
+    }
+    const from = current.active === "mongodb" ? "in MongoDB" : "on this computer";
+    const to = selected === "mongodb" ? "MongoDB" : "this computer";
+    const moving = selected === "mongodb" ? current.active !== "mongodb" || !!uri.value.trim() || database.value.trim() !== current.mongodb.database : current.active === "mongodb";
+    copyRow.hidden = !moving || current.courses === 0;
+    copyLabel.textContent = ` Copy the ${plural(current.courses, "dungeon")} saved ${from} to ${to}`;
+  }
+  for (const input of [uri, database]) input.addEventListener("input", updateCopy);
+  function apply(settings) {
+    current = settings;
+    database.value = settings.mongodb.database;
+    vectorIndex.value = settings.mongodb.vectorIndex;
+    uri.value = "";
+    removeUri.checked = false;
+    uri.placeholder = settings.mongodb.hasUri ? `Saved for ${settings.mongodb.host ?? "your cluster"} \u2014 enter a replacement or leave blank` : "mongodb+srv://user:password@cluster.example.net";
+    uriState.textContent = settings.mongodb.hasUri ? `Saved: ${settings.mongodb.host ?? "connection string"}` : "No connection string saved";
+    uriState.className = settings.mongodb.hasUri ? "ok" : "dim";
+    inUse.textContent = `In use now: ${NAMES[settings.active]}${settings.active === "mongodb" && settings.mongodb.host ? ` (${settings.mongodb.host}, ${settings.mongodb.database})` : ""} \xB7 ${plural(settings.courses, "dungeon")}.`;
+    problem.textContent = settings.error ? `MongoDB could not be reached when the game started, so this computer is in use. ${settings.error}` : "";
+    problem.hidden = !settings.error;
+    choose(settings.backend);
+  }
+  function body() {
+    const update = { backend: selected };
+    if (selected === "mongodb" || removeUri.checked) {
+      update.mongodb = {
+        database: database.value.trim(),
+        vectorIndex: vectorIndex.value.trim(),
+        ...removeUri.checked ? { uri: null } : uri.value.trim() ? { uri: uri.value.trim() } : {}
+      };
+    }
+    if (!copyRow.hidden && copy.checked) update.copyExisting = true;
+    return update;
+  }
+  const test = btn("Test connection", () => void deps.act(say, async () => {
+    if (!current) throw new Error("Connect to the server first.");
+    const result = await deps.client().testStorageSettings(body());
+    say(result.message, result.ok ? "ok" : "bad");
+  }), "alt");
+  const save2 = btn("Save & switch", () => void deps.act(say, async () => {
+    if (!current) throw new Error("Connect to the server first.");
+    const before = current;
+    const enteredUri = !!uri.value.trim();
+    const result = await deps.client().updateStorageSettings(body());
+    apply(result);
+    const switched = before.active !== result.active || result.active === "mongodb" && (enteredUri || before.mongodb.database !== result.mongodb.database || before.mongodb.vectorIndex !== result.mongodb.vectorIndex);
+    if (switched) deps.onSwitched();
+    const where = result.active === "mongodb" ? `MongoDB (${result.mongodb.host ?? "your cluster"})` : NAMES[result.active];
+    const copied = result.copied ? ` Copied ${plural(result.copied.courses, "dungeon")} and ${plural(result.copied.runs, "expedition")}${result.copied.skipped ? `; ${result.copied.skipped} already there` : ""}.` : "";
+    say(switched ? `Dungeons are now saved in ${where}.${copied}` : "Saved.", "ok");
+  }));
+  const root = el(
+    "div",
+    "setup-panel",
+    el("div", "setup-heading", el(
+      "div",
+      "",
+      el("h2", "", "Where your dungeons are saved"),
+      el("p", "dim", "Keep them on this computer, or in a MongoDB database. Switching happens right away.")
+    ), badge),
+    choices,
+    el(
+      "div",
+      "setup-grid",
+      el("div", "provider-form", mongoFields, localNote, copyRow),
+      el(
+        "aside",
+        "setup-aside",
+        el("h3", "", "Good to know"),
+        inUse,
+        problem,
+        el("p", "", "Switching moves the game to the other storage at once. An expedition you have open goes back to My archive."),
+        el("div", "setup-rule"),
+        el("p", "dim", "Copying skips dungeons that are already there and never deletes anything."),
+        deps.practice ? el("p", "warn", "Practice mode has no server storage. Open the game without ?mock=1 to use these settings.") : null
+      )
+    ),
+    el(
+      "div",
+      "setup-footer",
+      el("div", "actions", test, save2),
+      el("small", "dim", "Testing connects once and counts the dungeons there. Nothing is saved.")
+    ),
+    status
+  );
+  async function load() {
+    await deps.act(say, async () => {
+      apply(await deps.client().getStorageSettings());
+      say("Connected.");
+    });
+  }
+  choose("local");
+  return { el: root, load, clear: () => {
+    uri.value = "";
+  } };
+}
+
 // game/course/settings-view.ts
 function buildSettingsView(options) {
   let active2 = true;
@@ -42023,8 +42229,8 @@ function buildSettingsView(options) {
   fields.append(offline);
   const cards = /* @__PURE__ */ new Map();
   for (const [provider, label, detail] of [
-    ["openai", "OpenAI", "Use your OpenAI key"],
     ["gemini", "Google Gemini", "Use your Google AI key"],
+    ["openai", "OpenAI", "Use your OpenAI key"],
     ["mock", "Offline", "Sample lessons \xB7 no key needed"]
   ]) {
     const choice2 = btn("", () => choose(provider), "provider-choice");
@@ -42045,10 +42251,8 @@ function buildSettingsView(options) {
     keyStatus.textContent = provider === "mock" ? "OFFLINE" : titleFor(provider).toUpperCase();
   }
   const showStatus = (text2, kind = "dim") => {
-    if (active2) {
-      status.textContent = text2;
-      status.className = `setup-status ${kind}`;
-    }
+    status.textContent = text2;
+    status.className = `setup-status ${kind}`;
   };
   function serverOrigin() {
     const url = new URL(origin.value.trim());
@@ -42090,7 +42294,7 @@ function buildSettingsView(options) {
     }
     return update;
   }
-  const save2 = btn("Save & apply", () => void act(async () => {
+  const save2 = btn("Save & apply", () => void act(showStatus, async () => {
     if (!loaded) throw new Error("Connect to the backend first.");
     const apiOrigin2 = serverOrigin();
     const settings = await clientFor(apiOrigin2).updateApiSettings(body());
@@ -42100,22 +42304,25 @@ function buildSettingsView(options) {
     options.onOriginChange(apiOrigin2);
     showStatus(`${titleFor(settings.provider)} is ready. Your settings are saved and active.`, "ok");
   }));
-  const test = btn("Test connection", () => void act(async () => {
+  const test = btn("Test connection", () => void act(showStatus, async () => {
     if (!loaded) throw new Error("Connect to the backend first.");
     const result = await clientFor(serverOrigin()).testApiSettings(body());
     showStatus(result.message, result.ok ? "ok" : "bad");
   }), "alt");
   const load = btn("Load server", () => void loadSettings(), "alt");
   const back = btn("Back to game", options.onBack, "alt");
-  async function act(action) {
+  async function act(say, action) {
     if (root.getAttribute("aria-busy") === "true") return;
     root.setAttribute("aria-busy", "true");
-    for (const control of root.querySelectorAll("input,button")) if (control !== back) control.disabled = true;
-    showStatus("Working\u2026");
+    for (const control of root.querySelectorAll("input,button")) if (control !== back && !tabButtons.includes(control)) control.disabled = true;
+    const report = (text2, kind) => {
+      if (active2) say(text2, kind);
+    };
+    report("Working\u2026");
     try {
       await action();
     } catch (error) {
-      showStatus(error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name) ? "The server took too long to respond. Check the backend URL and try again." : error instanceof Error ? error.message : "Could not update API settings.", "bad");
+      report(error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name) ? "The server took too long to respond. Check the backend URL and try again." : error instanceof Error ? error.message : "Could not update the settings.", "bad");
     } finally {
       if (active2) {
         root.setAttribute("aria-busy", "false");
@@ -42125,7 +42332,7 @@ function buildSettingsView(options) {
     }
   }
   async function loadSettings() {
-    await act(async () => {
+    await act(showStatus, async () => {
       const apiOrigin2 = serverOrigin();
       connection = clientFor(apiOrigin2);
       const settings = await connection.getApiSettings();
@@ -42133,7 +42340,9 @@ function buildSettingsView(options) {
       apply(settings);
       showStatus("Connected.");
     });
+    if (active2) await storage.load();
   }
+  const storage = buildStoragePanel({ client: () => connection, act, field, onSwitched: options.onStorageChange, practice: options.practice });
   const advanced = el(
     "details",
     "setup-advanced",
@@ -42141,11 +42350,12 @@ function buildSettingsView(options) {
     el("div", "connection-fields", field("Backend URL", origin, "Changing servers starts a new game session."), load, field("Request timeout (seconds)", timeout)),
     field("Course preparation timeout (seconds)", ingestTimeout, "Per request while preparing your course. Active OpenAI document streams extend this idle budget, with a 10-minute request cap.")
   );
-  root.append(
+  const aiPanel = el(
+    "div",
+    "setup-panel",
     el("div", "setup-heading", el(
       "div",
       "",
-      el("span", "setup-eyebrow", "SETTINGS"),
       el("h2", "", "Choose an AI provider"),
       el("p", "dim", "This AI writes Pip's questions and notes and prepares your courses. You can switch anytime.")
     ), keyStatus),
@@ -42161,22 +42371,62 @@ function buildSettingsView(options) {
     )),
     advanced,
     el("div", "setup-footer", el("div", "actions", test, save2), el("small", "dim", "Testing sends one small request to the AI, which may use a little API credit.")),
-    status,
-    el("div", "setup-back", back)
+    status
   );
+  const panels = [
+    { id: "ai", label: "AI provider", panel: aiPanel },
+    { id: "storage", label: "MongoDB", panel: storage.el }
+  ];
+  const tabList = el("div", "setup-tabs");
+  tabList.setAttribute("role", "tablist");
+  tabList.setAttribute("aria-label", "Settings");
+  const tabButtons = panels.map(({ id: id2, label, panel: panel2 }, index) => {
+    const tab = btn(label, () => show3(index), "setup-tab");
+    tab.id = `settings-tab-${id2}`;
+    tab.setAttribute("role", "tab");
+    tab.setAttribute("aria-controls", `settings-panel-${id2}`);
+    panel2.id = `settings-panel-${id2}`;
+    panel2.setAttribute("role", "tabpanel");
+    panel2.setAttribute("aria-labelledby", tab.id);
+    tabList.append(tab);
+    return tab;
+  });
+  function show3(index) {
+    panels.forEach(({ panel: panel2 }, i) => {
+      const on = i === index;
+      panel2.hidden = !on;
+      tabButtons[i].setAttribute("aria-selected", String(on));
+      tabButtons[i].tabIndex = on ? 0 : -1;
+    });
+  }
+  tabList.addEventListener("keydown", (event) => {
+    const step = event.key === "ArrowRight" ? 1 : event.key === "ArrowLeft" ? -1 : 0;
+    if (!step) return;
+    const next = (tabButtons.indexOf(host3.activeElement) + step + panels.length) % panels.length;
+    show3(next);
+    tabButtons[next].focus();
+    event.preventDefault();
+  });
+  root.append(
+    el("div", "setup-top", el("div", "setup-top-left", back, el("span", "setup-eyebrow", "SETTINGS")), tabList),
+    aiPanel,
+    storage.el
+  );
+  show3(0);
   choose("mock");
   void loadSettings();
   return { el: root, stop: () => {
     active2 = false;
     controller.abort();
     for (const p of Object.values(profiles)) p.key.value = "";
+    storage.clear();
   } };
 }
 
 // game/course/Settings.ts
 var SettingsScene = class extends Page {
   create() {
-    const view = buildSettingsView({ apiOrigin, onOriginChange: setApiOrigin, onBack: backFromSettings, practice: mock });
+    const view = buildSettingsView({ apiOrigin, onOriginChange: setApiOrigin, onStorageChange: afterStorageSwitch, onBack: backFromSettings, practice: mock });
     this.onClose = view.stop;
     panel(this, view.el);
   }

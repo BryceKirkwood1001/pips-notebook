@@ -72,6 +72,21 @@ The actual game's battle feedback now lives in `course/battle-feedback.ts`: `tur
 
 The actual game's `UploadScene.retryUpload` retains the submitted file array or notes/title while that scene stays open. An ingest error exposes **Retry preparation**, which submits a new course and clears stale room selections. Leaving/reloading Upload releases those inputs. A failed course keeps Start disabled and shows a preparation-error hint, rather than asking the player to select nonexistent rooms.
 
+## MongoDB (storage) settings fields
+
+`course/storage-view.ts` builds the **MongoDB** tab of Settings; `course/settings-view.ts` shows it next to the **AI provider** tab.
+
+| Name/field | Type | Use |
+|---|---|---|
+| `selected` / body `backend` | `'local' \| 'mongodb'` | Card choice: This computer or MongoDB |
+| `uri` / body `mongodb.uri` | Password input / string, `null` removes | Write-only connection string; blank keeps the saved one |
+| `database`, `vectorIndex` / body `mongodb.database`, `mongodb.vectorIndex` | Text inputs / strings | Database and Atlas vector index names |
+| `copy` / body `copyExisting` | Checkbox / boolean | Shown only when saving would switch storage and the current one has dungeons |
+| response `active`, `courses`, `error` | `'local' \| 'mongodb' \| 'memory'`, number, string or null | "In use now" line and the startup-fallback warning |
+| response `mongodb.hasUri`, `mongodb.host` | boolean, string or null | Saved-connection state; the host is shown, the string never is |
+| response `copied` | `{ courses, runs, skipped }` or null | Result line after Save & switch |
+| `afterStorageSwitch()` | `app.ts` | Clears the open run and results after a switch; Back goes to the title |
+
 ## Course picker and upload inputs
 
 | Variable/field | Type | Source → use |

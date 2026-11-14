@@ -5,11 +5,11 @@
  *   LLM_PROVIDER=mock (or no key)  -> fake LLM client + deterministic mock tasks
  *   LLM_PROVIDER=gemini            -> Gemini client + Gemini-backed tasks
  *   LLM_PROVIDER=openai            -> OpenAI client + the same provider-independent tasks
- *   MONGODB_URI set                -> MongoDB repository + Atlas Vector Search
- *   MONGODB_URI empty              -> local disk archive; explicit test environments use memory
+ *
+ * Storage (MongoDB, this computer's .local/archive, or memory in tests) is opened by storage.ts and passed in,
+ * so Settings can switch it while the server runs.
  */
 import { fileURLToPath } from 'node:url';
-import { MongoClient, type Db } from 'mongodb';
 import type { Config } from './config';
 import { randomSeed } from './core/rng';
 import { engine } from './engine';
@@ -20,18 +20,9 @@ import { createGameplayTasks, createLlmClient, createMockGameplayTasks } from '.
 import { createIngestTasks, createMockIngestTasks } from './llm/ingest';
 import type { Retriever } from './rag/types';
 import type { ApiSettingsManager, LlmFactory } from './settings';
-import {
-  createAtlasVectorStore,
-  createChunker,
-  createEmbedder,
-  createMaterialParser,
-  createMemoryVectorStore,
-  createRetriever,
-} from './rag';
-import { createMemoryRepository, createMongoRepository } from './repo';
-import { createFileRepository, createFileVectorStore } from './repo/file';
+import { createChunker, createEmbedder, createMaterialParser, createRetriever } from './rag';
 import { createServices } from './services/create';
-import type { Services } from './services/types';
+import type { OpenStorage, Wired } from './storage';
 
 export interface WiringOptions {
   config: Config;
@@ -42,45 +33,17 @@ export interface WiringOptions {
   seed?: number;
   /** Default: the repo's `samples/` folder. */
   samplesDir?: string;
-  dataDir?: string;
-}
-
-export interface Wired {
-  services: Services;
-  close(): Promise<void>;
+  /** The opened storage. Closing the wiring closes it. */
+  storage: OpenStorage;
 }
 
 const DEFAULT_SAMPLES_DIR = fileURLToPath(new URL('../../samples', import.meta.url));
-
-/** Connects to MongoDB, or returns null (with a loud warning) so the server can still run in memory. */
-async function connectMongo(config: Config): Promise<{ client: MongoClient; db: Db } | null> {
-  if (!config.mongodbUri) return null;
-  const client = new MongoClient(config.mongodbUri, { serverSelectionTimeoutMS: 8000 });
-  try {
-    await client.connect();
-    const db = client.db(config.mongodbDb);
-    await db.command({ ping: 1 });
-    return { client, db };
-  } catch (err) {
-    console.error(
-      '[server] Could not connect to MongoDB. Using the configured local storage fallback.',
-      err instanceof Error ? err.message : err,
-    );
-    await client.close().catch(() => undefined);
-    return null;
-  }
-}
 
 export async function wire(options: WiringOptions): Promise<Wired> {
   const { config, clock, settings } = options;
   const factory = options.llmFactory ?? createLlmClient;
   const legacyEmbedding = { provider: config.llmProvider, model: config.embeddingModel, dims: config.embeddingDims };
-  const mongo = await connectMongo(config);
-
-  const repo = mongo ? createMongoRepository(mongo.db) : options.dataDir ? createFileRepository(options.dataDir) : createMemoryRepository();
-  const store = mongo ? createAtlasVectorStore(mongo.db, config) : options.dataDir ? createFileVectorStore(options.dataDir) : createMemoryVectorStore();
-  await repo.init();
-  await store.init();
+  const { repo, store } = options.storage;
   // Interrupted preparation cannot continue without the original upload. Never leave it waiting forever.
   for (const pack of await repo.listCoursePacks()) {
     if (!['ready', 'error'].includes(pack.status.stage)) {
@@ -137,16 +100,15 @@ export async function wire(options: WiringOptions): Promise<Wired> {
     runIngest,
     samplesDir: options.samplesDir ?? DEFAULT_SAMPLES_DIR,
     newSeed: options.seed === undefined ? randomSeed : () => options.seed as number,
-    storage: mongo ? 'mongodb' : options.dataDir ? 'local' : 'memory',
+    storage: options.storage.kind,
   });
 
   return {
     services,
     close: async () => {
-      // Let background ingests finish writing before the connection goes away.
+      // Let background ingests finish writing before the storage goes away.
       await services.idle();
-      await repo.close();
-      if (mongo) await mongo.client.close();
+      await options.storage.close();
     },
   };
 }

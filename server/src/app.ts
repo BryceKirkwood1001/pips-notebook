@@ -66,7 +66,7 @@ export async function buildApp(container: Container): Promise<FastifyInstance> {
     });
   });
 
-  registerRoutes(app, container.services, container.settings, config);
+  registerRoutes(app, container.services, container.settings, container.storage, config);
   await registerGame(app);
 
   app.addHook('onClose', async () => {
