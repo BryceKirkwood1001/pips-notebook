@@ -1,0 +1,31 @@
+{
+  "name": "teach-or-perish-backend",
+  "private": true,
+  "type": "module",
+  "description": "Teach or Perish: backend, game logic, ingest/RAG pipeline and test client",
+  "engines": {
+    "node": ">=22"
+  },
+  "workspaces": [
+    "shared",
+    "server",
+    "test-client"
+  ],
+  "scripts": {
+    "dev:server": "tsx watch server/src/index.ts",
+    "start": "tsx server/src/index.ts",
+    "dev:client": "npm run dev -w test-client",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p shared --noEmit && tsc -p server --noEmit && tsc -p test-client --noEmit",
+    "e2e": "tsx scripts/e2e.ts",
+    "ingest": "tsx server/src/ingest/cli.ts",
+    "llm:smoke": "tsx server/src/llm/smoke.ts"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "tsx": "^4.23.15",
+    "typescript": "~5.9.3",
+    "vitest": "^5.1.0"
+  }
+}
