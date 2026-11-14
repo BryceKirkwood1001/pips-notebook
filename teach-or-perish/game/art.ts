@@ -68,23 +68,23 @@ export function drawStage(run: { screen: string; isBoss: boolean; phase: string;
     const bg = boss ? 'boss_room_background' : 'concept_room_background';
     const key = (s: string) => game.assets.has(s) ? s : 'fallback-'+s;
     const encounter = run.screen === 'room' || run.isBoss;
-    game.spawn({texture:key(bg), x:640, y:encounter ? 120 : 360, width:1280,height:720,layer:'back'});
+    game.spawn({texture:key(bg), x:640, y:360, width:1280,height:720,layer:'back'});
     const teaching = run.phase === 'teach';
     const idle = teaching ? 'student_writing_notes' : 'student_idle';
     const animated = !run.victory && game.assets.has(idle);
     const fallback = run.victory ? 'student_finished' : encounter && !teaching ? 'student_fighting' : 'student_learning';
-    const x = encounter ? teaching ? 704 : 480 : 935;
-    const y = encounter ? 249 : 466;
+    const x = encounter ? teaching ? 820 : 465 : 935;
+    const y = encounter ? 518 : 490;
     game.spawn({
         texture: animated ? idle : key(fallback), tags: ['student'], x, y,
-        width: encounter ? 172 : 225, layer: 'world', anims: animations('student'),
+        width: encounter ? 222 : 225, layer: 'world', anims: animations('student'),
         ...(animated ? { play: idle } : {}),
     });
     if (!encounter || teaching) return;
     const slime = game.assets.has('monster_idle');
     const enemy = game.spawn({
         tags: ['monster'], texture: slime ? 'monster_idle' : 'foe' + (run.isBoss ? 3 : run.index % 3),
-        x: 861, y: run.isBoss ? 225 : 245, width: run.isBoss ? 205 : 156, layer: 'world',
+        x: 861, y: run.isBoss ? 501 : 531, width: run.isBoss ? 255 : 191, layer: 'world',
         anims: animations('monster'), ...(slime ? { play: 'monster_idle' } : {}),
     });
     if (slime) enemy.sx *= -1;

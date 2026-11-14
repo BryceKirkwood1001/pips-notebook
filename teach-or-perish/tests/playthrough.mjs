@@ -30,14 +30,37 @@ try {
     await page.goto(local+'/?mock=1');
     const button=name=>page.getByRole('button',{name,exact:true});
     await button('Play →').click();
+    await button('Files').click();
+    await page.getByLabel('Course files').waitFor();
+    await button('Notes').click();
+    await page.getByPlaceholder('Paste course notes here').fill('My lesson draft');
+    await button('Library').click();
+    await button('Notes').click();
+    assert.equal(await page.getByPlaceholder('Paste course notes here').inputValue(),'My lesson draft');
+    await button('Library').click();
     await button('Seasons (mock sample)').click();
     await page.getByRole('checkbox').nth(1).uncheck();
     await button('🦉').click();await button('Start run').click();
-    await page.getByPlaceholder('Explain this room to your student...').fill('Earth tilts as it orbits.');
+    const talk=button('Talk to Pip');
+    await talk.waitFor();
+    assert(!(await page.locator('.room-folio').isVisible()));
+    await talk.click();
+    const draft=page.getByPlaceholder('Explain this room to your student...');
+    await draft.fill('Earth tilts as it orbits.');
+    await page.keyboard.press('Escape');
+    await button('Notebook').click();
+    await button('Close').click();
+    await talk.click();
+    assert.equal(await draft.inputValue(),'Earth tilts as it orbits.');
     await button('Teach').click();
+    await button('Pip has a question').waitFor();
+    assert(!(await page.locator('.room-folio').isVisible()));
+    await button('Pip has a question').click();
     await page.getByPlaceholder('Your answer...').first().fill('Earth’s tilt changes the sunlight angle.');
     await button('Answer').first().click();await button('Skip').last().click();
     await button('Ready: go fight').click();
+    await button('Next turn').waitFor();
+    assert(!(await page.locator('.room-folio').isVisible()));
     let helped=0,retried=false;
     for(let n=0;n<65;n++){
         const actions=page.getByRole('button',{name:/^(Next turn|Show result|Continue|Retry room|Ready: go fight|Start over|Submit)$/});
@@ -61,6 +84,11 @@ try {
                 }else await options.first().click();
             }
             await button('Submit').click();await modal.waitFor({state:'detached'});helped++;continue;
+        }
+        if(await button('Battle log').isVisible()) {
+            await button('Battle log').click();
+            await page.locator('.turns').waitFor();
+            await button('Close').click();
         }
         const action=actions.last();
         if((await action.innerText())==='Retry room')retried=true;

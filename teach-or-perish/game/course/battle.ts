@@ -1,7 +1,7 @@
 import { api, call, goTo, sceneForPhase, setRun, state } from './app.js';
 import type { Answer, HelpMeTurn, PublicRun, TurnResult } from './api-client.js';
 import { buildHelp } from './help.js';
-import { Page, panel, stage, title } from './page.js';
+import { Page, panel, RoomView, stage, title } from './page.js';
 import { btn, el, mdToEl, questionEl } from './ui.js';
 import { drawStage, playAttack } from '../art.js';
 import { game } from '../engine.js';
@@ -16,7 +16,7 @@ export class Battle extends Page {
         if(!fight) {goTo(sceneForPhase(run.phase));return;}
         const stats=this.boss?'Health '+run.boss!.health+'/100':'Hearts '+run.room!.hearts+'/'+run.room!.maxHearts+' · Attempt '+run.room!.attempt;
         title(this,(this.boss?'Final examination':run.currentRoom?.title ?? 'Room battle')+' · '+stats);
-        const journal=el('details','',el('summary','','Student notebook'),mdToEl(run.notebookMd));
+        const view = new RoomView();
         const log=el('div','turns');
         for(const event of fight.log) {
             if(event.kind==='student_answer' || event.kind==='help_result') {
@@ -30,7 +30,8 @@ export class Battle extends Page {
         }
         log.querySelector('details')?.setAttribute('open','');
         const step=btn(run.phase==='room_result'||run.phase==='results'?'Show result':'Next turn',()=>void this.step());
-        const actions=el('div','actions',step);
+        const actions=view.actions;
+        actions.append(step);
         const summary=this.summary;
         if(summary) {
             actions.replaceChildren(el('b','',summary.passed?'Room cleared!':'Room failed'),btn(summary.passed?'Continue':'Retry room',async()=>{
@@ -39,7 +40,10 @@ export class Battle extends Page {
             }));
             for(const f of summary.failedTurns) log.prepend(el('article','box',questionEl(f.question),el('p','',f.reasoning),el('p','','Cited: '+f.citedNotes.join(' · '))));
         }
-        panel(this,el('div','',el('div','paneltop',el('b','','Question '+fight.turn+' / '+fight.totalTurns),journal),actions,log));
+        view.inventory.append(view.entry('Notebook', 'Pip’s notebook', mdToEl(run.notebookMd)));
+        if (log.childElementCount) view.inventory.append(view.entry('Battle log', 'Battle chronicle', log));
+        if (!summary) actions.prepend(el('span', 'turn-count', 'Turn ' + Math.min(fight.turn, fight.totalTurns) + ' / ' + fight.totalTurns));
+        panel(this, view.root);
         if(run.pendingHelpMe) this.helpModal(run.pendingHelpMe);
     }
     private helpModal(event:HelpMeTurn) {
@@ -52,7 +56,7 @@ export class Battle extends Page {
         };
         const content=stage.querySelector<HTMLElement>('section')!;
         const built=buildHelp(event,a=>void submit(a));
-        const modal=el('div','veil',el('section','sheet journal',built.el));
+        const modal=el('div','veil',el('section','folio help-folio',built.el));
         modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Help your student');
         content.inert=true;stage.append(modal);
         const header=stage.querySelector('header')!;
@@ -90,6 +94,11 @@ export class Battle extends Page {
                 run.phase=event.phaseAfter;
                 this.create();
                 animateAnswer(event.correct);
+                const cue = el('div', 'battle-cue ' + (event.correct ? 'hit' : 'miss'),
+                    event.correct ? 'Pip answered correctly!' : 'The slime lands a hit!');
+                cue.setAttribute('role','status');
+                stage.querySelector('.room-view')?.append(cue);
+                game.after(2.6, () => cue.remove());
             }
         }
     }

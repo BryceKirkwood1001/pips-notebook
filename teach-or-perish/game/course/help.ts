@@ -129,7 +129,7 @@ export function buildHelp(ev: HelpMeTurn, submit: (a: Answer) => void): { el: HT
 
   const root = el(
     'div', '',
-    el('h2', '', '🆘 Help me!'),
+    el('h2', '', 'Pip needs your help!'),
     el('div', 'warn', `${LEVELS[q.difficulty] ?? 'Hard'} one: ${ev.timeBudgetSec}s`),
     questionEl(q),
     input,

@@ -1,4 +1,4 @@
-import { Page, panel, title } from './page.js';
+import { Page, panel, RoomView, title } from './page.js';
 import type { PublicStudentQuestion } from './api-client.js';
 import { api, call, goTo, sceneForPhase, setRun, state } from './app.js';
 import { btn, el, mdToEl } from './ui.js';
@@ -14,6 +14,7 @@ export class LearningScene extends Page {
   private questionsEl!: HTMLElement;
   private teachInfo!: HTMLElement;
   private blocks = new Map<string, QBlock>();
+  private talk!: HTMLButtonElement;
 
   constructor() {
     super();
@@ -23,7 +24,8 @@ export class LearningScene extends Page {
     const run = state.run;
     if (!run) return goTo('Upload');
     const room = run.currentRoom;
-    title(this, `${run.studentEmoji}  Learning: ${room?.title ?? ''}  (room ${run.roomIndex + 1}/${run.rooms.length}, target ${run.targetGrade})`);
+    title(this, `Room ${run.roomIndex + 1}/${run.rooms.length} · ${room?.title ?? 'Lesson'}`);
+    const view = new RoomView();
 
     this.blocks = new Map();
     this.notebookEl = el('div');
@@ -43,24 +45,28 @@ export class LearningScene extends Page {
       this.syncQuestions(res.questions);
       run.learning.teachCount += 1;
       this.teachInfo.textContent = `Taught ${run.learning.teachCount} time(s). Teach again to fix things, or press Ready.`;
+      if (this.talk.getAttribute('aria-expanded') === 'true') view.dismiss();
     });
     const ready = btn('Ready: go fight', async () => {
       const next = await call(() => api.ready(run.id));
       if (!next) return;
       setRun(next);
       goTo(sceneForPhase(next.phase));
-    }, 'alt');
+    }, 'gold');
 
     const concepts = el('ul', '', ...(room?.concepts ?? []).map((c) => el('li', '', c.title)));
     const left = el(
       'div', '',
+      this.questionsEl,
       el('h3', '', 'Concepts in this room'), concepts,
       el('h3', '', 'Your explanation'), explain,
-      el('div', '', teach, ready), this.teachInfo,
-      el('h3', '', `The student's questions (max ${run.rules.maxStudentQuestions} open)`), this.questionsEl,
+      el('div', '', teach), this.teachInfo,
     );
-    const right = el('div', '', el('h3', '', 'Student notebook'), el('div', 'box', this.notebookEl));
-    panel(this, el('div', 'cols', left, right));
+    this.talk = view.entry('Talk to Pip', 'A lesson with Pip', left, 'pip-bubble');
+    view.root.append(this.talk);
+    view.inventory.append(view.entry('Notebook', 'Pip’s notebook', this.notebookEl));
+    view.actions.append(ready);
+    panel(this, view.root);
 
     this.setNotebook(run.notebookMd);
     this.syncQuestions(run.learning.pendingQuestions);
@@ -84,7 +90,7 @@ export class LearningScene extends Page {
       const controls = el('div');
       const input = el('textarea');
       input.rows = 2;
-    input.maxLength = 4000;
+      input.maxLength = 4000;
       input.placeholder = 'Your answer...';
       controls.append(
         input,
@@ -105,7 +111,7 @@ export class LearningScene extends Page {
           this.updatePose();
         }, 'alt'),
       );
-      this.questionsEl.append(el('div', 'box', el('div', '', `❓ ${q.text}`), status, controls));
+      this.questionsEl.append(el('div', 'box', el('h3', '', 'Pip asks'), el('p', '', q.text), status, controls));
       this.blocks.set(q.id, { status, controls });
       this.setStatus(q.id, q.status);
     }
@@ -114,6 +120,7 @@ export class LearningScene extends Page {
 
   private updatePose(understood = false) {
     const hasQuestion = Array.from(this.blocks.values()).some(b => b.status.dataset.st === 'open');
+    this.talk.textContent = hasQuestion ? 'Pip has a question' : 'Talk to Pip';
     teachingPose(hasQuestion, understood);
   }
 
