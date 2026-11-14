@@ -154,7 +154,7 @@ export function walkOff(exit: Exit = 'right'): Promise<void> {
     if (game.assets.has('student_idle')) pip.play('student_idle');
     // Stand back up to full height and opacity (a lost fight leaves Pip slumped), with a little hop off the chair.
     game.tween.to(pip, { alpha: 1, sy: Math.abs(pip.sx), y: homeY }, { duration: 0.2, ease: 'easeOutQuad' });
-    if (seated) game.tween.fromTo(pip, { y: homeY }, { y: homeY - 14 }, { duration: GET_UP_TIME / 2, yoyo: true, ease: 'easeOutQuad' });
+    if (seated) game.tween.fromTo(pip, { y: homeY }, { y: homeY - 14 }, { duration: GET_UP_TIME / 2, yoyo: true, loop: 1, ease: 'easeOutQuad' });
     return new Promise<void>(resolve => game.after(GET_UP_TIME, resolve)).then(() => walk(exit === 'left' ? OFF_LEFT : OFF_RIGHT, 'student_idle', EXIT_SPEED));
 }
 
@@ -175,8 +175,13 @@ export function strike(correct: boolean) {
     const [attacker, victim, dir] = correct ? [pip, foe, 1] : [foe, pip, -1];
     const gap = Math.abs(victim.data.homeX - attacker.data.homeX) - (attacker.width + victim.width) / 2;
     const step = Math.max(0, Math.min(LUNGE, gap - MIN_GAP));
-    game.tween.fromTo(attacker, { x: attacker.data.homeX }, { x: attacker.data.homeX + dir * step }, { duration: 0.14, yoyo: true, ease: 'easeOutQuad' });
-    game.tween.fromTo(victim, { x: victim.data.homeX }, { x: victim.data.homeX + dir * KNOCKBACK }, { duration: 0.12, delay: 0.12, yoyo: true, ease: 'easeOutQuad' });
+    // `yoyo` reverses only on a repeat, so `loop: 1` brings each sprite back; onComplete pins it to its home spot,
+    // where its nameplate is, even if the tween is cut short.
+    const home = (sprite: Sprite<Home>) => () => { if (sprite.alive) sprite.x = sprite.data.homeX; };
+    game.tween.fromTo(attacker, { x: attacker.data.homeX }, { x: attacker.data.homeX + dir * step },
+        { duration: 0.14, yoyo: true, loop: 1, ease: 'easeOutQuad', onComplete: home(attacker) });
+    game.tween.fromTo(victim, { x: victim.data.homeX }, { x: victim.data.homeX + dir * KNOCKBACK },
+        { duration: 0.12, delay: 0.12, yoyo: true, loop: 1, ease: 'easeOutQuad', onComplete: home(victim) });
     game.tween.fromTo(victim, { alpha: 1 }, { alpha: 0.35 }, { duration: 0.09, delay: 0.12, yoyo: true, loop: 1,
         onComplete: () => { if (victim.alive) victim.alpha = 1; } });
     game.particles.burst({ x: victim.data.homeX - dir * victim.width * 0.2, y: victim.y - 20, count: correct ? 18 : 12, layer: 'front',

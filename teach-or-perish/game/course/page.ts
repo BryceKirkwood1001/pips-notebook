@@ -1,5 +1,6 @@
 import { btn, el, host } from './ui.js';
-import { banner, mock, openMenu, openSettings, state } from './app.js';
+import { banner, goHome, mock, openMenu, openSettings, state } from './app.js';
+import { musicOn, toggleMusic } from './soundtrack.js';
 
 /** The game world the canvas letterboxes, in world units. */
 const WORLD_W = 1280, WORLD_H = 720;
@@ -75,7 +76,11 @@ export class RoomView {
 }
 export function frame(screen:string) {
     const badge=state.run ? 'Target grade '+state.run.targetGrade : mock ? 'Practice course' : 'My archive';
-    const header=el('header','',el('span','','Teach or Perish'),el('div','nav-right',badge));
+    const home=btn('Teach or Perish',()=>void goHome(),'home-link');
+    home.title=state.run?'Home (your expedition is paused and saved in My archive)':'Home';
+    const music=btn(musicOn()?'Music on':'Music off',()=>{ const on=toggleMusic(); music.textContent=on?'Music on':'Music off'; music.setAttribute('aria-pressed',String(on)); },'alt');
+    music.setAttribute('aria-pressed',String(musicOn()));
+    const header=el('header','',home,el('div','nav-right',badge),music);
     if (screen !== 'settings') header.append(btn('Settings', openSettings, 'alt'));
     if (state.run && screen !== 'menu') {
         header.append(btn('Rooms', () => void openMenu(), 'alt'));

@@ -453,3 +453,11 @@ body.settings-preview{margin:0;min-height:100vh;overflow:hidden;background:#160f
 .course-stage .answer-choices button code{background:#ffffff1f;border-color:#ffffff40;color:inherit}
 .course-stage .answer-choices .sel code{background:#ffffff33}
 .course-stage .answer-choices label code{background:#5b2d3b14}
+
+/* The title chip is the Home button. */
+.course-stage header>.home-link{background:#291c2bf2;color:#fff0d1;border:2px solid #a37a49;box-shadow:inset 0 0 0 2px #48313a,2px 3px #1a101e;
+    padding:9px 16px;font:bold 17px Silkscreen,'Courier New',monospace;min-height:0}
+.course-stage header>.home-link:hover{color:#ffe5b7;border-color:#e0b46e}
+.course-stage header [aria-pressed=false]{opacity:.8}
+.results-actions{flex-wrap:wrap;margin:14px 0 6px}
+.results-sheet .menu-report{margin-top:16px}

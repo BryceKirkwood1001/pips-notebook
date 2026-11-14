@@ -1,9 +1,30 @@
 import { Page, panel, title } from './page.js';
-import type { Results } from './api-client.js';
+import type { PublicRun, Results } from './api-client.js';
 import { api, call, goTo, setRun, state } from './app.js';
 import { btn, el, inline } from './ui.js';
+import { reportBook } from './report.js';
+import { travel } from './transition.js';
+import { setArrival } from '../art.js';
 
 export class ResultsScene extends Page {
+  /** What to do next: replay the same course and rooms, read the full report, or go back to My archive. */
+  private actions(run: PublicRun, report: HTMLDetailsElement) {
+    return el('div', 'menu-actions results-actions',
+      btn('Play this course again →', () => void this.again(run)),
+      btn('Expedition report', () => { report.open = true; report.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }, 'alt'),
+      btn('My archive', () => { setRun(null); state.results = null; goTo('Upload'); }, 'alt'));
+  }
+
+  /** A fresh expedition on the same course, rooms and target, with an empty notebook. */
+  private async again(run: PublicRun) {
+    await travel({ kicker: 'New expedition', title: run.courseTitle, detail: 'Pip starts over with an empty notebook. Teach one topic at a time.' }, async () => {
+      const next = await call(() => api.createRun({ courseId: run.courseId, targetGrade: run.targetGrade, scope: { roomIds: run.rooms.map(r => r.id) } }));
+      if (!next) return false;
+      setRun(next); state.results = null; setArrival('study'); goTo('Learning');
+      return true;
+    });
+  }
+
   constructor() {
     super();
   }
@@ -20,10 +41,14 @@ export class ResultsScene extends Page {
   }
 
   private render(r: Results): HTMLElement {
-    const root = el('div');
+    const run = state.run!;
+    const report = el('details', 'menu-report', el('summary', '', 'Expedition report'), reportBook(run));
+    const root = el('div', 'results-sheet');
     root.append(
       el('h2', '', `Predicted grade: ${r.letter} (${r.predictedGradePct.toFixed(1)}%)`),
-      el('div', r.metTarget ? 'ok' : 'bad', `Target ${r.target}: ${r.metTarget ? 'MET' : 'not met'}`),
+      el('div', r.metTarget ? 'ok' : 'bad', `Target ${r.target}: ${r.metTarget ? 'met' : 'not met'}`),
+      el('p', 'dim', 'Your grade is the health Pip kept through the final exam. Where next?'),
+      this.actions(run, report),
       el('h3', '', 'Accuracy per concept'),
     );
     for (const c of r.conceptAccuracy) {
@@ -52,11 +77,7 @@ export class ResultsScene extends Page {
         ),
       );
     }
-    root.append(btn('Start over', () => {
-      setRun(null);
-      state.results = null;
-      goTo('Upload');
-    }));
+    root.append(report, this.actions(run, report));
     return root;
   }
 }

@@ -42,6 +42,11 @@ Resume (or View record / View results), End and Remove; the Rooms/Pause menu has
 Remove expedition. Both ask first (in-game dialog, Cancel focused, Escape cancels). End keeps the run
 as a read-only record (opens in the menu as "Expedition ended"); Remove deletes it, the course stays.
 
+Header: the Teach or Perish chip is Home (pauses a run in progress, which stays in My archive);
+Music on/off is remembered per browser. Soundtrack (`course/soundtrack.ts`, teammate): menu, learning,
+mini-boss by danger tier (miniboss_1..3), finalboss. Results: Play this course again, Expedition report,
+My archive (top and bottom).
+
 Settings: OpenAI / Gemini / Offline, write-only keys, Test/Save, connection and preparation
 timeouts (see root docs/API_SETTINGS.md).
 
@@ -55,6 +60,7 @@ timeouts (see root docs/API_SETTINGS.md).
 - `course/transition.ts`: title-card curtain; `app.ts` goTo walks only when no curtain is up.
 - `course/dictation.ts`: on-device speech recognition button.
 - `course/expedition.ts`: end/remove actions, confirm dialog, archive run lines.
+- `course/soundtrack.ts`: scene music, tier-matched combat tracks, music toggle.
 - `course/Upload.ts`, `Menu.ts`, `Results.ts`, `Settings.ts`, `settings-view.ts`, `help.ts`.
 - `course/api-client.ts`: identical copy of `shared/src/api-client.ts`. `course/mock.ts`: practice API.
 - `media/game.css`, `media/font.css` (Silkscreen, OFL in `OFL-Silkscreen.txt`).

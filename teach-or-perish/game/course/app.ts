@@ -39,6 +39,13 @@ export function goTo(screen: Screen) {
     }
     walkToScene(arrive);
 }
+/** Home: back to the title screen. A run in progress is paused first (help timers freeze) and stays in My archive. */
+export async function goHome() {
+    const run = state.run;
+    if (run && !run.pausedAt && !run.endedAt && run.phase !== 'results') await call(() => api.pauseRun(run.id));
+    setRun(null); state.results = null;
+    goTo('Title');
+}
 export function openSettings() { settingsReturn = currentScreen; goTo('Settings'); }
 export function backFromSettings() { goTo(state.run?.pausedAt ? 'Menu' : state.run ? sceneForPhase(state.run.phase) : settingsReturn === 'Settings' ? 'Title' : settingsReturn); }
 export async function openMenu() {

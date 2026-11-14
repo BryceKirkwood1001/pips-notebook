@@ -224,7 +224,8 @@ export function createMockApi(): ApiClient {
 
     createRun: async (body) => {
       await wait();
-      if (polls < 3) throw new ApiError(425, 'room_not_ready', 'The first room is still being ingested.');
+      // A course that already has a practice run is prepared, even after a reload resets `polls`.
+      if (polls < 3 && !run) throw new ApiError(425, 'room_not_ready', 'The first room is still being ingested.');
       const ids = body.scope?.roomIds ?? ROOMS.map((r) => r.id);
       const rooms = ROOMS.filter((r) => ids.includes(r.id)).map((r) => ({ ...r, ready: true, state: 'upcoming' as const }));
       attempt = 1; helpCount = 0; pending = null; over = false; failed = []; questions = []; notebook = '# Notebook\n';
