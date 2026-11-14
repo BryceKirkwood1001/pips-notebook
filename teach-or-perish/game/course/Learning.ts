@@ -1,7 +1,7 @@
 import { atWorld, Page, panel, RoomView, title } from './page.js';
 import type { PublicRun, PublicRunRoom, PublicStudentQuestion } from './api-client.js';
 import { api, call, goTo, sceneForPhase, setRun, state } from './app.js';
-import { btn, clock, el, mdToEl } from './ui.js';
+import { btn, clock, el, inline, mdToEl } from './ui.js';
 import { DANGER_LEVELS, encounterFor, POS, setArrival, teachingPose } from '../art.js';
 import { micButton, stopDictation } from './dictation.js';
 import { notesByTitle, reportBook, reportCard } from './report.js';
@@ -132,9 +132,9 @@ export class LearningScene extends Page {
     const room = this.run.currentRoom;
     const page = el('div', '', el('small', 'lesson-kicker', `${this.concepts.length} topic${this.concepts.length === 1 ? '' : 's'} to teach`),
       el('h3', '', room?.title ?? 'This room'));
-    if (room?.description) page.append(el('p', 'lesson-description', room.description));
+    if (room?.description) page.append(el('p', 'lesson-description', inline(room.description)));
     if (room?.learningObjectives?.length) page.append(el('h4', '', 'By the end, Pip should be able to'),
-      el('ul', 'teaching-goals', ...room.learningObjectives.map(goal => el('li', '', goal))));
+      el('ul', 'teaching-goals', ...room.learningObjectives.map(goal => el('li', '', inline(goal)))));
     page.append(el('p', 'lesson-tip', 'Teach one topic at a time in a few sentences. Pip writes notes and asks about anything that confuses it. In battle, Pip can only use those notes.'));
     const loose = this.questions.filter(q => !q.conceptId || !this.concepts.some(c => c.id === q.conceptId));
     if (loose.length) page.append(el('h4', '', 'Pip’s questions'), this.questionList(loose));
@@ -160,9 +160,9 @@ export class LearningScene extends Page {
     const page = el('div', '',
       el('small', 'lesson-kicker', `Topic ${index + 1} of ${this.concepts.length}`),
       el('h3', '', concept.title),
-      el('p', 'topic-summary', concept.summary || `Explain ${concept.title.toLowerCase()} using the definitions, reasoning and examples in your material.`),
+      el('p', 'topic-summary', inline(concept.summary || `Explain ${concept.title.toLowerCase()} using the definitions, reasoning and examples in your material.`)),
       el('details', 'topic-notes', el('summary', '', notes.length ? `Pip’s notes on this topic (${notes.length})` : 'Pip has no notes on this topic yet'),
-        notes.length ? el('ul', '', ...notes.map(n => el('li', '', n))) : el('p', 'dim', 'Teach it below.')),
+        notes.length ? el('ul', '', ...notes.map(n => el('li', '', inline(n)))) : el('p', 'dim', 'Teach it below.')),
       thread,
       asked.length ? el('h4', '', 'Pip asks') : null, asked.length ? this.questionList(asked) : null,
       el('label', 'teach-label', `Teach Pip about ${concept.title}`), box,
@@ -215,7 +215,7 @@ export class LearningScene extends Page {
     const asking = res.questions.filter(q => q.status === 'open' && q.conceptId === concept.id);
     pending.className = 'bubble pip';
     pending.replaceChildren(fresh.length
-      ? el('span', '', el('b', '', 'Got it! I wrote down:'), el('ul', '', ...fresh.map(n => el('li', '', n))))
+      ? el('span', '', el('b', '', 'Got it! I wrote down:'), el('ul', '', ...fresh.map(n => el('li', '', inline(n)))))
       : el('span', '', 'Hmm, nothing new for my notes there. Could you explain it another way, with an example?'));
     if (asking.length) pending.append(el('span', 'bubble-ask', `I have ${asking.length === 1 ? 'a question' : `${asking.length} questions`} below.`));
     status.textContent = '';
@@ -229,7 +229,7 @@ export class LearningScene extends Page {
   }
 
   private questionCard(q: PublicStudentQuestion) {
-    const card = el('div', `box pip-question ${q.status}`, el('p', 'pip-question-text', q.text));
+    const card = el('div', `box pip-question ${q.status}`, el('p', 'pip-question-text', inline(q.text)));
     if (q.status !== 'open') {
       card.append(el('small', q.status === 'answered' ? 'ok' : 'bad', q.status === 'answered' ? 'Answered' : 'Skipped: Pip keeps this idea'));
       return card;

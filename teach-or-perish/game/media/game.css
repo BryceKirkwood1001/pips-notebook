@@ -435,3 +435,21 @@ body.settings-preview{margin:0;min-height:100vh;overflow:hidden;background:#160f
 .confirm-folio{width:min(520px,calc(100% - 60px));padding:22px 28px 24px}
 .course-stage .confirm-folio h2{font-size:20px;margin:0 0 10px}
 .confirm-folio p{font-size:16px;line-height:1.45;margin:0 0 6px}
+
+/* Markdown in questions, answers, notes and chat (ui.ts markdown/inline). Code keeps its case and spacing. */
+.course-stage code{font:.92em/1.35 ui-monospace,Menlo,Consolas,'Courier New',monospace;background:#5b2d3b14;border:1px solid #5b2d3b26;padding:0 .25em;text-transform:none;letter-spacing:0;white-space:pre-wrap}
+.course-stage pre{margin:8px 0;padding:10px 12px;background:#2b1f2a;color:#f4e3c5;border-left:3px solid #c69b58;overflow-x:auto;max-width:100%}
+.course-stage pre code{display:block;background:none;border:0;padding:0;color:inherit;white-space:pre;font-size:14px;line-height:1.45}
+.course-stage .md>:first-child{margin-top:0}.course-stage .md>:last-child{margin-bottom:0}
+.course-stage .md p{margin:6px 0}
+.course-stage .question-prompt{font-weight:bold;font-size:1.05em}
+.course-stage .question-prompt pre,.course-stage .question-prompt code{font-weight:normal}
+.course-stage .turn-field .md p{font-size:16px;line-height:1.4;margin:5px 0 0}
+/* Dark chips (outcome card, thought bubble, expedition log) get a lighter code tint. */
+.report-card code,.plate code{background:#ffffff1a;border-color:#ffffff33;color:inherit}
+/* "Help me!" answers are read character by character, so they use the book's text face, not the pixel face
+   (which has no true lowercase and would hide case in code like 'Mia'). */
+.course-stage .answer-choices button{font:16px/1.35 Georgia,'Times New Roman',serif;text-align:left;white-space:normal;letter-spacing:0;padding:8px 14px;margin:4px 0}
+.course-stage .answer-choices button code{background:#ffffff1f;border-color:#ffffff40;color:inherit}
+.course-stage .answer-choices .sel code{background:#ffffff33}
+.course-stage .answer-choices label code{background:#5b2d3b14}

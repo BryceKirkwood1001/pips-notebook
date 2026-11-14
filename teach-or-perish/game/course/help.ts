@@ -1,6 +1,13 @@
 // The "Help me!" modal: question, difficulty, time budget, an input that fits the type, and a countdown.
 import type { Answer, HelpMeTurn } from './api-client.js';
-import { btn, el, questionEl, clock } from './ui.js';
+import { btn, el, inline, questionEl, clock } from './ui.js';
+
+/** An answer button whose text may hold Markdown (inline code, emphasis), after an optional "A. " prefix. */
+function choice(prefix: string, text: string, onClick: () => void, cls: string) {
+  const b = btn('', onClick, cls);
+  b.append(prefix, inline(text));
+  return b;
+}
 
 const LEVELS = ['', 'Easy', 'Fair', 'Tricky', 'Tough', 'Brutal'];
 
@@ -13,13 +20,13 @@ export function buildHelp(ev: HelpMeTurn, submit: (a: Answer) => void, expire?: 
 
   // Each branch sets `build` (read the answer; `final` fills gaps when time runs out) and adds its input.
   let build: (final: boolean) => Answer = () => ({});
-  const input = el('div', 'box');
+  const input = el('div', 'box answer-choices');
 
   switch (q.type) {
     case 'mcq': {
       let pick = -1;
       const bs = q.payload.options.map((o, i) =>
-        btn(`${String.fromCharCode(65 + i)}. ${o}`, () => {
+        choice(`${String.fromCharCode(65 + i)}. `, o, () => {
           pick = i;
           bs.forEach((b, j) => (b.className = j === i ? 'sel' : 'alt'));
         }, 'alt'),
@@ -37,7 +44,7 @@ export function buildHelp(ev: HelpMeTurn, submit: (a: Answer) => void, expire?: 
         t.className = v ? 'sel' : 'alt';
         f.className = v ? 'alt' : 'sel';
       };
-      input.append(el('div', 'dim', q.payload.statement), t, f);
+      input.append(el('div', 'dim', inline(q.payload.statement)), t, f);
       build = () => ({ value: pick ?? false });
       break;
     }
@@ -45,7 +52,7 @@ export function buildHelp(ev: HelpMeTurn, submit: (a: Answer) => void, expire?: 
       const boxes = q.payload.options.map((o) => {
         const cb = el('input');
         cb.type = 'checkbox';
-        input.append(el('div', '', el('label', '', cb, ` ${o}`)));
+        input.append(el('div', '', el('label', '', cb, ' ', inline(o))));
         return cb;
       });
       build = () => ({ choiceIndexes: boxes.flatMap((cb, i) => (cb.checked ? [i] : [])) });
@@ -67,7 +74,7 @@ export function buildHelp(ev: HelpMeTurn, submit: (a: Answer) => void, expire?: 
         list.replaceChildren(
           ...q.payload.items.map((item, i) => {
             const pos = order.indexOf(i);
-            return btn(pos >= 0 ? `${pos + 1}. ${item}` : item, () => {
+            return choice(pos >= 0 ? `${pos + 1}. ` : '', item, () => {
               if (!order.includes(i)) order = [...order, i];
               draw();
             }, pos >= 0 ? 'sel' : 'alt');

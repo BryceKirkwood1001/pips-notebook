@@ -1,7 +1,7 @@
 // The expedition report between rooms: rooms cleared, battle accuracy and weak points. Everything here restates
 // what the player has already seen (battle turns, Pip's questions, the notebook); Pip's hidden beliefs stay hidden.
 import type { PublicRoomReport, PublicRun } from './api-client.js';
-import { btn, el } from './ui.js';
+import { btn, el, inline } from './ui.js';
 
 /** How many weak points the compact card lists before "Full report". */
 const CARD_WEAK_POINTS = 3;
@@ -97,7 +97,7 @@ function roomEntry(h: PublicRoomReport) {
     el('p', 'dim', `Lesson: taught ${h.teachCount} time${h.teachCount === 1 ? '' : 's'} · Pip asked ${h.questionsAsked}` +
       (h.questionsAsked ? ` (answered ${h.questionsAnswered}, skipped ${h.questionsSkipped})` : '')));
   if (h.missed.length) entry.append(el('ul', 'report-missed', ...h.missed.map(m => el('li', '',
-    el('span', '', m.prompt), el('small', 'dim', [m.by === 'help' ? 'Your help' : 'Pip', ...m.concepts.map(c => c.title)].join(' · '))))));
+    el('span', '', inline(m.prompt)), el('small', 'dim', [m.by === 'help' ? 'Your help' : 'Pip', ...m.concepts.map(c => c.title)].join(' · '))))));
   return entry;
 }
 

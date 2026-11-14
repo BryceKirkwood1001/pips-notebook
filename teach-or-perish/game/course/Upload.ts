@@ -1,7 +1,7 @@
 import { Page, panel, title } from './page.js';
 import { STUDENT_EMOJIS, TARGET_GRADES, type PublicCourse, type StudentEmoji, type TargetGrade } from './api-client.js';
 import { api, call, describeError, goTo, setRun, showError, state } from './app.js';
-import { btn, el, clock } from './ui.js';
+import { btn, el, clock, inline } from './ui.js';
 import { resume } from './app.js';
 import { lessonGuide } from './lesson-guide.js';
 import { travel } from './transition.js';
@@ -258,7 +258,7 @@ export class UploadScene extends Page {
       const concepts=c.units.flatMap(u=>u.concepts).filter(k=>r.conceptIds.includes(k.id));
       const guide=el('details','room-preview',el('summary','','What will I teach?'),lessonGuide({...r,concepts},false));
       guide.dataset.roomId=r.id;guide.open=open.has(r.id);
-      this.roomsEl.append(el('div', 'scope-room', label, r.description?el('p','',r.description):null,guide));
+      this.roomsEl.append(el('div', 'scope-room', label, r.description?el('p','',inline(r.description)):null,guide));
     }
     this.updateStart();
   }

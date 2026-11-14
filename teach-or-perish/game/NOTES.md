@@ -30,6 +30,10 @@ Dictation is on-device only: `SpeechRecognition.available({langs, processLocally
 recognition is unavailable (the Claude built-in browser reports `unavailable`) it says so and
 records nothing. It only edits the text box; navigation aborts it.
 
+Markdown (`ui.ts` `markdown`/`inline`, text nodes only): fenced code, inline code, bold, italics,
+lists and line breaks in questions, options, answers, reasoning, explanations, notes and chat.
+"Help me!" answer buttons use the serif text face so code keeps its case.
+
 Zoom: the HUD is laid out in CSS px on a stage exactly over the canvas, so browser zoom resizes
 the HUD while the scene fills the window (HUD shrinks with the window below 0.8 CSS px/unit).
 

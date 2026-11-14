@@ -1,7 +1,7 @@
 import { Page, panel, title } from './page.js';
 import type { Results } from './api-client.js';
 import { api, call, goTo, setRun, state } from './app.js';
-import { btn, el } from './ui.js';
+import { btn, el, inline } from './ui.js';
 
 export class ResultsScene extends Page {
   constructor() {
@@ -43,10 +43,10 @@ export class ResultsScene extends Page {
       root.append(
         el(
           'div', 'box',
-          el('b', '', `${m.conceptTitle}: ${m.description}`),
-          el('div', 'dim', `Origin: ${m.origin}. Belief: ${m.beliefStatement}`),
-          el('div', 'dim', `Question: ${m.questionPrompt}`),
-          el('div', 'ok', `Correction: ${m.correction}`),
+          el('b', '', `${m.conceptTitle}: `, inline(m.description)),
+          el('div', 'dim', `Origin: ${m.origin}. Belief: `, inline(m.beliefStatement)),
+          el('div', 'dim', 'Question: ', inline(m.questionPrompt)),
+          el('div', 'ok', 'Correction: ', inline(m.correction)),
           el('div', '', `Material: ${ref.fileName}, page ${ref.page}, ${ref.sectionPath.join(' > ')}`),
           el('div', 'dim', `"${ref.quote}"`),
         ),

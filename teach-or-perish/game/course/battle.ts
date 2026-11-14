@@ -2,7 +2,7 @@ import { api, call, goTo, openMenu, sceneForPhase, setRun, state } from './app.j
 import type { Answer, HelpMeTurn, PublicQuestion, PublicRun, TurnResult } from './api-client.js';
 import { buildHelp } from './help.js';
 import { atWorld, Page, panel, RoomView, stage, title } from './page.js';
-import { btn, clock, el, mdToEl, questionEl } from './ui.js';
+import { btn, clock, el, inline, mdToEl, questionEl } from './ui.js';
 import { turnCard } from './battle-feedback.js';
 import { attemptStats } from './report.js';
 import { travel } from './transition.js';
@@ -99,7 +99,7 @@ export class Battle extends Page {
             if(card){card.open=true;card.scrollIntoView({block:'nearest'});card.querySelector('summary')?.focus();}
         },'turn-outcome-panel');
         outcome.append(el('small','',`Turn ${turns.length} · ${label}`),el('strong',latest.correct?'ok':'bad',`${result} · ${damage}`),
-            el('span','outcome-question',latest.question.prompt),el('span','outcome-link','See how this turn played out →'));
+            el('span','outcome-question',inline(latest.question.prompt)),el('span','outcome-link','See how this turn played out →'));
         outcome.setAttribute('aria-label',`Turn ${turns.length} outcome: ${result}. ${damage}. Open battle log`);
         return outcome;
     }
@@ -135,7 +135,7 @@ export class Battle extends Page {
 
     private defeat(run: PublicRun, summary: RoomEnd) {
         const retry=btn('Back to the library to reteach →',()=>void this.retry(),'door');
-        const trace=summary.failedTurns.slice(0,TRACE_SHOWN).map(t=>el('li','',el('strong','',t.question.prompt),el('small','',`Pip’s reasoning: ${t.reasoning}`)));
+        const trace=summary.failedTurns.slice(0,TRACE_SHOWN).map(t=>el('li','',el('strong','',inline(t.question.prompt)),el('small','','Pip’s reasoning: ',inline(t.reasoning))));
         const panelEl=el('section','end-panel lost',
             el('small','end-kicker',`Room ${run.roomIndex+1} of ${run.rooms.length} · attempt ${run.room?.attempt ?? 1}`),
             el('h2','end-title','Pip was overwhelmed'),
@@ -256,7 +256,7 @@ export class Battle extends Page {
     /** Pip's thought bubble while the answer is worked out; returns a function that removes it. */
     private thinking(q: PublicQuestion) {
         const bubble=atWorld(el('div','thought',el('span','thought-dots',el('i'),el('i'),el('i')),el('strong','','Pip is thinking…'),
-            el('small','',q.prompt)),THOUGHT_X,THOUGHT_Y);
+            el('small','',inline(q.prompt))),THOUGHT_X,THOUGHT_Y);
         stage.querySelector('.room-view')?.append(bubble);
         return ()=>bubble.remove();
     }
