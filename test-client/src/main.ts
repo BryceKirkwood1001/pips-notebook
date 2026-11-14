@@ -1,16 +1,25 @@
-// Placeholder until the test-client harness is built (SPEC section 8 of the build brief).
-import { createApiClient } from '@top/shared/api-client';
+import Phaser from 'phaser';
+import { state } from './app';
+import { installDebug } from './debug';
+import { GAME_H, GAME_W } from './ui';
+import { BootScene } from './scenes/BootScene';
+import { UploadScene } from './scenes/UploadScene';
+import { LearningScene } from './scenes/LearningScene';
+import { FightScene } from './scenes/FightScene';
+import { BossScene } from './scenes/BossScene';
+import { ResultsScene } from './scenes/ResultsScene';
 
-const api = createApiClient({ baseUrl: 'http://localhost:8787' });
-const root = document.getElementById('game');
-if (root) {
-  root.textContent = 'Teach or Perish test client: checking the API...';
-  api
-    .health()
-    .then((h) => {
-      root.textContent = `API ok (llm=${h.llmProvider}, storage=${h.storage})`;
-    })
-    .catch((err: unknown) => {
-      root.textContent = `API not reachable: ${err instanceof Error ? err.message : String(err)}`;
-    });
-}
+state.game = new Phaser.Game({
+  type: Phaser.AUTO,
+  parent: 'game',
+  width: GAME_W,
+  height: GAME_H,
+  backgroundColor: '#10162a',
+  dom: { createContainer: true },
+  scale: { mode: Phaser.Scale.FIT, autoCenter: Phaser.Scale.CENTER_BOTH },
+  scene: [BootScene, UploadScene, LearningScene, FightScene, BossScene, ResultsScene],
+});
+installDebug();
+
+// A handle for poking at the harness from the browser console: `__top.state.run`, `__top.game`.
+(window as unknown as { __top: unknown }).__top = { game: state.game, state };
