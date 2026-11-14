@@ -29,6 +29,7 @@ export interface Repository {
   /** Insert or replace by `pack.id`. */
   saveCoursePack(pack: CoursePack): Promise<void>;
   getCoursePack(courseId: string): Promise<CoursePack | null>;
+  listCoursePacks(): Promise<CoursePack[]>;
 
   // Questions
   /** Insert or replace by question id. */
@@ -47,4 +48,5 @@ export interface Repository {
   /** Insert or replace by `run.id`. */
   saveRun(run: Run): Promise<void>;
   getRun(runId: string): Promise<Run | null>;
+  listRuns(): Promise<Run[]>;
 }

@@ -1,0 +1,225 @@
+{
+  "reference": "User-provided 53-page ArrayLists lecture; previously extracted evidence-backed concepts",
+  "oldRooms": 25,
+  "oldConcepts": 26,
+  "newRooms": 5,
+  "newConcepts": 21,
+  "sourceConceptsAssigned": 26,
+  "sourceEvidenceRetained": true,
+  "plan": {
+    "lessons": [
+      {
+        "title": "From Fixed-Size Arrays to the List Abstraction",
+        "description": "Review how arrays store and access elements, and why their fixed capacity can be limiting. Introduce lists as ordered collections that can change size, along with their common properties and operations.",
+        "learningObjectives": [
+          "Explain how an array stores elements and why indexed access is approximately constant time.",
+          "Describe the limits of array operations and why choosing an array size in advance can be problematic.",
+          "Compare arrays and lists as containers, including why lists are useful when collection size is unknown or elements need to move.",
+          "Identify the properties and basic operations of lists, including ordering, duplicates, and size."
+        ],
+        "concepts": [
+          {
+            "sourceIds": [
+              "c1"
+            ],
+            "title": "Arrays as fixed-size containers",
+            "summary": "Cover arrays as containers for primitive values or object references, with elements stored in a fixed-size sequence."
+          },
+          {
+            "sourceIds": [
+              "c2"
+            ],
+            "title": "Array access time and random access",
+            "summary": "Explain how an element’s address can be calculated from the array’s start and its offset, allowing approximately constant-time reads and writes."
+          },
+          {
+            "sourceIds": [
+              "c3"
+            ],
+            "title": "Array operations and limitations",
+            "summary": "Review allocation, indexed assignment and access, length, and the limited built-in operations of fixed-size arrays. Include the memory tradeoff of allocating a very large array and the use of Arrays.toString() to display contents."
+          },
+          {
+            "sourceIds": [
+              "c4",
+              "c9"
+            ],
+            "title": "Why use lists instead of relying only on arrays",
+            "summary": "Explain how lists address fixed-size limitations and reduce bookkeeping when collection size is unknown or elements need to move. Note that arrays still provide constant-time access and are easy to build on contiguous memory, while array-backed lists may resize."
+          },
+          {
+            "sourceIds": [
+              "c5"
+            ],
+            "title": "Abstract list properties and operations",
+            "summary": "Present a list as an ordered collection that allows duplicates and generally permits null values, though implementations may differ. Cover adding, removing, getting by index, reporting size, and the fact that lists are not necessarily sorted."
+          }
+        ]
+      },
+      {
+        "title": "List Operations and Java Interfaces",
+        "description": "Learn how Java represents list behavior through the List interface and how implementations provide that behavior. Practice distinguishing appending, indexed insertion, replacement, retrieval, removal, and size operations.",
+        "learningObjectives": [
+          "Explain the difference between a list interface and classes that implement it.",
+          "Compare adding at an index with replacing an existing element using set.",
+          "Describe how indexed insertion and removal shift subsequent elements.",
+          "Use list methods and loops to access and process list elements."
+        ],
+        "concepts": [
+          {
+            "sourceIds": [
+              "c7",
+              "c12",
+              "c13"
+            ],
+            "title": "Java List, interfaces, implementations, and abstract data types",
+            "summary": "Explain that Java’s List type describes list behavior, while classes such as ArrayList and LinkedList implement it. Connect interfaces to abstract data types: they specify available behavior without specifying fields or internal implementation, and multiple implementations can support the same interface."
+          },
+          {
+            "sourceIds": [
+              "c8",
+              "c10"
+            ],
+            "title": "List operations and Java usage",
+            "summary": "Cover lists as linear containers operated on through methods rather than array brackets. Explain add, set, get, remove, size, and for-each iteration, including that invalid locations produce errors."
+          },
+          {
+            "sourceIds": [
+              "c6"
+            ],
+            "title": "Shifting elements during indexed insertion and removal",
+            "summary": "Trace how insertion at a location shifts later elements right to make room and how removal shifts later elements left to close the gap."
+          }
+        ]
+      },
+      {
+        "title": "StringList Contracts and Array-Backed Representation",
+        "description": "Examine a small StringList interface and separate the behaviors it promises from the details an implementation must supply. Then build the representation model for an array-backed list, distinguishing the number of stored elements from the backing array’s capacity.",
+        "learningObjectives": [
+          "Explain what an interface specifies and what it leaves to an implementation.",
+          "Describe the role and limits of the StringList interface and its method documentation.",
+          "Distinguish list size from backing-array capacity.",
+          "Explain why get must validate an index against the current list size."
+        ],
+        "concepts": [
+          {
+            "sourceIds": [
+              "c11"
+            ],
+            "title": "StringList operations and scope",
+            "summary": "Review the StringList interface’s append, indexed add, get, remove, and size operations, including its restriction to strings and declared index exceptions."
+          },
+          {
+            "sourceIds": [
+              "c14"
+            ],
+            "title": "Interface contracts and limitations",
+            "summary": "Discuss how a primitive interface may omit useful methods and may not fully specify behavior. Explain the role of method documentation in providing a clearer contract."
+          },
+          {
+            "sourceIds": [
+              "c15",
+              "c16"
+            ],
+            "title": "Representing list size and array capacity",
+            "summary": "Describe a StringArrayList with a backing array and a separate integer size. Explain that the initial capacity is an arbitrary choice, unused slots initially contain null references, and the size counts stored elements rather than array slots."
+          },
+          {
+            "sourceIds": [
+              "c17"
+            ],
+            "title": "Validating indices in get",
+            "summary": "Explain why array-bound checks alone may accept an index beyond the list’s current contents. Cover the valid range from zero up to, but not including, size, and the exception for invalid indices."
+          }
+        ]
+      },
+      {
+        "title": "Implementing Array-Backed List Updates",
+        "description": "Trace how an array-backed list appends, inserts, and removes elements while keeping its size and contents consistent. Follow the resizing procedure used when capacity is exhausted, and consider the aggregate cost of repeated growth.",
+        "learningObjectives": [
+          "Trace an append operation, including its capacity check and size update.",
+          "Explain how a larger backing array is created and populated when the old array is full.",
+          "Trace indexed insertion and removal, including index checks and element shifts.",
+          "Explain why geometric growth gives constant amortized cost per add across a run of operations."
+        ],
+        "concepts": [
+          {
+            "sourceIds": [
+              "c18"
+            ],
+            "title": "Appending elements and maintaining size",
+            "summary": "Show how append uses the current size as the next array index, checks for available capacity, stores the element, and increments size."
+          },
+          {
+            "sourceIds": [
+              "c19"
+            ],
+            "title": "Growing the backing array",
+            "summary": "Explain that arrays cannot be enlarged in place: create a larger array, copy existing contents, and update the array reference. Use the example of doubling and note that the old array is garbage collected after it is no longer referenced."
+          },
+          {
+            "sourceIds": [
+              "c20"
+            ],
+            "title": "Inserting an element at an index",
+            "summary": "Cover the insertion index range from zero through size, the need to enlarge a full array first, and shifting elements right to make room."
+          },
+          {
+            "sourceIds": [
+              "c21"
+            ],
+            "title": "Removing an element by index",
+            "summary": "Explain how removal validates the index, saves the removed value, shifts later elements left, decrements size, and returns the saved value."
+          },
+          {
+            "sourceIds": [
+              "c23"
+            ],
+            "title": "Amortized cost of geometric growth",
+            "summary": "Explain why individual enlargements can require work proportional to the array size, while geometric growth bounds the total enlargement work over a run. Distinguish constant amortized cost per add from the cost of an individual enlargement."
+          }
+        ]
+      },
+      {
+        "title": "Testing, Resizing Tradeoffs, and Alternative Implementations",
+        "description": "Use the StringList interface to test an array-backed implementation and make its contents readable during debugging. Consider how shrinking and growth factors affect space and time, then compare array-backed and linked-list representations through their shared interface.",
+        "learningObjectives": [
+          "Explain how a helper can use StringList methods without depending on StringArrayList internals.",
+          "Describe the purpose of a custom toString method for readable list output.",
+          "Explain the purpose of trimming and the tradeoff involved in choosing a growth factor.",
+          "Compare array-backed and linked-list representations while recognizing that both can implement the same interface."
+        ],
+        "concepts": [
+          {
+            "sourceIds": [
+              "c22"
+            ],
+            "title": "Testing through the StringList interface",
+            "summary": "Describe how a printing helper can rely on interface methods rather than a particular implementation, and use the example sequence of appending, inserting, and removing values."
+          },
+          {
+            "sourceIds": [
+              "c25"
+            ],
+            "title": "Readable StringArrayList output",
+            "summary": "Explain why a custom toString method is useful for testing and debugging, and describe the demonstrated bracketed, comma-separated format."
+          },
+          {
+            "sourceIds": [
+              "c24"
+            ],
+            "title": "Shrinking and growth-factor tradeoffs",
+            "summary": "Cover how an array-backed list can retain unused capacity after removals, Java ArrayList’s trim operation, and the relationship between growth factor, space waste, and resizing work. Include the stated Java and Python growth factors."
+          },
+          {
+            "sourceIds": [
+              "c26"
+            ],
+            "title": "Linked-list representation",
+            "summary": "Contrast storing elements in a backing array with using individually manipulated node objects. Emphasize that different representations can expose the same StringList interface to users."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -49,6 +49,32 @@ h1,h2,.card strong,.gold,.ghost,.eyebrow,header>span,.energy,.gauge,.numbers str
 .battle-cue.hit {border-color:#abd29a}.battle-cue.miss {border-color:#e69979}
 .battle-status {position:absolute;right:28px;top:139px;padding:8px 14px;
     background:#291c2bf2;color:#fff0d1;border:2px solid var(--brass);font:19px Pixelify,monospace}
+.course-stage .turn-outcome-panel{position:absolute;right:28px;bottom:102px;width:420px;display:grid;gap:9px;text-align:left;
+    padding:17px 20px;background:#f4dfb6;color:#452732;border:3px solid #8f574a;box-shadow:inset 0 0 0 2px #d1aa70,3px 4px #21131d}
+.turn-outcome-panel small{font:16px Pixelify,monospace}.turn-outcome-panel strong{font:24px Pixelify,monospace}
+.turn-outcome-panel .outcome-question{font:17px/1.35 Georgia,serif;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
+.turn-outcome-panel .outcome-link{font:15px Pixelify,monospace;color:#653846}
+.course-stage .turn-outcome-panel .ok{color:#2d653c}.course-stage .turn-outcome-panel .bad{color:#8a3433}
+.journey-progress{position:absolute;left:28px;bottom:92px;width:450px;background:#291c2bf2;border:2px solid var(--brass);padding:7px 12px}
+.course-stage .journey-link{font:16px/1.25 Pixelify,monospace;padding:0;margin:0 0 5px;background:none;border:0;box-shadow:none;color:#ffe5b7;text-align:left}
+.course-stage progress{display:block;width:100%;height:9px;accent-color:#65865d}
+.course-stage progress::-webkit-progress-bar{background:#aa8662}.course-stage progress::-webkit-progress-value{background:#65865d}
+.course-stage[data-screen=menu] .roomname{display:none}
+.course-stage[data-screen=menu] .archive-folio{left:72px;top:86px;width:1136px;max-height:602px}
+.course-menu>progress{margin:14px 0}.menu-actions{display:flex;gap:12px;margin:18px 0}
+.lesson-map{display:grid;gap:12px}.map-room{border:1px solid #ac875b;padding:14px 18px;background:#fff0ce}
+.map-room>summary{font:23px Pixelify,monospace;line-height:1.3}
+.topic-guide{border-left:3px solid #bb9969;padding-left:13px;margin:12px 0}
+.teaching-goals li{margin-bottom:9px}.lesson-description{font-size:18px}
+.saved-course{border-bottom:1px solid #bb9969;padding:6px 0 16px}.saved-course p{margin:5px 0 9px}
+.scope-room{border-bottom:1px solid #bb9969;padding:10px 0 14px}.scope-room>p{font-size:15px}
+.room-choice{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:8px;align-items:start}
+.room-choice strong{font:21px Pixelify,monospace}.room-choice input{margin-top:5px}
+.room-preview>summary{font:16px Pixelify,monospace}.room-preview .lesson-guide{font-size:15px}
+.course-stage .archive-folio.planning{left:72px;top:86px;width:1136px;max-height:602px;padding-bottom:0}
+.course-stage .course-setup-layout{grid-template-columns:320px minmax(0,1fr)}
+.expedition-start{position:sticky;bottom:0;background:#f0d9ad;border-top:2px solid #b28c5c;padding:12px 0;display:flex;align-items:center;gap:18px}
+.expedition-start .dim{font-size:15px}
 
 /* A cloth cover, stacked leaves and a ruled margin form the archive and Pip's books. */
 .folio {
@@ -61,7 +87,7 @@ h1,h2,.card strong,.gold,.ghost,.eyebrow,header>span,.energy,.gauge,.numbers str
 }
 .archive-folio,.room-folio,.help-folio {padding:25px 32px 28px;overflow:auto}
 .archive-folio {position:absolute;left:53px;top:103px;width:724px;max-height:550px}
-.room-folio {position:absolute;left:36px;top:139px;width:536px;max-height:463px;padding-top:0;overscroll-behavior:contain}
+.room-folio {position:absolute;left:36px;top:139px;width:536px;max-height:410px;padding-top:0;overscroll-behavior:contain}
 .folio-bar {position:sticky;top:0;z-index:1;display:flex;align-items:center;justify-content:space-between;
     gap:12px;padding:17px 0 10px;background:#f3dfb6;border-bottom:2px solid #bb9969}
 .folio-leaf {padding-top:7px}

@@ -1,5 +1,5 @@
 import { btn, el, host } from './ui.js';
-import { banner, mock, openSettings, state } from './app.js';
+import { banner, mock, openMenu, openSettings, state } from './app.js';
 export const stage=el('main','stage course-stage');
 const heading=el('div','roomname');
 const content=el('section','');
@@ -53,19 +53,26 @@ export class RoomView {
     }
 }
 export function frame(screen:string) {
-    const badge=state.run ? state.run.studentEmoji+' · Target '+state.run.targetGrade : mock ? 'Practice course' : 'The Lantern Archive';
+    const badge=state.run ? state.run.studentEmoji+' · Target '+state.run.targetGrade : mock ? 'Practice course' : 'My archive';
     const header=el('header','',el('span','','Teach or Perish'),el('div','nav-right',badge));
     if (screen !== 'settings') header.append(btn('Settings', openSettings, 'alt'));
-    if (state.run && screen !== 'report') header.append(btn('Pause', () => {
-        const resume=btn('Resume',()=>pause.close());
-        const pause=el('dialog','course-pause',el('h2','','Paused'),el('p','','Timed help deadlines keep running.'),resume);
-        stage.append(pause);
-        pause.onclose=()=>pause.remove();
-        pause.showModal();
-    },'alt'));
+    if (state.run && screen !== 'menu') {
+        header.append(btn('Rooms', () => void openMenu(), 'alt'));
+        if (screen !== 'report') header.append(btn('Pause', () => void openMenu(), 'alt'));
+    }
     stage.dataset.screen=screen;
     heading.replaceChildren(); content.replaceChildren();
     stage.replaceChildren(header,heading,content,banner);
+    if (state.run && (screen === 'room' || screen === 'boss')) {
+        const run = state.run;
+        const complete = run.rooms.filter(r => r.state === 'passed').length + (run.phase === 'room_result' && run.room?.passed ? 1 : 0);
+        const progress=el('progress'); progress.max=run.rooms.length; progress.value=complete;
+        progress.setAttribute('aria-label','Rooms completed');
+        const label = run.currentRoom ? `Room ${run.roomIndex+1}/${run.rooms.length}: ${run.currentRoom.title}` : 'All rooms cleared · Final examination';
+        const map = btn(label, () => void openMenu(), 'journey-link');
+        map.title = run.rooms.map((r,i)=>`${i+1}. ${r.title} (${r.state})`).join('\n');
+        stage.append(el('nav','journey-progress',map,progress));
+    }
     content.className=screen==='title'?'cover':screen==='room'||screen==='boss'?'room-field':'folio archive-folio';
 }
 export function mount() {

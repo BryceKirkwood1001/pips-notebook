@@ -9,12 +9,22 @@ export let apiOrigin = params.get('api') || 'http://localhost:8787';
 try { apiOrigin = params.get('api') || localStorage.getItem('top.apiOrigin') || apiOrigin; } catch { /* Storage may be disabled. */ }
 export let api = mock ? createMockApi() : createApiClient({baseUrl: apiOrigin});
 export const state: {run: PublicRun | null; results: Results | null} = {run:null, results:null};
-export type Screen = 'Title' | 'Upload' | 'Learning' | 'Fight' | 'Boss' | 'Results' | 'Settings';
+export type Screen = 'Title' | 'Upload' | 'Learning' | 'Fight' | 'Boss' | 'Results' | 'Settings' | 'Menu';
 let currentScreen: Screen = 'Title';
 let settingsReturn: Screen = 'Title';
 export function goTo(screen: Screen) { currentScreen = screen; game.scenes.go(screen); }
 export function openSettings() { settingsReturn = currentScreen; goTo('Settings'); }
-export function backFromSettings() { goTo(state.run ? sceneForPhase(state.run.phase) : settingsReturn === 'Settings' ? 'Title' : settingsReturn); }
+export function backFromSettings() { goTo(state.run?.pausedAt ? 'Menu' : state.run ? sceneForPhase(state.run.phase) : settingsReturn === 'Settings' ? 'Title' : settingsReturn); }
+export async function openMenu() {
+    if (!state.run) return goTo('Upload');
+    const run = await call(() => api.pauseRun(state.run!.id));
+    if (run) {setRun(run);goTo('Menu');}
+}
+export async function continuePlaying() {
+    if (!state.run) return goTo('Upload');
+    const run=await call(()=>api.resumeRun(state.run!.id));
+    if(run){setRun(run);goTo(sceneForPhase(run.phase));}
+}
 export function setApiOrigin(origin: string) {
     if (apiOrigin !== origin) { setRun(null); state.results = null; settingsReturn = 'Title'; needsSync = false; }
     apiOrigin = origin;
@@ -52,7 +62,7 @@ async function reconcile() {
     if (!state.run) return;
     const snapshot=await api.getRun(state.run.id);
     setRun(snapshot); needsSync=false;
-    goTo(sceneForPhase(snapshot.phase));
+    goTo(snapshot.pausedAt ? 'Menu' : sceneForPhase(snapshot.phase));
 }
 export async function call<T>(action:()=>Promise<T>):Promise<T|undefined> {
     if(inflight) return;
@@ -72,5 +82,5 @@ export async function call<T>(action:()=>Promise<T>):Promise<T|undefined> {
 }
 export async function resume(id:string) {
     const run=await call(()=>api.getRun(id));
-    if(run) {setRun(run);goTo(sceneForPhase(run.phase));}
+    if(run) {setRun(run);goTo(run.pausedAt ? 'Menu' : sceneForPhase(run.phase));}
 }

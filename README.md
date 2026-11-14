@@ -36,7 +36,7 @@ For the reference test harness instead, open [localhost:5174](http://localhost:5
 npm run dev:client
 ```
 
-**No keys are needed to try it.** With an empty `.env` the server uses built-in deterministic mocks in place of the language model and keeps everything in memory, and the two sample courses load instantly.
+**No keys are needed to try it.** With an empty `.env` the server uses built-in deterministic mocks in place of the language model. Courses, source chunks, question banks, notebooks and runs persist in ignored `.local/archive`; the two sample courses load instantly. Tests use isolated memory storage by default. MongoDB remains available when configured.
 
 Use the bundled samples for the offline demo. Arbitrary uploads use a limited heuristic in mock mode and can fail coverage; a `202` upload response means accepted, so keep polling ingest status.
 
@@ -55,6 +55,8 @@ Every other setting has a default and is described in `.env.example`.
 Open **Settings** in the game's header to select **OpenAI**, **Google Gemini**, or **Offline**, change generation/embedding model names, replace/remove keys, or change the backend URL. Connection details separates the interactive timeout (30 seconds by default) from course preparation (180 seconds per request). Large uploads are outlined in bounded page/text batches. **Test connection** checks unsaved settings; **Save & apply** activates them without restarting the backend. A live connection test uses a small amount of API usage.
 
 During preparation, **Thinking** below Stage shows current task/page progress and public OpenAI reasoning summaries when available. Active document streams extend their idle timeout, with a ten-minute request cap. See [API_SETTINGS.md](docs/API_SETTINGS.md) for model support and fallback behavior.
+
+**My archive** lists saved courses and recent expeditions. New uploads receive a whole-course lesson plan that groups related concepts into a few complete rooms, with descriptions and teaching goals. **Rooms** and **Pause** open the progress/lesson menu; pausing also freezes pending help deadlines on the backend. Combat keeps a clickable turn outcome above Next turn, linking to that turn's feedback. See [ARCHIVE_AND_LESSONS.md](docs/ARCHIVE_AND_LESSONS.md).
 
 The same styled Settings component is available at [localhost:5174/api-settings.html](http://localhost:5174/api-settings.html) with `npm run dev:client`, including while the separate Phaser AE runtime is unavailable. The harness course picker also links to it.
 
@@ -170,6 +172,7 @@ Libraries and services this project uses:
 | [Fastify](https://fastify.dev), [`@fastify/cors`](https://github.com/fastify/fastify-cors), [`@fastify/multipart`](https://github.com/fastify/fastify-multipart) | The HTTP API and file uploads | MIT |
 | [Zod](https://zod.dev), [`zod-to-json-schema`](https://github.com/StefanTerdell/zod-to-json-schema) | Data schemas and structured model output | MIT, ISC |
 | [`@google/genai`](https://github.com/googleapis/js-genai) with the Google Gemini API | The AI student, grading, course pack generation, embeddings | Apache-2.0 |
+| [OpenAI API](https://platform.openai.com/docs) (called directly over HTTPS, no SDK) | Optional second provider for the AI student, grading, course pack generation and embeddings | OpenAI terms |
 | [MongoDB Node.js driver](https://github.com/mongodb/node-mongodb-native) with MongoDB Atlas Vector Search | Storage and vector search | Apache-2.0 |
 | [`unpdf`](https://github.com/unjs/unpdf) | PDF text extraction | MIT |
 | [`pdf-lib`](https://pdf-lib.js.org) | Generating small PDFs inside tests | MIT |

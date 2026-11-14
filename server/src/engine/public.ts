@@ -38,7 +38,9 @@ function publicRooms(run: Run, pack: CoursePack): PublicRunRoom[] {
     return {
       id: rid,
       title: room?.title ?? rid,
-      concepts: (room?.conceptIds ?? []).map((id) => ({ id, title: conceptTitle(pack, id) })),
+      ...(room?.description ? { description: room.description } : {}),
+      ...(room?.learningObjectives ? { learningObjectives: [...room.learningObjectives] } : {}),
+      concepts: (room?.conceptIds ?? []).map((id) => ({ id, title: conceptTitle(pack, id), summary: pack.concepts.find(c => c.id === id)?.summary ?? '' })),
       ready: room ? roomReady(pack, room) : false,
       state: i < run.roomIndex ? 'passed' : i === run.roomIndex ? 'current' : 'upcoming',
     };
@@ -111,5 +113,6 @@ export function toPublicRun(run: Run, ctx: EngineContext, config: Config): Publi
   }
   if (pendingHelpMe) out.pendingHelpMe = pendingHelpMe;
   if (run.results) out.results = structuredClone(run.results);
+  if (run.pausedAt) out.pausedAt = run.pausedAt;
   return out;
 }

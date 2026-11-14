@@ -5,7 +5,7 @@ import { btn, el, questionEl, clock } from './ui.js';
 const LEVELS = ['', 'Easy', 'Fair', 'Tricky', 'Tough', 'Brutal'];
 
 /** Returns the modal content and a stop() that clears the countdown. `submit` gets the answer. */
-export function buildHelp(ev: HelpMeTurn, submit: (a: Answer) => void): { el: HTMLElement; stop: () => void } {
+export function buildHelp(ev: HelpMeTurn, submit: (a: Answer) => void, expire?: () => void): { el: HTMLElement; stop: () => void } {
   const q = ev.question;
   let sent = false;
   let tick = 0;
@@ -96,6 +96,7 @@ export function buildHelp(ev: HelpMeTurn, submit: (a: Answer) => void): { el: HT
   const hint = el("p", "warn");
   const go = (final: boolean) => {
     if (sent) return;
+    if (final && expire) { sent=true;stop();expire();return; }
     const answer = build(final);
     if (!final && ((q.type === 'mcq' && !input.querySelector('.sel')) ||
         (q.type === 'true_false' && !input.querySelector('.sel')) ||

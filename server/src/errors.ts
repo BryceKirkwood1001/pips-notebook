@@ -12,6 +12,7 @@ export const ERROR_STATUS = {
   not_found: 404,
   /** The action is not allowed in the run's current phase. */
   wrong_phase: 409,
+  run_paused: 409,
   /** The "Help me!" event id is not the pending one (already answered, or never existed). */
   help_event_not_pending: 409,
   /** A learning-phase question that is not open (already answered or skipped). */

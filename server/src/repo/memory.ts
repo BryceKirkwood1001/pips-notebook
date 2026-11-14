@@ -19,6 +19,8 @@ export function createMemoryRepository(): Repository {
   return {
     async init() {},
     async close() {},
+    async listCoursePacks() { return [...courses.values()].map(p => structuredClone(p)); },
+    async listRuns() { return [...runs.values()].map(r => structuredClone(r)).sort((a,b) => b.updatedAt.localeCompare(a.updatedAt)); },
 
     async saveCoursePack(pack) {
       courses.set(pack.id, structuredClone(pack));

@@ -2,6 +2,8 @@ import { Page, panel, title } from './page.js';
 import { STUDENT_EMOJIS, TARGET_GRADES, type PublicCourse, type StudentEmoji, type TargetGrade } from './api-client.js';
 import { api, call, describeError, goTo, setRun, showError, state } from './app.js';
 import { btn, el, clock } from './ui.js';
+import { resume } from './app.js';
+import { lessonGuide } from './lesson-guide.js';
 
 const STAGES = ['parsing', 'outline', 'style', 'concepts', 'ready'];
 
@@ -53,13 +55,24 @@ export class UploadScene extends Page {
 
   private buildSource() {
     const samples = el('div', 'box', el('div', 'dim', 'Loading samples...'));
-    void call(() => api.listSamples()).then((res) => {
+    const archive = el('div','saved-courses',el('p','dim','Loading your archive…'));
+    void call(async () => ({samples:await api.listSamples(), archive:await api.listArchive()})).then((res) => {
+      if (!this.active) return;
       samples.replaceChildren();
-      if (!res) return samples.append(btn('Reload samples', () => goTo('Upload')));
-      for (const s of res.samples) {
+      archive.replaceChildren();
+      if (!res) return samples.append(btn('Reload archive', () => goTo('Upload')));
+      for (const c of res.archive.courses) {
+        const runs = res.archive.runs.filter(r=>r.courseId===c.id);
+        const entry=el('article','saved-course',el('h4','',c.title),el('p','dim',`${c.rooms.length} lessons · ${c.status.stage}`),
+          btn('View lessons',()=>this.begin({courseId:c.id}),'alt'));
+        if (runs[0]) entry.append(btn(runs[0].phase==='results'?'View last results':'Resume expedition',()=>void resume(runs[0].id)));
+        archive.append(entry);
+      }
+      if (!res.archive.courses.length) archive.append(el('p','dim','Your prepared dungeons will appear here, ready to return to after a restart.'));
+      for (const s of res.samples.samples) {
         samples.append(btn(s.title, async () => { this.retryUpload = null; this.begin(await call(() => api.seedCourse(s.id))); }));
       }
-      if (!res.samples.length) samples.append(el('div', 'dim', 'No samples available.'));
+      if (!res.samples.samples.length) samples.append(el('div', 'dim', 'No samples available.'));
     });
 
     const files = el('input');
@@ -98,7 +111,7 @@ export class UploadScene extends Page {
     });
 
     const methods = [
-      { name: 'Library', body: el('div', '', el('h3', '', 'Choose a volume'), samples) },
+      { name: 'Library', body: el('div', '', el('h3', '', 'Your saved dungeons'), archive, el('h3', '', 'Sample lessons'), samples) },
       { name: 'Files', body: el('div', '', el('h3', '', 'Bring your own pages'), picker, fileTitle, upload) },
       { name: 'Notes', body: el('div', '', el('h3', '', 'Transcribe your notes'), text, textTitle, create) },
     ];
@@ -113,7 +126,7 @@ export class UploadScene extends Page {
       });
     };
     bookmarks.append(...buttons);
-    this.sourceEl.append(el('h2', '', 'The lesson archive'), bookmarks, ...methods.map(m => m.body));
+    this.sourceEl.append(el('h2', '', 'My archive'), bookmarks, ...methods.map(m => m.body));
     select(0);
   }
 
@@ -124,6 +137,7 @@ export class UploadScene extends Page {
     this.roomsEl.replaceChildren(); this.startBtn.disabled = true;
     this.hintEl.textContent = 'Preparing your course…';
     this.courseId = res.courseId;
+    this.courseEl.closest('section')?.classList.add('planning');
     this.sourceEl.style.display = 'none';
     this.courseEl.style.display = 'block';
     this.timer = clock.setInterval(() => void this.poll(), 1000);
@@ -152,14 +166,14 @@ export class UploadScene extends Page {
 
     const setup = el(
       'div', '',
-      el('h3', '', 'Scope (rooms to play)'), this.roomsEl,
       el('h3', '', 'Target grade'), grade,
       el('h3', '', 'Your student'), emojis,
-      el('div', '', this.startBtn), this.hintEl,
+      el('h3', '', 'Scope (rooms to play)'), this.roomsEl,
     );
     this.courseEl.append(btn('Change course', () => goTo('Upload'), 'alt'),
       el('h2', '', 'Plan your expedition'),
-      el('div', 'cols', el('div', 'box', this.progressEl), el('div', 'box', setup)),
+      el('div', 'cols course-setup-layout', el('div', 'box', this.progressEl), el('div', 'box', setup)),
+      el('div', 'expedition-start', this.startBtn, this.hintEl),
     );
   }
 
@@ -189,7 +203,6 @@ export class UploadScene extends Page {
   private renderProgress() {
     const c = this.course;
     if (!c) return;
-    const mark = (ok: boolean) => (ok ? '✅' : '⏳');
     const stage = c.status.stage;
     const stageLine = el('div', '', 'Stage: ');
     for (const s of STAGES) stageLine.append(el('span', s === stage ? 'warn' : 'dim', (s === stage ? `[${s}]` : s) + ' > '));
@@ -209,19 +222,16 @@ export class UploadScene extends Page {
       if (/timed out|timeout/i.test(c.status.error ?? '')) this.progressEl.append(el('p', 'dim', 'Try again, or increase the course preparation timeout in Settings.'));
       if (this.retryUpload) this.progressEl.append(btn('Retry preparation', () => void this.retryUpload?.()));
     }
-    this.progressEl.append(el('h4', '', 'Concepts'));
-    for (const u of c.units) {
-      this.progressEl.append(el('div', 'dim', u.title));
-      for (const k of u.concepts) this.progressEl.append(el('div', '', `${mark(k.ready)} ${k.title}`));
-    }
     for (const file of c.files) this.progressEl.append(el('p', 'dim', file.name + ' · ' + file.type + ' · ' + file.pages + ' pages'));
-    this.progressEl.append(el('h4', '', 'Rooms'));
-    for (const r of c.rooms) this.progressEl.append(el('div', '', `${mark(r.ready)} ${r.title}`));
+    const count=c.rooms.filter(r=>r.ready).length;
+    const progress=el('progress');progress.max=c.rooms.length||1;progress.value=count;progress.setAttribute('aria-label','Lessons prepared');
+    this.progressEl.append(el('h4','',`${count} of ${c.rooms.length} lessons prepared`),progress);
   }
 
   private renderRooms() {
     const c = this.course;
     if (!c) return;
+    const open = new Set(Array.from(this.roomsEl.querySelectorAll<HTMLDetailsElement>('details[open]'),node=>node.dataset.roomId));
     this.roomsEl.replaceChildren();
     for (const r of c.rooms) {
       const cb = el('input');
@@ -230,11 +240,20 @@ export class UploadScene extends Page {
       cb.onchange = () => {
         if (cb.checked) this.chosen.add(r.id);
         else this.chosen.delete(r.id);
-        this.renderRooms();
+        this.updateStart();
       };
-      const label = el('label', '', cb, ` ${r.title} `, el('span', r.ready ? 'ok' : 'warn', r.ready ? 'ready' : 'pending'));
-      this.roomsEl.append(el('div', '', label));
+      const label = el('label', 'room-choice', cb, el('strong','',r.title), el('small', r.ready ? 'ok' : 'warn', r.ready ? 'ready' : 'preparing'));
+      const concepts=c.units.flatMap(u=>u.concepts).filter(k=>r.conceptIds.includes(k.id));
+      const guide=el('details','room-preview',el('summary','','What will I teach?'),lessonGuide({...r,concepts},false));
+      guide.dataset.roomId=r.id;guide.open=open.has(r.id);
+      this.roomsEl.append(el('div', 'scope-room', label, r.description?el('p','',r.description):null,guide));
     }
+    this.updateStart();
+  }
+
+  private updateStart() {
+    const c=this.course;
+    if(!c)return;
     const first = c.rooms.find((r) => this.chosen.has(r.id));
     this.startBtn.disabled = !first || !first.ready || c.status.stage === 'error';
     this.hintEl.textContent = c.status.stage === 'error'

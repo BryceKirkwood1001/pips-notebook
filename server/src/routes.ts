@@ -79,6 +79,7 @@ export function registerRoutes(app: FastifyInstance, services: Services, setting
   // ── Courses ───────────────────────────────────────────────────────────────
 
   app.get('/api/samples', async () => services.listSamples());
+  app.get('/api/archive', async (_req, reply) => { reply.header('cache-control', 'no-store'); return services.listArchive(); });
 
   app.post('/api/courses/seed/:sample', async (req) => services.seedCourse(param(req, 'sample')));
 
@@ -105,6 +106,8 @@ export function registerRoutes(app: FastifyInstance, services: Services, setting
   });
 
   app.get('/api/runs/:id', async (req) => services.getRun(param(req, 'id')));
+  app.post('/api/runs/:id/pause', async req => services.pauseRun(param(req, 'id')));
+  app.post('/api/runs/:id/resume', async req => services.resumeRun(param(req, 'id')));
 
   app.post('/api/runs/:id/teach', async (req) => {
     const body = parse(TeachBodySchema, req.body, 'body');

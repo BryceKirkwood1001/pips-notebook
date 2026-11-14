@@ -1,4 +1,4 @@
-import { api, call, goTo, sceneForPhase, setRun, state } from './app.js';
+import { api, call, goTo, openMenu, sceneForPhase, setRun, state } from './app.js';
 import type { Answer, HelpMeTurn, PublicRun, TurnResult } from './api-client.js';
 import { buildHelp } from './help.js';
 import { Page, panel, RoomView, stage, title } from './page.js';
@@ -37,7 +37,26 @@ export class Battle extends Page {
             }));
         }
         view.inventory.append(view.entry('Notebook', 'Pip’s notebook', mdToEl(run.notebookMd)));
-        if (log.childElementCount) view.inventory.append(view.entry('Battle log', 'Battle chronicle', log));
+        if (log.childElementCount) {
+            const book=view.entry('Battle log', 'Battle chronicle', log);
+            view.inventory.append(book);
+            const turns=fight.log.filter(e=>e.kind==='student_answer'||e.kind==='help_result');
+            const latest=turns[turns.length-1]!;
+            if(latest.kind==='student_answer'||latest.kind==='help_result') {
+                const label=latest.kind==='help_result'?'Your help':'Pip’s answer';
+                const result=latest.kind==='help_result'&&latest.late?'Time expired':latest.correct?'Correct':'Incorrect';
+                const damage=latest.damage===0?'No damage':`${Number(latest.damage.toFixed(1))} ${this.boss?'health':'heart'} lost`;
+                const outcome=btn('',()=>{
+                    if(book.getAttribute('aria-expanded')!=='true')book.click();
+                    const card=log.querySelector<HTMLDetailsElement>('details');
+                    if(card){card.open=true;card.scrollIntoView({block:'nearest'});card.querySelector('summary')?.focus();}
+                },'turn-outcome-panel');
+                outcome.append(el('small','',`Turn ${turns.length} · ${label}`),el('strong',latest.correct?'ok':'bad',`${result} · ${damage}`),
+                    el('span','outcome-question',latest.question.prompt),el('span','outcome-link','See how this turn played out →'));
+                outcome.setAttribute('aria-label',`Turn ${turns.length} outcome: ${result}. ${damage}. Open battle log`);
+                view.root.append(outcome);
+            }
+        }
         if (!summary) actions.prepend(el('span', 'turn-count', 'Answered ' + Math.min(fight.turn, fight.totalTurns) + ' of ' + fight.totalTurns));
         panel(this, view.root);
         if(run.pendingHelpMe) this.helpModal(run.pendingHelpMe);
@@ -51,8 +70,14 @@ export class Battle extends Page {
             else {panel(this,btn('Refresh help request',()=>void this.sync()));}
         };
         const content=stage.querySelector<HTMLElement>('section')!;
-        const built=buildHelp(event,a=>void submit(a));
-        const modal=el('div','veil',el('section','folio help-folio',built.el));
+        const built=buildHelp(event,a=>void submit(a),()=>void (async()=>{
+            const result=await call(()=>api.turn(state.run!.id));
+            if(!this.active)return;
+            this.stopHelp();
+            if(result)await this.handle(result);
+            else panel(this,btn('Refresh help request',()=>void this.sync()));
+        })());
+        const modal=el('div','veil',el('section','folio help-folio',btn('Pause & rooms',()=>void openMenu(),'alt'),built.el));
         modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Help your student');
         content.inert=true;stage.append(modal);
         const header=stage.querySelector('header')!;
@@ -94,11 +119,6 @@ export class Battle extends Page {
                 }
                 this.create();
                 animateAnswer(event.correct);
-                const cue = el('div', 'battle-cue ' + (event.correct ? 'hit' : 'miss'),
-                    event.correct ? 'Pip answered correctly!' : 'The slime lands a hit!');
-                cue.setAttribute('role','status');
-                stage.querySelector('.room-view')?.append(cue);
-                game.after(2.6, () => cue.remove());
             }
         }
     }
@@ -112,6 +132,6 @@ function animateAnswer(correct:boolean) {
     const attacker=game.roster.tagged(correct?'student':'monster')[Symbol.iterator]().next().value;
     const victim=game.roster.tagged(correct?'monster':'student')[Symbol.iterator]().next().value;
     if(attacker)game.tween.to(attacker,{x:attacker.x+(correct?100:-100)},{duration:.14,yoyo:true});
-    if(victim)game.tween.from(victim,{alpha:.15},{duration:.4});
+    if(victim)game.tween.to(victim,{alpha:.2},{duration:.12,yoyo:true,onComplete:()=>{if(victim.alive)victim.alpha=1;}});
 }
 

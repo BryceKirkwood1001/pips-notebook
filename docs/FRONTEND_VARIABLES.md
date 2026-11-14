@@ -109,8 +109,10 @@ File formats are `.pdf`, `.txt`, `.md` (`.markdown` is also accepted by the serv
 | `course.files[].pages` | `number` | Page count |
 | `course.units[].id`, `.title` | `string` | Unit grouping/heading |
 | `course.units[].concepts[].id`, `.title` | `string` | Concept identity/label |
+| `course.units[].concepts[].summary?` | `string` | Describes what the learner should explain |
 | `course.units[].concepts[].ready` | `boolean` | Ready/pending indicator |
 | `course.rooms[].id`, `.title` | `string` | Room checkbox identity/label |
+| `course.rooms[].description?`, `.learningObjectives?` | `string`, `string[]` | Lesson scope and concrete teaching checklist |
 | `course.rooms[].conceptIds[]` | `string[]` | Concepts covered by each room |
 | `course.rooms[].ready` | `boolean` | Whether the room can start |
 | `course.styleSummary.voice` | `string` | Optional course style summary |
@@ -159,6 +161,7 @@ These are available on the run, even if a particular screen does not render them
 | `run.rules.maxStudentQuestions` | `number` | Max open questions label |
 | `run.rules.helpMeTimed` | `boolean` | Timed/untimed UI; event `deadline` is authoritative |
 | `run.createdAt`, `run.updatedAt` | ISO `string` | Optional metadata |
+| `run.pausedAt?` | ISO `string` | Open Menu instead of gameplay; resume through `resumeRun` |
 
 `PublicRunRoom`, used in both `rooms[]` and `currentRoom`:
 
@@ -166,10 +169,14 @@ These are available on the run, even if a particular screen does not render them
 |---|---|---|
 | `id`, `title` | `string` | Room identity/title |
 | `concepts[].id`, `.title` | `string` | Concepts to teach |
+| `concepts[].summary?` | `string` | Teaching guide topic explanation |
+| `description?`, `learningObjectives?` | `string`, `string[]` | Lesson scope/checklist in setup, Learning and Menu |
 | `ready` | `boolean` | Room readiness |
 | `state` | `upcoming \| current \| passed` | Progress-map styling |
 
 Navigation: `learning` → Learning; `room` or `room_result` → Fight; `boss` → Boss; `results` → Results. Keep the server's current run rather than recalculating phase/health locally.
+
+New native-game navigation: `pausedAt` opens `Menu`; Rooms/Pause calls `pauseRun(id)` and Resume expedition calls `resumeRun(id)`. `listArchive()` supplies public `courses[]` and recent run summaries for My archive / Your saved dungeons. The game uses the latest `student_answer`/`help_result` in the current fight log for its persistent outcome card. Click opens and focuses that same turn in the chronicle. See [ARCHIVE_AND_LESSONS.md](ARCHIVE_AND_LESSONS.md) for the full native file map and persistence behavior.
 
 ## Learning and notebook variables
 

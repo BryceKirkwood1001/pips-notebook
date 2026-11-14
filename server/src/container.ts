@@ -25,6 +25,8 @@ export interface ContainerOptions {
   /** Tests default to session-only settings. The server persists to the ignored .local folder. */
   settingsFile?: string | false;
   llmFactory?: LlmFactory;
+  /** Real server defaults to .local/archive; tests stay in memory unless explicitly set. */
+  dataDir?: string | false;
 }
 
 export interface Container {
@@ -41,7 +43,8 @@ export async function createContainer(options: ContainerOptions = {}): Promise<C
   const clock = options.clock ?? systemClock;
   const file = options.settingsFile === false ? undefined : options.settingsFile ?? (options.env ? undefined : fileURLToPath(new URL('../../.local/api-settings.json', import.meta.url)));
   const settings = await createApiSettingsManager(config, { file, llmFactory: options.llmFactory });
-  const wired = await wire({ config, clock, settings, llmFactory: options.llmFactory, seed: options.seed, samplesDir: options.samplesDir });
+  const dataDir = options.dataDir === false ? undefined : options.dataDir ?? (options.env ? undefined : fileURLToPath(new URL('../../.local/archive', import.meta.url)));
+  const wired = await wire({ config, clock, settings, dataDir, llmFactory: options.llmFactory, seed: options.seed, samplesDir: options.samplesDir });
   return {
     config,
     clock,

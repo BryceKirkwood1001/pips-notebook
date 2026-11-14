@@ -21,7 +21,7 @@ import type {
 export interface HealthInfo {
   ok: boolean;
   llmProvider: 'gemini' | 'openai' | 'mock';
-  storage: 'mongodb' | 'memory';
+  storage: 'mongodb' | 'memory' | 'local';
   debug: boolean;
 }
 
@@ -40,10 +40,13 @@ export interface Services {
   /** Saves an empty pack, starts progressive ingest in the background and returns at once. */
   createCourse(input: { title?: string; files: UploadInput[] }): Promise<CreateCourseResponse>;
   getCourse(courseId: string): Promise<PublicCourse>;
+  listArchive(): Promise<{ courses: PublicCourse[]; runs: { id: string; courseId: string; phase: PublicRun['phase']; roomIndex: number; updatedAt: string; pausedAt?: string }[] }>;
 
   // Runs
   createRun(body: CreateRunBody): Promise<PublicRun>;
   getRun(runId: string): Promise<PublicRun>;
+  pauseRun(runId: string): Promise<PublicRun>;
+  resumeRun(runId: string): Promise<PublicRun>;
   teach(runId: string, explanation: string): Promise<TeachResponse>;
   answerQuestion(runId: string, studentQuestionId: string, answer: string): Promise<AnswerQuestionResponse>;
   skipQuestion(runId: string, studentQuestionId: string): Promise<SkipQuestionResponse>;

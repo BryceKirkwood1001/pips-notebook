@@ -219,6 +219,8 @@ export const RoomSchema = z.object({
   order: z.number().int(),
   /** Usually one concept; tiny neighbours are merged, huge ones split. */
   conceptIds: z.array(z.string()).min(1),
+  description: z.string().optional(),
+  learningObjectives: z.array(z.string()).optional(),
 });
 export type Room = z.infer<typeof RoomSchema>;
 
@@ -794,6 +796,7 @@ export const RunSchema = z.object({
   rngState: z.number().int(),
   createdAt: z.string(),
   updatedAt: z.string(),
+  pausedAt: z.string().optional(),
 });
 export type Run = z.infer<typeof RunSchema>;
 
@@ -809,11 +812,13 @@ export const PublicStudentQuestionSchema = z.object({
 });
 export type PublicStudentQuestion = z.infer<typeof PublicStudentQuestionSchema>;
 
-export const ConceptRefSchema = z.object({ id: z.string(), title: z.string() });
+export const ConceptRefSchema = z.object({ id: z.string(), title: z.string(), summary: z.string().optional() });
 
 export const PublicRunRoomSchema = z.object({
   id: z.string(),
   title: z.string(),
+  description: z.string().optional(),
+  learningObjectives: z.array(z.string()).optional(),
   concepts: z.array(ConceptRefSchema),
   /** False while the room's concepts are still being ingested. */
   ready: z.boolean(),
@@ -873,6 +878,7 @@ export const PublicRunSchema = z.object({
   }),
   createdAt: z.string(),
   updatedAt: z.string(),
+  pausedAt: z.string().optional(),
 });
 export type PublicRun = z.infer<typeof PublicRunSchema>;
 
@@ -886,11 +892,11 @@ export const PublicCourseSchema = z.object({
     z.object({
       id: z.string(),
       title: z.string(),
-      concepts: z.array(z.object({ id: z.string(), title: z.string(), ready: z.boolean() })),
+      concepts: z.array(z.object({ id: z.string(), title: z.string(), summary: z.string().optional(), ready: z.boolean() })),
     }),
   ),
   rooms: z.array(
-    z.object({ id: z.string(), title: z.string(), conceptIds: z.array(z.string()), ready: z.boolean() }),
+    z.object({ id: z.string(), title: z.string(), description: z.string().optional(), learningObjectives: z.array(z.string()).optional(), conceptIds: z.array(z.string()), ready: z.boolean() }),
   ),
   styleSummary: z.object({
     voice: z.string(),

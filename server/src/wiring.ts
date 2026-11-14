@@ -6,7 +6,7 @@
  *   LLM_PROVIDER=gemini            -> Gemini client + Gemini-backed tasks
  *   LLM_PROVIDER=openai            -> OpenAI client + the same provider-independent tasks
  *   MONGODB_URI set                -> MongoDB repository + Atlas Vector Search
- *   MONGODB_URI empty              -> in-memory repository + in-memory cosine search
+ *   MONGODB_URI empty              -> local disk archive; explicit test environments use memory
  */
 import { fileURLToPath } from 'node:url';
 import { MongoClient, type Db } from 'mongodb';
@@ -29,6 +29,7 @@ import {
   createRetriever,
 } from './rag';
 import { createMemoryRepository, createMongoRepository } from './repo';
+import { createFileRepository, createFileVectorStore } from './repo/file';
 import { createServices } from './services/create';
 import type { Services } from './services/types';
 
@@ -41,6 +42,7 @@ export interface WiringOptions {
   seed?: number;
   /** Default: the repo's `samples/` folder. */
   samplesDir?: string;
+  dataDir?: string;
 }
 
 export interface Wired {
@@ -61,7 +63,7 @@ async function connectMongo(config: Config): Promise<{ client: MongoClient; db: 
     return { client, db };
   } catch (err) {
     console.error(
-      '[server] Could not connect to MongoDB. Falling back to IN-MEMORY storage: nothing will be saved.',
+      '[server] Could not connect to MongoDB. Using the configured local storage fallback.',
       err instanceof Error ? err.message : err,
     );
     await client.close().catch(() => undefined);
@@ -75,10 +77,17 @@ export async function wire(options: WiringOptions): Promise<Wired> {
   const legacyEmbedding = { provider: config.llmProvider, model: config.embeddingModel, dims: config.embeddingDims };
   const mongo = await connectMongo(config);
 
-  const repo = mongo ? createMongoRepository(mongo.db) : createMemoryRepository();
-  const store = mongo ? createAtlasVectorStore(mongo.db, config) : createMemoryVectorStore();
+  const repo = mongo ? createMongoRepository(mongo.db) : options.dataDir ? createFileRepository(options.dataDir) : createMemoryRepository();
+  const store = mongo ? createAtlasVectorStore(mongo.db, config) : options.dataDir ? createFileVectorStore(options.dataDir) : createMemoryVectorStore();
   await repo.init();
   await store.init();
+  // Interrupted preparation cannot continue without the original upload. Never leave it waiting forever.
+  for (const pack of await repo.listCoursePacks()) {
+    if (!['ready', 'error'].includes(pack.status.stage)) {
+      pack.status = { ...pack.status, stage: 'error', error: 'Preparation was interrupted by a server restart. Upload this material again to finish preparing it.' };
+      await repo.saveCoursePack(pack);
+    }
+  }
 
   const chunker = createChunker(config);
 
@@ -128,7 +137,7 @@ export async function wire(options: WiringOptions): Promise<Wired> {
     runIngest,
     samplesDir: options.samplesDir ?? DEFAULT_SAMPLES_DIR,
     newSeed: options.seed === undefined ? randomSeed : () => options.seed as number,
-    storage: mongo ? 'mongodb' : 'memory',
+    storage: mongo ? 'mongodb' : options.dataDir ? 'local' : 'memory',
   });
 
   return {

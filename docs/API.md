@@ -20,11 +20,14 @@ The client is [shared/src/api-client.ts](../shared/src/api-client.ts), and the c
 | POST | `/api/settings/api` | 200 |
 | POST | `/api/settings/api/test` | 200 |
 | GET | `/api/samples` | 200 |
+| GET | `/api/archive` | 200 |
 | POST | `/api/courses/seed/:sample` | 200 |
 | POST | `/api/courses` | 202 |
 | GET | `/api/courses/:id` | 200 |
 | POST | `/api/runs` | 201 |
 | GET | `/api/runs/:id` | 200 |
+| POST | `/api/runs/:id/pause` | 200 |
+| POST | `/api/runs/:id/resume` | 200 |
 | POST | `/api/runs/:id/teach` | 200 |
 | POST | `/api/runs/:id/questions/:qid/answer` | 200 |
 | POST | `/api/runs/:id/questions/:qid/skip` | 200 |
@@ -188,6 +191,110 @@ Response: HTTP 200.
 }
 ```
 
+## GET /api/archive
+
+Lists prepared/uploaded courses as public course projections and recent run summaries. No answer keys, private question banks or hidden beliefs. The real server defaults to local disk storage under ignored `.local/archive`; explicit test containers stay in memory, and configured MongoDB storage remains supported.
+
+### Example
+
+Request: `GET /api/archive` (no body).
+
+Response: HTTP 200.
+
+```json
+{
+  "courses": [
+    {
+      "id": "sample-seasons",
+      "title": "Why Earth Has Seasons",
+      "status": {
+        "stage": "ready",
+        "conceptsReady": [
+          "c2",
+          "c1",
+          "c3"
+        ]
+      },
+      "files": [
+        {
+          "id": "f1",
+          "name": "seasons.md",
+          "type": "md",
+          "pages": 1
+        }
+      ],
+      "units": [
+        {
+          "id": "u1",
+          "title": "Seasons",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle",
+              "summary": "Earth's tilted axis, not its distance from the Sun, causes the seasons by changing the angle of sunlight; the noon Sun altitude rule quantifies it.",
+              "ready": true
+            },
+            {
+              "id": "c2",
+              "title": "Day length",
+              "summary": "Day length changes with latitude and season because of the tilt, not because Earth's spin changes; the hottest weather lags the longest day.",
+              "ready": true
+            },
+            {
+              "id": "c3",
+              "title": "Opposite hemispheres",
+              "summary": "The hemispheres have opposite seasons, split by the equator and not by east or west.",
+              "ready": true
+            }
+          ]
+        }
+      ],
+      "rooms": [
+        {
+          "id": "r1",
+          "title": "Axial tilt and sunlight angle",
+          "conceptIds": [
+            "c1"
+          ],
+          "ready": true
+        },
+        {
+          "id": "r2",
+          "title": "Day length",
+          "conceptIds": [
+            "c2"
+          ],
+          "ready": true
+        },
+        {
+          "id": "r3",
+          "title": "Opposite hemispheres",
+          "conceptIds": [
+            "c3"
+          ],
+          "ready": true
+        }
+      ],
+      "styleSummary": {
+        "voice": "A short, friendly handout: a rule, a worked example, then direct practice problems with one-line answers.",
+        "notation": "Angles in degrees. Latitude is positive in the north and negative in the south. Distances in million km.",
+        "units": "degrees, hours, million km",
+        "topFormats": [
+          "numeric",
+          "true_false",
+          "mcq",
+          "short_text",
+          "multi_select",
+          "ordering",
+          "free_response"
+        ]
+      }
+    }
+  ],
+  "runs": []
+}
+```
+
 ## POST /api/courses/seed/:sample
 
 Loads a cached course immediately. Bundled sample ids: `seasons` and `binary-search`.
@@ -223,7 +330,7 @@ Response: HTTP 202.
 
 ```json
 {
-  "courseId": "crs_a331059882"
+  "courseId": "crs_c55a66703f"
 }
 ```
 
@@ -252,7 +359,7 @@ Response: HTTP 202.
 
 ```json
 {
-  "courseId": "crs_c65c2f46d2"
+  "courseId": "crs_597154dc6c"
 }
 ```
 
@@ -294,16 +401,19 @@ Response: HTTP 200.
         {
           "id": "c1",
           "title": "Axial tilt and sunlight angle",
+          "summary": "Earth's tilted axis, not its distance from the Sun, causes the seasons by changing the angle of sunlight; the noon Sun altitude rule quantifies it.",
           "ready": true
         },
         {
           "id": "c2",
           "title": "Day length",
+          "summary": "Day length changes with latitude and season because of the tilt, not because Earth's spin changes; the hottest weather lags the longest day.",
           "ready": true
         },
         {
           "id": "c3",
           "title": "Opposite hemispheres",
+          "summary": "The hemispheres have opposite seasons, split by the equator and not by east or west.",
           "ready": true
         }
       ]
@@ -371,7 +481,7 @@ Response: HTTP 201 (excerpt).
 
 ```json
 {
-  "id": "run_8ad55a92-2de1-4a31-8c7d-7ca86a452476",
+  "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -381,7 +491,8 @@ Response: HTTP 201 (excerpt).
     "concepts": [
       {
         "id": "c1",
-        "title": "Axial tilt and sunlight angle"
+        "title": "Axial tilt and sunlight angle",
+        "summary": "Earth's tilted axis, not its distance from the Sun, causes the seasons by changing the angle of sunlight; the noon Sun altitude rule quantifies it."
       }
     ],
     "ready": true,
@@ -407,13 +518,13 @@ Returns the current public run, notebook, completed turn logs and pending help e
 
 ### Example
 
-Request: `GET /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476` (no body).
+Request: `GET /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_8ad55a92-2de1-4a31-8c7d-7ca86a452476",
+  "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -423,7 +534,8 @@ Response: HTTP 200 (excerpt).
     "concepts": [
       {
         "id": "c1",
-        "title": "Axial tilt and sunlight angle"
+        "title": "Axial tilt and sunlight angle",
+        "summary": "Earth's tilted axis, not its distance from the Sun, causes the seasons by changing the angle of sunlight; the noon Sun altitude rule quantifies it."
       }
     ],
     "ready": true,
@@ -450,13 +562,100 @@ Response: HTTP 200 (excerpt).
 }
 ```
 
+## POST /api/runs/:id/pause
+
+Idempotently pauses an unfinished run and persists `pausedAt`. Gameplay mutations then return 409 `run_paused`. A pending help deadline and solve clock are frozen until resume. Read-only archive/lesson views remain available.
+
+### Example
+
+Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/pause` (no body).
+
+Response: HTTP 200 (excerpt).
+
+```json
+{
+  "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
+  "courseId": "sample-seasons",
+  "phase": "learning",
+  "roomIndex": 0,
+  "currentRoom": {
+    "id": "r1",
+    "title": "Axial tilt and sunlight angle",
+    "concepts": [
+      {
+        "id": "c1",
+        "title": "Axial tilt and sunlight angle",
+        "summary": "Earth's tilted axis, not its distance from the Sun, causes the seasons by changing the angle of sunlight; the noon Sun altitude rule quantifies it."
+      }
+    ],
+    "ready": true,
+    "state": "current"
+  },
+  "learning": {
+    "pendingQuestions": [],
+    "teachCount": 0
+  },
+  "rules": {
+    "roomQuestions": 5,
+    "roomHearts": 3,
+    "bossQuestions": 10,
+    "maxStudentQuestions": 3,
+    "helpMeTimed": true
+  },
+  "pausedAt": "2026-11-14T08:11:20.494Z"
+}
+```
+
+## POST /api/runs/:id/resume
+
+Idempotently resumes the run. Shifts a pending help deadline and its started time by the paused duration, including time across server restarts. Does not advance a turn or erase notes.
+
+### Example
+
+Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/resume` (no body).
+
+Response: HTTP 200 (excerpt).
+
+```json
+{
+  "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
+  "courseId": "sample-seasons",
+  "phase": "learning",
+  "roomIndex": 0,
+  "currentRoom": {
+    "id": "r1",
+    "title": "Axial tilt and sunlight angle",
+    "concepts": [
+      {
+        "id": "c1",
+        "title": "Axial tilt and sunlight angle",
+        "summary": "Earth's tilted axis, not its distance from the Sun, causes the seasons by changing the angle of sunlight; the noon Sun altitude rule quantifies it."
+      }
+    ],
+    "ready": true,
+    "state": "current"
+  },
+  "learning": {
+    "pendingQuestions": [],
+    "teachCount": 0
+  },
+  "rules": {
+    "roomQuestions": 5,
+    "roomHearts": 3,
+    "bossQuestions": 10,
+    "maxStudentQuestions": 3,
+    "helpMeTimed": true
+  }
+}
+```
+
 ## POST /api/runs/:id/teach
 
 Allowed in `learning`. `explanation` is trimmed, nonempty, at most 8,000 characters. Adds notebook notes and up to the configured number of open questions. Existing open questions remain. Clear correction can resolve active beliefs; explicitly stating a wrong belief activates it again.
 
 ### Example
 
-Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/teach` (`application/json`).
+Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/teach` (`application/json`).
 
 ```json
 {
@@ -495,7 +694,7 @@ Allowed in `learning` for an open student question. `answer` is nonempty text, a
 
 ### Example
 
-Request: `POST /api/runs/run_91b6e57a-8e31-4180-909c-efc6d5d6afd1/questions/sq_0_0_1/answer` (`application/json`).
+Request: `POST /api/runs/run_b52020a7-2b80-443e-b76b-9fb53b118c4f/questions/sq_0_0_1/answer` (`application/json`).
 
 ```json
 {
@@ -518,7 +717,7 @@ Allowed in `learning` for an open student question. No body. Adds its belief as 
 
 ### Example
 
-Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/questions/sq_0_0_1/skip` (no body).
+Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/questions/sq_0_0_1/skip` (no body).
 
 Response: HTTP 200.
 
@@ -534,13 +733,13 @@ Allowed in `learning`. No body. Auto-skips open questions, draws fresh questions
 
 ### Example
 
-Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/ready` (no body).
+Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/ready` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_8ad55a92-2de1-4a31-8c7d-7ca86a452476",
+  "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
   "courseId": "sample-seasons",
   "phase": "room",
   "roomIndex": 0,
@@ -550,7 +749,8 @@ Response: HTTP 200 (excerpt).
     "concepts": [
       {
         "id": "c1",
-        "title": "Axial tilt and sunlight angle"
+        "title": "Axial tilt and sunlight angle",
+        "summary": "Earth's tilted axis, not its distance from the Sun, causes the seasons by changing the angle of sunlight; the noon Sun altitude rule quantifies it."
       }
     ],
     "ready": true,
@@ -598,7 +798,7 @@ Allowed in `room`, `room_result`, `boss`, `results`. No body. Returns a discrimi
 
 ### student_answer
 
-Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/turn` (no body).
+Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/turn` (no body).
 
 Response: HTTP 200.
 
@@ -638,7 +838,7 @@ Response: HTTP 200.
 
 ### help_me
 
-Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/turn` (no body).
+Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/turn` (no body).
 
 Response: HTTP 200.
 
@@ -657,13 +857,13 @@ Response: HTTP 200.
     }
   },
   "timeBudgetSec": 80,
-  "deadline": "2026-11-14T06:02:50.984Z"
+  "deadline": "2026-11-14T08:12:40.529Z"
 }
 ```
 
 ### room_end
 
-Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/turn` (no body).
+Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/turn` (no body).
 
 Response: HTTP 200.
 
@@ -730,7 +930,7 @@ Response: HTTP 200.
 
 ### boss_end
 
-Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/turn` (no body).
+Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/turn` (no body).
 
 Response: HTTP 200.
 
@@ -770,7 +970,7 @@ Response: HTTP 200.
       "correct": 5,
       "wrong": 1,
       "late": 0,
-      "avgSolveTimeSec": 0.005
+      "avgSolveTimeSec": 0
     },
     "costlyMisconceptions": [
       {
@@ -805,7 +1005,7 @@ Allowed in `room` or `boss` for the pending event. Send `{ answer: ... }` using 
 
 ### help_result
 
-Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/help/help_r0_a1_t1` (`application/json`).
+Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/help/help_r0_a1_t1` (`application/json`).
 
 ```json
 {
@@ -840,7 +1040,7 @@ Response: HTTP 200.
     "text": "40 degrees"
   },
   "explanation": "On an equinox the declination is 0, so 90 - |50 - 0| = 40 degrees.",
-  "solveTimeSec": 0.01,
+  "solveTimeSec": 0,
   "noteAdded": "Teacher showed me: 40 degrees",
   "damage": 0,
   "hearts": 2,
@@ -854,13 +1054,13 @@ Allowed after a failed `room_result`. No body. Returns to `learning` for the sam
 
 ### Example
 
-Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/retry` (no body).
+Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/retry` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_8ad55a92-2de1-4a31-8c7d-7ca86a452476",
+  "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -870,7 +1070,8 @@ Response: HTTP 200 (excerpt).
     "concepts": [
       {
         "id": "c1",
-        "title": "Axial tilt and sunlight angle"
+        "title": "Axial tilt and sunlight angle",
+        "summary": "Earth's tilted axis, not its distance from the Sun, causes the seasons by changing the angle of sunlight; the noon Sun altitude rule quantifies it."
       }
     ],
     "ready": true,
@@ -903,13 +1104,13 @@ Allowed after a passed `room_result`. No body. Moves to the next room in `learni
 
 ### Example
 
-Request: `POST /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/continue` (no body).
+Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/continue` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_8ad55a92-2de1-4a31-8c7d-7ca86a452476",
+  "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 1,
@@ -919,7 +1120,8 @@ Response: HTTP 200 (excerpt).
     "concepts": [
       {
         "id": "c2",
-        "title": "Day length"
+        "title": "Day length",
+        "summary": "Day length changes with latitude and season because of the tilt, not because Earth's spin changes; the hottest weather lags the longest day."
       }
     ],
     "ready": true,
@@ -945,7 +1147,7 @@ Allowed in `results`. Returns boss health rounded to a percentage, letter grade,
 
 ### Example
 
-Request: `GET /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/results` (no body).
+Request: `GET /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/results` (no body).
 
 Response: HTTP 200.
 
@@ -983,7 +1185,7 @@ Response: HTTP 200.
     "correct": 5,
     "wrong": 1,
     "late": 0,
-    "avgSolveTimeSec": 0.005
+    "avgSolveTimeSec": 0
   },
   "costlyMisconceptions": [
     {
@@ -1017,14 +1219,14 @@ Development only: 404 unless `DEBUG=true`. Returns `{ run, pack, questions, stat
 
 ### Example
 
-Request: `GET /api/runs/run_8ad55a92-2de1-4a31-8c7d-7ca86a452476/debug` (no body).
+Request: `GET /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/debug` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
   "run": {
-    "id": "run_8ad55a92-2de1-4a31-8c7d-7ca86a452476",
+    "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
     "phase": "learning",
     "hidden": {
       "misconceptions": []
@@ -1123,7 +1325,7 @@ Errors have one shape. This response was captured by calling `/turn` during `lea
 |---|---|---|
 | 400 | `validation_error`, `invalid_answer` | Invalid body or answer shape |
 | 404 | `not_found` | Unknown id/sample, or debug disabled |
-| 409 | `wrong_phase`, `help_pending`, `question_not_open`, `help_event_not_pending` | Refresh the run and use the allowed action |
+| 409 | `wrong_phase`, `run_paused`, `help_pending`, `question_not_open`, `help_event_not_pending` | Refresh the run and use the allowed action |
 | 413 | `payload_too_large` | Upload/body/page limit exceeded |
 | 415 | `unsupported_file` | Unsupported upload type |
 | 502 | `llm_error` | Model failure, invalid output after one retry, or timeout |

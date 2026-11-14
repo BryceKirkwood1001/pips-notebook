@@ -25,6 +25,7 @@ import type { ParsedFile, RetrievedChunk } from '../rag/types';
 import { checkCoverage, gapFor, multiConceptNeed, preferredTypes, roomPoolNeed } from './coverage';
 import { createLimiter } from './limiter';
 import { buildOutline, tagChunks } from './outline';
+import { applyLessonPlan } from './lesson-plan';
 import type { IngestDeps, IngestInput, IngestReport } from './types';
 import { questionKey, shuffleOrdering, slugify, toPublicQuestion } from './util';
 import { validateQuestion } from './validate';
@@ -480,9 +481,13 @@ export async function runIngest(deps: IngestDeps, input: IngestInput): Promise<I
     current.status.stage = 'outline';
     await activity({ message: 'Finding the main ideas and supporting passages in your material.' });
     const draft = await deps.tasks.extractOutline({ files: run.parsed, titleHint: input.title, onProgress: activity });
-    const outline = buildOutline(draft, run.chunks);
+    let outline = buildOutline(draft, run.chunks);
     for (const d of outline.dropped) log(`outline: dropped ${d}`);
     if (outline.concepts.length === 0) throw new Error('The outline has no concept with a findable quote.');
+    if (deps.tasks.planLessons) {
+      await activity({ message: 'Combining overlapping topics into complete lessons and writing teaching goals.' });
+      outline = applyLessonPlan(outline, await deps.tasks.planLessons({title: input.title || draft.title, concepts: outline.concepts}));
+    }
     if (!input.title) current.title = draft.title || current.title;
     current.language = draft.language || 'en';
     current.units = outline.units;

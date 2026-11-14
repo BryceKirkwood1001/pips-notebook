@@ -97,12 +97,17 @@ async function main() {
     head(`Seed "${sample}" and create a run (target B)`);
     const { courseId } = await api.seedCourse(sample);
     seen(await api.getCourse(courseId));
+    seen(await api.listArchive());
     if (flag('capture-file')) {
       const text = '# Seasons\n\nEarth has seasons because its axis is tilted.\n';
       seen(await api.createCourseFromText(text, 'API upload example'));
       seen(await api.uploadCourse([{ name: 'seasons.md', data: new Blob([text], { type: 'text/markdown' }) }], 'Multipart example'));
     }
     let run: PublicRun = seen(await api.createRun({ courseId, targetGrade: 'B' }));
+    const paused = seen(await api.pauseRun(run.id));
+    check(!!paused.pausedAt, 'pause saves a paused run');
+    run = seen(await api.resumeRun(run.id));
+    check(!run.pausedAt, 'resume clears the paused flag');
     const runId = run.id;
     log(`course ${courseId}, run ${runId}, ${run.rooms.length} rooms`);
 

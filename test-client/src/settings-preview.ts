@@ -8,7 +8,7 @@ let origin = params.get('api') || 'http://localhost:8787';
 try { origin = params.get('api') || localStorage.getItem('top.apiOrigin') || origin; } catch { /* Optional browser preference. */ }
 const stage = document.createElement('main'); stage.className = 'stage course-stage'; stage.dataset.screen = 'settings';
 stage.style.backgroundImage = `linear-gradient(90deg,#190f1bd9,#21121d85),url(${background})`;
-const header = document.createElement('header'); header.innerHTML = '<span>Teach or Perish</span><div class="nav-right">The Lantern Archive</div>';
+const header = document.createElement('header'); header.innerHTML = '<span>Teach or Perish</span><div class="nav-right">My archive</div>';
 const sheet = document.createElement('section'); sheet.className = 'folio archive-folio';
 const view = buildSettingsView({ apiOrigin: origin,
   onOriginChange(next) {

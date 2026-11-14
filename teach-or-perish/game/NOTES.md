@@ -2,19 +2,25 @@
 
 ## How to test
 
-Play opens The lesson archive: Library / Files / Notes switch source methods
+Play opens My archive / Your saved dungeons: Library / Files / Notes switch sources
 without losing drafts. Choose a sample and rooms, then Start run. In Learning,
 Talk to Pip opens the lesson book; Notebook opens the notebook. Close/Escape
 puts the book away without discarding an unsent answer. Teach updates Pip's pose
 and question cue; Answer/Skip and Ready advance the lesson. Combat keeps health
 and Next turn outside the books; Battle log opens labeled feedback/damage cards.
+The persistent outcome card above Next turn opens that exact feedback entry.
+Rooms/Pause opens Menu: inspect all lessons/goals and progress, Resume expedition
+or return to My archive. Pause & rooms also works during help; deadlines freeze
+on the backend and survive restarts. Settings alone does not pause a deadline.
+New uploads get grouped lessons with descriptions and teaching objectives.
+The ready ArrayLists course has 5 rooms; View lessons shows goals before starting.
 
 The `Settings` scene opens from the header's Settings button. Choose OpenAI,
 Google Gemini or Offline; edit the password key, model fields and remove-key
 checkbox. Expand Connection details for the backend origin and timeout.
 Test connection validates unsaved settings; Save & apply persists and activates
 them. Back to game returns to the existing run phase/previous page. A changed
-backend origin clears the local run/results. Timed help deadlines keep running.
+backend origin clears the local client run/results; stored runs remain saved.
 Connection details has a separate preparation timeout (180 seconds by default,
 up to 600) for new uploads. Preparation errors offer Retry preparation using
 the submitted file/text while Upload remains open. Reloading/leaving Upload
@@ -36,9 +42,10 @@ on port 5174 uses the same view and supports narrower screens.
 - `course/page.ts`: header Settings button and shared page frame.
 - `course/Learning.ts`, `page.ts`: conversation/inventory books and draft retention.
 - `course/Upload.ts`: tabbed archive, expedition setup and Thinking/retry.
+- `course/Menu.ts`, `lesson-guide.ts`: room map/progress and source-based teaching scope.
 - `course/battle.ts`, `battle-feedback.ts`: battle chronicle, result cues, canonical run refresh and explicit damage labels.
 - `art.ts`, `manifest.json`, `media/*idle.png` and pose sheets: animated actors.
-- `main.ts`: registers Settings alongside the existing six scenes.
+- `main.ts`: registers the eight scenes including Settings and Menu.
 - `course/api-client.ts`: dependency-free copy of the shared backend client.
 - `media/game.css`: existing theme plus scoped setup/preview styles.
 
@@ -53,6 +60,8 @@ Native smoke was attempted: its headless simulator fails at course/ui.ts:2
 with document undefined; the existing frontend requires a real DOM browser.
 A small live GPT-6 Luna request verified summary streaming and structured output.
 Full live ingestion/gameplay/PDF/Atlas checks and publish were not performed.
+The backend persists prepared courses, chunks, question banks and runs in
+ignored .local/archive by default. Legacy rooms/runs were removed at user request.
 See the root `docs/API_SETTINGS.md` for storage, provider-switching behavior,
 verification and complete source map. Existing gameplay/debug behavior is
 described by the root integration/handoff docs; no new cheats were added.

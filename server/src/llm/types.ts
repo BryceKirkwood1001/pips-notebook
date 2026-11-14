@@ -299,6 +299,7 @@ export interface VerifyQuestionOutput {
 }
 
 export interface IngestTasks {
+  planLessons?(input: {title: string; concepts: Concept[]}): Promise<import('../ingest/lesson-plan').LessonPlan>;
   /** Reads the material (PDFs natively when `file.uploaded` is set, page text otherwise). */
   extractOutline(input: { files: ParsedFile[]; titleHint?: string; onProgress?: (activity: CourseActivity) => Promise<void> }): Promise<OutlineDraft>;
   /** Style profile from the material's own items and a few sample pages. */

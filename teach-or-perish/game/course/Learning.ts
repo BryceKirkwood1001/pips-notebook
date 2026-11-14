@@ -3,6 +3,7 @@ import type { PublicStudentQuestion } from './api-client.js';
 import { api, call, goTo, sceneForPhase, setRun, state } from './app.js';
 import { btn, el, mdToEl } from './ui.js';
 import { teachingPose } from '../art.js';
+import { lessonGuide } from './lesson-guide.js';
 
 interface QBlock {
   status: HTMLElement;
@@ -54,11 +55,10 @@ export class LearningScene extends Page {
       goTo(sceneForPhase(next.phase));
     }, 'gold');
 
-    const concepts = el('ul', '', ...(room?.concepts ?? []).map((c) => el('li', '', c.title)));
     const left = el(
       'div', '',
       this.questionsEl,
-      el('h3', '', 'Concepts in this room'), concepts,
+      ...(room ? [lessonGuide(room)] : []),
       el('h3', '', 'Your explanation'), explain,
       el('div', '', teach), this.teachInfo,
     );

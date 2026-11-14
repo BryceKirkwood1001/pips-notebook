@@ -79,6 +79,7 @@ export function createMockApi(): ApiClient {
   let notebook = '# Notebook\n';
 
   const need = (...phases: RunPhase[]) => {
+    if (run?.pausedAt) throw new ApiError(409, 'run_paused', 'Resume the expedition first.');
     if (!run || !phases.includes(run.phase)) throw new ApiError(409, 'wrong_phase', `Not allowed in phase ${run?.phase}`);
     return run;
   };
@@ -117,6 +118,13 @@ export function createMockApi(): ApiClient {
   };
 
   const api: ApiClient = {
+    listArchive: async () => ({courses: [],runs:run?[{id:run.id,courseId:run.courseId,phase:run.phase,roomIndex:run.roomIndex,updatedAt:run.updatedAt}]:[]}),
+    pauseRun: async () => { if (!run) throw new ApiError(404,'not_found','No practice run'); run.pausedAt ??= new Date().toISOString(); return view(); },
+    resumeRun: async () => {
+      if (!run) throw new ApiError(404,'not_found','No practice run');
+      if (run.pausedAt && pending?.ev.deadline) pending.ev.deadline = new Date(Date.parse(pending.ev.deadline) + Math.max(0,Date.now()-Date.parse(run.pausedAt))).toISOString();
+      delete run.pausedAt; return view();
+    },
     health: async () => ({ ok: true, llmProvider: 'mock', storage: 'browser', debug: true }),
     listSamples: async () => (await wait(), { samples: [{ id: 'seasons', title: 'Seasons (mock sample)' }] }),
     seedCourse: async () => (await wait(), polls = 0, { courseId: 'mock-course' }),
@@ -199,7 +207,10 @@ export function createMockApi(): ApiClient {
         if (boss) return { kind: 'boss_end', results: RESULTS };
         return { kind: 'room_end', passed: r.room!.hearts > 0, hearts: r.room!.hearts, failedTurns: failed };
       }
-      if (pending) return pending.ev;
+      if (pending) {
+        if (pending.ev.deadline && new Date().getTime() > Date.parse(pending.ev.deadline)) return api.help(r.id,pending.ev.eventId,pending.item.key);
+        return pending.ev;
+      }
       const f = boss ? r.boss! : r.room!;
       if (f.turn % 2 === 1) {
         const item = HELP[helpCount++ % HELP.length];
@@ -231,7 +242,7 @@ export function createMockApi(): ApiClient {
       need('room', 'boss');
       if (!pending || pending.ev.eventId !== eventId) throw new ApiError(409, 'help_event_not_pending', 'That event is not pending.');
       const { ev, item } = pending;
-      const late = ev.deadline !== null && Date.now() > Date.parse(ev.deadline) + 1500;
+      const late = ev.deadline !== null && Date.now() > Date.parse(ev.deadline);
       const correct = !late && isRight(item.key, answer) && !(run!.roomIndex === 0 && attempt === 1 && run!.phase === 'room');
       pending = null;
       const d = settle(!correct);

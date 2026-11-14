@@ -43,7 +43,9 @@ Text and Markdown files are read directly and split into pages on form feeds.
 
 - **Chunking is structure-aware.** Text is split on headings, slide separators and page breaks first, then into chunks of about `CHUNK_TOKENS` (400) tokens with `CHUNK_OVERLAP` (15%) overlap. A chunk never spans two pages. Each chunk keeps `fileId`, `page`, `sectionPath` (its heading trail) and `conceptIds`.
 - **Embeddings** come from Gemini `gemini-embedding-001`, with task type `RETRIEVAL_DOCUMENT` for chunks and `RETRIEVAL_QUERY` for queries, at `EMBEDDING_DIMS` (768) dimensions.
-- **The vector store** is MongoDB Atlas Vector Search (`$vectorSearch` on the `chunks` collection, filtered by `courseId`). The index is created from code at startup if it is missing. With no `MONGODB_URI`, an in-memory store with cosine similarity is used instead.
+- **The vector store** is MongoDB Atlas Vector Search (`$vectorSearch` on the `chunks` collection, filtered by `courseId`). The index is created from code at startup if it is missing. With no `MONGODB_URI`, the actual server persists chunks/vectors under `.local/archive` and ranks them with cosine similarity. Explicit test containers default to an isolated in-memory store.
+
+After batched extraction and exact evidence lookup, live ingestion now runs a whole-course lesson planner. It merges overlapping concepts across batches and assigns every source concept exactly once to a small number of complete lessons, with descriptions and teaching objectives. Question generation uses the resulting canonical concepts/rooms. See [ARCHIVE_AND_LESSONS.md](ARCHIVE_AND_LESSONS.md) for validation, the ArrayLists reference and persistent storage.
 - **Retrieval is hybrid**: first the concept's own chunks (structure), then the top `RETRIEVAL_TOP_K` (6) vector hits for the query, with duplicates removed.
 
 Retrieval is used for building misconceptions, adapting and generating questions, verification, resolution checks in the learning phase, and grading short-text and free-response answers.

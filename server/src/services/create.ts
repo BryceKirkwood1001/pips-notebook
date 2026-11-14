@@ -48,7 +48,7 @@ export interface ServiceDeps {
   samplesDir: string;
   /** Seed for a new run. */
   newSeed: () => number;
-  storage: 'mongodb' | 'memory';
+  storage: 'mongodb' | 'memory' | 'local';
 }
 
 const SAMPLE_NAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
@@ -82,11 +82,13 @@ export function toPublicCourse(pack: CoursePack): PublicCourse {
       concepts: u.conceptIds
         .map((id) => conceptById.get(id))
         .filter((c): c is NonNullable<typeof c> => !!c)
-        .map((c) => ({ id: c.id, title: c.title, ready: ready.has(c.id) })),
+        .map((c) => ({ id: c.id, title: c.title, summary: c.summary, ready: ready.has(c.id) })),
     })),
     rooms: byOrder(pack.rooms).map((r) => ({
       id: r.id,
       title: r.title,
+      ...(r.description ? { description: r.description } : {}),
+      ...(r.learningObjectives ? { learningObjectives: [...r.learningObjectives] } : {}),
       conceptIds: [...r.conceptIds],
       ready: r.conceptIds.every((id) => ready.has(id)),
     })),
@@ -163,6 +165,7 @@ export function createServices(deps: ServiceDeps): Services {
   ): Promise<{ out: T; ctx: EngineContext }> {
     return withRunLock(runId, async () => {
       const run = await loadRun(runId);
+      if (run.pausedAt) throw new AppError('run_paused', 'This run is paused. Resume it from the menu first.');
       const ctx = await loadContext(run.courseId);
       const rng = createRng(run.rngState);
       const out = await fn(engineDeps(rng), ctx, run);
@@ -198,6 +201,35 @@ export function createServices(deps: ServiceDeps): Services {
 
   return {
     health: () => ({ ok: true, llmProvider: config.llmProvider, storage: deps.storage, debug: config.debug }),
+
+    async listArchive() {
+      const courses = (await repo.listCoursePacks()).sort((a,b) => b.createdAt.localeCompare(a.createdAt)).map(toPublicCourse);
+      const runs = (await repo.listRuns()).map(r => ({ id:r.id, courseId:r.courseId, phase:r.phase, roomIndex:r.roomIndex, updatedAt:r.updatedAt, ...(r.pausedAt ? {pausedAt:r.pausedAt}: {}) }));
+      return { courses, runs };
+    },
+
+    pauseRun: runId => withRunLock(runId, async () => {
+      const run = await loadRun(runId);
+      if (!run.pausedAt && run.phase !== 'results') { run.pausedAt = clock.now().toISOString(); run.updatedAt = run.pausedAt; await repo.saveRun(run); }
+      return publicRun(run, await loadContext(run.courseId));
+    }),
+
+    resumeRun: runId => withRunLock(runId, async () => {
+      const run = await loadRun(runId);
+      if (run.pausedAt) {
+        const elapsed = Math.max(0, clock.now().getTime() - Date.parse(run.pausedAt));
+        if (run.pendingHelpMe) {
+          const pending = run.pendingHelpMe;
+          pending.startedAt = new Date(Date.parse(pending.startedAt) + elapsed).toISOString();
+          if (pending.deadline) pending.deadline = new Date(Date.parse(pending.deadline) + elapsed).toISOString();
+          for (const event of [...(run.room?.log ?? []), ...(run.boss?.log ?? [])]) {
+            if (event.kind === 'help_me' && event.eventId === pending.eventId) event.deadline = pending.deadline;
+          }
+        }
+        delete run.pausedAt; run.updatedAt = clock.now().toISOString(); await repo.saveRun(run);
+      }
+      return publicRun(run, await loadContext(run.courseId));
+    }),
 
     async listSamples() {
       let names: string[];

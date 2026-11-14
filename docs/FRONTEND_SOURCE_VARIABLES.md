@@ -242,66 +242,66 @@ Page: Browser-only canned mock implementation (`?mock=1`).
 | `notebook` | variable | `string` | createMockApi | [79](../test-client/src/mockApi.ts#L79) |
 | `need` | variable | `(...phases: RunPhase[]) => PublicRun` | createMockApi | [81](../test-client/src/mockApi.ts#L81) |
 | `phases` | parameter | `RunPhase[]` | createMockApi → need | [81](../test-client/src/mockApi.ts#L81) |
-| `fightLog` | variable | `() => TurnResult[]` | createMockApi | [85](../test-client/src/mockApi.ts#L85) |
-| `view` | variable | `() => PublicRun` | createMockApi | [86](../test-client/src/mockApi.ts#L86) |
-| `r` | variable | `PublicRun` | createMockApi → view | [87](../test-client/src/mockApi.ts#L87) |
-| `x` | parameter | `PublicRunRoom` | createMockApi → view → (callback) | [88](../test-client/src/mockApi.ts#L88) |
-| `i` | parameter | `number` | createMockApi → view → (callback) | [88](../test-client/src/mockApi.ts#L88) |
-| `startFight` | variable | `(boss: boolean) => void` | createMockApi | [96](../test-client/src/mockApi.ts#L96) |
-| `boss` | parameter | `boolean` | createMockApi → startFight | [96](../test-client/src/mockApi.ts#L96) |
-| `settle` | variable | `(wrong: boolean) => { damage: number; hearts: number \| undefined; health: number \| undefined; phaseAfter: RunPhase; }` | createMockApi | [105](../test-client/src/mockApi.ts#L105) |
-| `wrong` | parameter | `boolean` | createMockApi → settle | [105](../test-client/src/mockApi.ts#L105) |
-| `r` | variable | `PublicRun` | createMockApi → settle | [106](../test-client/src/mockApi.ts#L106) |
-| `boss` | variable | `boolean` | createMockApi → settle | [107](../test-client/src/mockApi.ts#L107) |
-| `f` | variable | `{ turn: number; totalTurns: number; health: number; helpMeUsed: number; log: TurnResult[]; } \| { attempt: number; turn: number; totalTurns: number; hearts: number; maxHearts: nu...` | createMockApi → settle | [108](../test-client/src/mockApi.ts#L108) |
-| `damage` | variable | `0 \| 1 \| 17` | createMockApi → settle | [110](../test-client/src/mockApi.ts#L110) |
-| `done` | variable | `boolean` | createMockApi → settle | [113](../test-client/src/mockApi.ts#L113) |
-| `api` | variable | `{ getApiSettings: () => Promise<ApiSettings>; updateApiSettings: (body: UpdateApiSettingsBody) => Promise<ApiSettings>; testApiSettings: (body: UpdateApiSettingsBody) => Promise...` | createMockApi | [119](../test-client/src/mockApi.ts#L119) |
-| `stage` | variable | `"parsing" \| "outline" \| "concepts" \| "ready"` | createMockApi → (callback) | [128](../test-client/src/mockApi.ts#L128) |
-| `ready` | variable | `(id: string) => boolean` | createMockApi → (callback) | [129](../test-client/src/mockApi.ts#L129) |
-| `id` | parameter | `string` | createMockApi → (callback) → ready | [129](../test-client/src/mockApi.ts#L129) |
-| `r` | parameter | `{ id: string; title: string; concepts: { id: string; title: string; }[]; }` | createMockApi → (callback) → (callback) | [132](../test-client/src/mockApi.ts#L132) |
-| `c` | parameter | `{ id: string; title: string; }` | createMockApi → (callback) → (callback) → (callback) | [132](../test-client/src/mockApi.ts#L132) |
-| `r` | parameter | `{ id: string; title: string; concepts: { id: string; title: string; }[]; }` | createMockApi → (callback) → (callback) | [133](../test-client/src/mockApi.ts#L133) |
-| `c` | parameter | `{ id: string; title: string; }` | createMockApi → (callback) → (callback) → (callback) | [133](../test-client/src/mockApi.ts#L133) |
-| `body` | parameter | `CreateRunBody` | createMockApi → (callback) | [138](../test-client/src/mockApi.ts#L138) |
-| `ids` | variable | `string[]` | createMockApi → (callback) | [141](../test-client/src/mockApi.ts#L141) |
+| `fightLog` | variable | `() => TurnResult[]` | createMockApi | [86](../test-client/src/mockApi.ts#L86) |
+| `view` | variable | `() => PublicRun` | createMockApi | [87](../test-client/src/mockApi.ts#L87) |
+| `r` | variable | `PublicRun` | createMockApi → view | [88](../test-client/src/mockApi.ts#L88) |
+| `x` | parameter | `PublicRunRoom` | createMockApi → view → (callback) | [89](../test-client/src/mockApi.ts#L89) |
+| `i` | parameter | `number` | createMockApi → view → (callback) | [89](../test-client/src/mockApi.ts#L89) |
+| `startFight` | variable | `(boss: boolean) => void` | createMockApi | [97](../test-client/src/mockApi.ts#L97) |
+| `boss` | parameter | `boolean` | createMockApi → startFight | [97](../test-client/src/mockApi.ts#L97) |
+| `settle` | variable | `(wrong: boolean) => { damage: number; hearts: number \| undefined; health: number \| undefined; phaseAfter: RunPhase; }` | createMockApi | [106](../test-client/src/mockApi.ts#L106) |
+| `wrong` | parameter | `boolean` | createMockApi → settle | [106](../test-client/src/mockApi.ts#L106) |
+| `r` | variable | `PublicRun` | createMockApi → settle | [107](../test-client/src/mockApi.ts#L107) |
+| `boss` | variable | `boolean` | createMockApi → settle | [108](../test-client/src/mockApi.ts#L108) |
+| `f` | variable | `{ turn: number; totalTurns: number; health: number; helpMeUsed: number; log: TurnResult[]; } \| { attempt: number; turn: number; totalTurns: number; hearts: number; maxHearts: nu...` | createMockApi → settle | [109](../test-client/src/mockApi.ts#L109) |
+| `damage` | variable | `0 \| 1 \| 17` | createMockApi → settle | [111](../test-client/src/mockApi.ts#L111) |
+| `done` | variable | `boolean` | createMockApi → settle | [114](../test-client/src/mockApi.ts#L114) |
+| `api` | variable | `{ getApiSettings: () => Promise<ApiSettings>; updateApiSettings: (body: UpdateApiSettingsBody) => Promise<ApiSettings>; testApiSettings: (body: UpdateApiSettingsBody) => Promise...` | createMockApi | [120](../test-client/src/mockApi.ts#L120) |
+| `stage` | variable | `"parsing" \| "outline" \| "concepts" \| "ready"` | createMockApi → (callback) | [136](../test-client/src/mockApi.ts#L136) |
+| `ready` | variable | `(id: string) => boolean` | createMockApi → (callback) | [137](../test-client/src/mockApi.ts#L137) |
+| `id` | parameter | `string` | createMockApi → (callback) → ready | [137](../test-client/src/mockApi.ts#L137) |
+| `r` | parameter | `{ id: string; title: string; concepts: { id: string; title: string; }[]; }` | createMockApi → (callback) → (callback) | [140](../test-client/src/mockApi.ts#L140) |
+| `c` | parameter | `{ id: string; title: string; }` | createMockApi → (callback) → (callback) → (callback) | [140](../test-client/src/mockApi.ts#L140) |
 | `r` | parameter | `{ id: string; title: string; concepts: { id: string; title: string; }[]; }` | createMockApi → (callback) → (callback) | [141](../test-client/src/mockApi.ts#L141) |
-| `rooms` | variable | `{ ready: boolean; state: "upcoming"; id: string; title: string; concepts: { id: string; title: string; }[]; }[]` | createMockApi → (callback) | [142](../test-client/src/mockApi.ts#L142) |
-| `r` | parameter | `{ id: string; title: string; concepts: { id: string; title: string; }[]; }` | createMockApi → (callback) → (callback) | [142](../test-client/src/mockApi.ts#L142) |
-| `r` | parameter | `{ id: string; title: string; concepts: { id: string; title: string; }[]; }` | createMockApi → (callback) → (callback) | [142](../test-client/src/mockApi.ts#L142) |
-| `id` | parameter | `string` | createMockApi → (callback) | [153](../test-client/src/mockApi.ts#L153) |
-| `_id` | parameter | `string` | createMockApi → (callback) | [159](../test-client/src/mockApi.ts#L159) |
-| `explanation` | parameter | `string` | createMockApi → (callback) | [159](../test-client/src/mockApi.ts#L159) |
-| `title` | variable | `string` | createMockApi → (callback) | [163](../test-client/src/mockApi.ts#L163) |
-| `_id` | parameter | `string` | createMockApi → (callback) | [170](../test-client/src/mockApi.ts#L170) |
-| `qid` | parameter | `string` | createMockApi → (callback) | [170](../test-client/src/mockApi.ts#L170) |
-| `answer` | parameter | `string` | createMockApi → (callback) | [170](../test-client/src/mockApi.ts#L170) |
-| `resolved` | variable | `boolean` | createMockApi → (callback) | [173](../test-client/src/mockApi.ts#L173) |
-| `x` | parameter | `PublicStudentQuestion` | createMockApi → (callback) → (callback) | [174](../test-client/src/mockApi.ts#L174) |
+| `c` | parameter | `{ id: string; title: string; }` | createMockApi → (callback) → (callback) → (callback) | [141](../test-client/src/mockApi.ts#L141) |
+| `body` | parameter | `CreateRunBody` | createMockApi → (callback) | [146](../test-client/src/mockApi.ts#L146) |
+| `ids` | variable | `string[]` | createMockApi → (callback) | [149](../test-client/src/mockApi.ts#L149) |
+| `r` | parameter | `{ id: string; title: string; concepts: { id: string; title: string; }[]; }` | createMockApi → (callback) → (callback) | [149](../test-client/src/mockApi.ts#L149) |
+| `rooms` | variable | `{ ready: boolean; state: "upcoming"; id: string; title: string; concepts: { id: string; title: string; }[]; }[]` | createMockApi → (callback) | [150](../test-client/src/mockApi.ts#L150) |
+| `r` | parameter | `{ id: string; title: string; concepts: { id: string; title: string; }[]; }` | createMockApi → (callback) → (callback) | [150](../test-client/src/mockApi.ts#L150) |
+| `r` | parameter | `{ id: string; title: string; concepts: { id: string; title: string; }[]; }` | createMockApi → (callback) → (callback) | [150](../test-client/src/mockApi.ts#L150) |
+| `id` | parameter | `string` | createMockApi → (callback) | [161](../test-client/src/mockApi.ts#L161) |
+| `_id` | parameter | `string` | createMockApi → (callback) | [167](../test-client/src/mockApi.ts#L167) |
+| `explanation` | parameter | `string` | createMockApi → (callback) | [167](../test-client/src/mockApi.ts#L167) |
+| `title` | variable | `string` | createMockApi → (callback) | [171](../test-client/src/mockApi.ts#L171) |
 | `_id` | parameter | `string` | createMockApi → (callback) | [178](../test-client/src/mockApi.ts#L178) |
 | `qid` | parameter | `string` | createMockApi → (callback) | [178](../test-client/src/mockApi.ts#L178) |
-| `x` | parameter | `PublicStudentQuestion` | createMockApi → (callback) → (callback) | [181](../test-client/src/mockApi.ts#L181) |
-| `x` | parameter | `PublicStudentQuestion` | createMockApi → (callback) → (callback) | [187](../test-client/src/mockApi.ts#L187) |
-| `r` | variable | `PublicRun` | createMockApi → (callback) | [196](../test-client/src/mockApi.ts#L196) |
-| `boss` | variable | `boolean \| undefined` | createMockApi → (callback) | [197](../test-client/src/mockApi.ts#L197) |
-| `f` | variable | `{ turn: number; totalTurns: number; health: number; helpMeUsed: number; log: TurnResult[]; } \| { attempt: number; turn: number; totalTurns: number; hearts: number; maxHearts: nu...` | createMockApi → (callback) | [203](../test-client/src/mockApi.ts#L203) |
-| `item` | variable | `{ q: PublicQuestion; key: Answer; text: string; }` | createMockApi → (callback) | [205](../test-client/src/mockApi.ts#L205) |
-| `ev` | variable | `HelpMeTurn` | createMockApi → (callback) | [206](../test-client/src/mockApi.ts#L206) |
-| `lose` | variable | `boolean` | createMockApi → (callback) | [215](../test-client/src/mockApi.ts#L215) |
-| `s` | variable | `{ q: PublicQuestion; right: string; wrong: string; }` | createMockApi → (callback) | [216](../test-client/src/mockApi.ts#L216) |
-| `d` | variable | `{ damage: number; hearts: number \| undefined; health: number \| undefined; phaseAfter: RunPhase; }` | createMockApi → (callback) | [217](../test-client/src/mockApi.ts#L217) |
-| `res` | variable | `TurnResult` | createMockApi → (callback) | [218](../test-client/src/mockApi.ts#L218) |
-| `_id` | parameter | `string` | createMockApi → (callback) | [229](../test-client/src/mockApi.ts#L229) |
-| `eventId` | parameter | `string` | createMockApi → (callback) | [229](../test-client/src/mockApi.ts#L229) |
-| `answer` | parameter | `Answer` | createMockApi → (callback) | [229](../test-client/src/mockApi.ts#L229) |
-| `ev` | variable | `HelpMeTurn` | createMockApi → (callback) | [233](../test-client/src/mockApi.ts#L233) |
-| `item` | variable | `{ q: PublicQuestion; key: Answer; text: string; }` | createMockApi → (callback) | [233](../test-client/src/mockApi.ts#L233) |
-| `late` | variable | `boolean` | createMockApi → (callback) | [234](../test-client/src/mockApi.ts#L234) |
-| `correct` | variable | `boolean` | createMockApi → (callback) | [235](../test-client/src/mockApi.ts#L235) |
-| `d` | variable | `{ damage: number; hearts: number \| undefined; health: number \| undefined; phaseAfter: RunPhase; }` | createMockApi → (callback) | [237](../test-client/src/mockApi.ts#L237) |
-| `res` | variable | `TurnResult` | createMockApi → (callback) | [238](../test-client/src/mockApi.ts#L238) |
-| `h` | parameter | `{ q: PublicQuestion; key: Answer; text: string; }` | createMockApi → (callback) → (callback) | [275](../test-client/src/mockApi.ts#L275) |
+| `answer` | parameter | `string` | createMockApi → (callback) | [178](../test-client/src/mockApi.ts#L178) |
+| `resolved` | variable | `boolean` | createMockApi → (callback) | [181](../test-client/src/mockApi.ts#L181) |
+| `x` | parameter | `PublicStudentQuestion` | createMockApi → (callback) → (callback) | [182](../test-client/src/mockApi.ts#L182) |
+| `_id` | parameter | `string` | createMockApi → (callback) | [186](../test-client/src/mockApi.ts#L186) |
+| `qid` | parameter | `string` | createMockApi → (callback) | [186](../test-client/src/mockApi.ts#L186) |
+| `x` | parameter | `PublicStudentQuestion` | createMockApi → (callback) → (callback) | [189](../test-client/src/mockApi.ts#L189) |
+| `x` | parameter | `PublicStudentQuestion` | createMockApi → (callback) → (callback) | [195](../test-client/src/mockApi.ts#L195) |
+| `r` | variable | `PublicRun` | createMockApi → (callback) | [204](../test-client/src/mockApi.ts#L204) |
+| `boss` | variable | `boolean \| undefined` | createMockApi → (callback) | [205](../test-client/src/mockApi.ts#L205) |
+| `f` | variable | `{ turn: number; totalTurns: number; health: number; helpMeUsed: number; log: TurnResult[]; } \| { attempt: number; turn: number; totalTurns: number; hearts: number; maxHearts: nu...` | createMockApi → (callback) | [214](../test-client/src/mockApi.ts#L214) |
+| `item` | variable | `{ q: PublicQuestion; key: Answer; text: string; }` | createMockApi → (callback) | [216](../test-client/src/mockApi.ts#L216) |
+| `ev` | variable | `HelpMeTurn` | createMockApi → (callback) | [217](../test-client/src/mockApi.ts#L217) |
+| `lose` | variable | `boolean` | createMockApi → (callback) | [226](../test-client/src/mockApi.ts#L226) |
+| `s` | variable | `{ q: PublicQuestion; right: string; wrong: string; }` | createMockApi → (callback) | [227](../test-client/src/mockApi.ts#L227) |
+| `d` | variable | `{ damage: number; hearts: number \| undefined; health: number \| undefined; phaseAfter: RunPhase; }` | createMockApi → (callback) | [228](../test-client/src/mockApi.ts#L228) |
+| `res` | variable | `TurnResult` | createMockApi → (callback) | [229](../test-client/src/mockApi.ts#L229) |
+| `_id` | parameter | `string` | createMockApi → (callback) | [240](../test-client/src/mockApi.ts#L240) |
+| `eventId` | parameter | `string` | createMockApi → (callback) | [240](../test-client/src/mockApi.ts#L240) |
+| `answer` | parameter | `Answer` | createMockApi → (callback) | [240](../test-client/src/mockApi.ts#L240) |
+| `ev` | variable | `HelpMeTurn` | createMockApi → (callback) | [244](../test-client/src/mockApi.ts#L244) |
+| `item` | variable | `{ q: PublicQuestion; key: Answer; text: string; }` | createMockApi → (callback) | [244](../test-client/src/mockApi.ts#L244) |
+| `late` | variable | `boolean` | createMockApi → (callback) | [245](../test-client/src/mockApi.ts#L245) |
+| `correct` | variable | `boolean` | createMockApi → (callback) | [246](../test-client/src/mockApi.ts#L246) |
+| `d` | variable | `{ damage: number; hearts: number \| undefined; health: number \| undefined; phaseAfter: RunPhase; }` | createMockApi → (callback) | [248](../test-client/src/mockApi.ts#L248) |
+| `res` | variable | `TurnResult` | createMockApi → (callback) | [249](../test-client/src/mockApi.ts#L249) |
+| `h` | parameter | `{ q: PublicQuestion; key: Answer; text: string; }` | createMockApi → (callback) → (callback) | [286](../test-client/src/mockApi.ts#L286) |
 
 ## ui.ts
 
@@ -392,7 +392,7 @@ Page: Course picker, upload, ingest, run setup.
 | `drawEmojis` | variable | `() => void` | UploadScene → buildCourse | [118](../test-client/src/scenes/UploadScene.ts#L118) |
 | `e` | parameter | `"🤖" \| "🐙" \| "🦉" \| "🐸" \| "👾"` | UploadScene → buildCourse → drawEmojis → (callback) | [120](../test-client/src/scenes/UploadScene.ts#L120) |
 | `setup` | variable | `HTMLDivElement` | UploadScene → buildCourse | [130](../test-client/src/scenes/UploadScene.ts#L130) |
-| `r` | variable | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → poll | [148](../test-client/src/scenes/UploadScene.ts#L148) |
+| `r` | variable | `{ id: string; title: string; description?: string \| undefined; learningObjectives?: string[] \| undefined; conceptIds: string[]; ready: boolean; }` | UploadScene → poll | [148](../test-client/src/scenes/UploadScene.ts#L148) |
 | `stage` | variable | `IngestStage` | UploadScene → poll | [156](../test-client/src/scenes/UploadScene.ts#L156) |
 | `err` | variable | `unknown` | UploadScene → poll | [158](../test-client/src/scenes/UploadScene.ts#L158) |
 | `c` | variable | `PublicCourse \| null` | UploadScene → renderProgress | [166](../test-client/src/scenes/UploadScene.ts#L166) |
@@ -401,18 +401,18 @@ Page: Course picker, upload, ingest, run setup.
 | `stage` | variable | `IngestStage` | UploadScene → renderProgress | [169](../test-client/src/scenes/UploadScene.ts#L169) |
 | `stageLine` | variable | `HTMLDivElement` | UploadScene → renderProgress | [170](../test-client/src/scenes/UploadScene.ts#L170) |
 | `s` | variable | `string` | UploadScene → renderProgress | [171](../test-client/src/scenes/UploadScene.ts#L171) |
-| `u` | variable | `{ id: string; title: string; concepts: { id: string; title: string; ready: boolean; }[]; }` | UploadScene → renderProgress | [175](../test-client/src/scenes/UploadScene.ts#L175) |
-| `k` | variable | `{ id: string; title: string; ready: boolean; }` | UploadScene → renderProgress | [177](../test-client/src/scenes/UploadScene.ts#L177) |
-| `r` | variable | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → renderProgress | [180](../test-client/src/scenes/UploadScene.ts#L180) |
+| `u` | variable | `{ id: string; title: string; concepts: { id: string; title: string; summary?: string \| undefined; ready: boolean; }[]; }` | UploadScene → renderProgress | [175](../test-client/src/scenes/UploadScene.ts#L175) |
+| `k` | variable | `{ id: string; title: string; summary?: string \| undefined; ready: boolean; }` | UploadScene → renderProgress | [177](../test-client/src/scenes/UploadScene.ts#L177) |
+| `r` | variable | `{ id: string; title: string; description?: string \| undefined; learningObjectives?: string[] \| undefined; conceptIds: string[]; ready: boolean; }` | UploadScene → renderProgress | [180](../test-client/src/scenes/UploadScene.ts#L180) |
 | `c` | variable | `PublicCourse \| null` | UploadScene → renderRooms | [184](../test-client/src/scenes/UploadScene.ts#L184) |
-| `r` | variable | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → renderRooms | [187](../test-client/src/scenes/UploadScene.ts#L187) |
+| `r` | variable | `{ id: string; title: string; description?: string \| undefined; learningObjectives?: string[] \| undefined; conceptIds: string[]; ready: boolean; }` | UploadScene → renderRooms | [187](../test-client/src/scenes/UploadScene.ts#L187) |
 | `cb` | variable | `HTMLInputElement` | UploadScene → renderRooms | [188](../test-client/src/scenes/UploadScene.ts#L188) |
 | `label` | variable | `HTMLLabelElement` | UploadScene → renderRooms | [196](../test-client/src/scenes/UploadScene.ts#L196) |
-| `first` | variable | `{ id: string; title: string; conceptIds: string[]; ready: boolean; } \| undefined` | UploadScene → renderRooms | [199](../test-client/src/scenes/UploadScene.ts#L199) |
-| `r` | parameter | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → renderRooms → (callback) | [199](../test-client/src/scenes/UploadScene.ts#L199) |
+| `first` | variable | `{ id: string; title: string; description?: string \| undefined; learningObjectives?: string[] \| undefined; conceptIds: string[]; ready: boolean; } \| undefined` | UploadScene → renderRooms | [199](../test-client/src/scenes/UploadScene.ts#L199) |
+| `r` | parameter | `{ id: string; title: string; description?: string \| undefined; learningObjectives?: string[] \| undefined; conceptIds: string[]; ready: boolean; }` | UploadScene → renderRooms → (callback) | [199](../test-client/src/scenes/UploadScene.ts#L199) |
 | `roomIds` | variable | `string[]` | UploadScene → start | [210](../test-client/src/scenes/UploadScene.ts#L210) |
-| `r` | parameter | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → start → (callback) | [210](../test-client/src/scenes/UploadScene.ts#L210) |
-| `r` | parameter | `{ id: string; title: string; conceptIds: string[]; ready: boolean; }` | UploadScene → start → (callback) | [210](../test-client/src/scenes/UploadScene.ts#L210) |
+| `r` | parameter | `{ id: string; title: string; description?: string \| undefined; learningObjectives?: string[] \| undefined; conceptIds: string[]; ready: boolean; }` | UploadScene → start → (callback) | [210](../test-client/src/scenes/UploadScene.ts#L210) |
+| `r` | parameter | `{ id: string; title: string; description?: string \| undefined; learningObjectives?: string[] \| undefined; conceptIds: string[]; ready: boolean; }` | UploadScene → start → (callback) | [210](../test-client/src/scenes/UploadScene.ts#L210) |
 | `run` | variable | `PublicRun \| undefined` | UploadScene → start | [211](../test-client/src/scenes/UploadScene.ts#L211) |
 
 ## scenes/LearningScene.ts
@@ -433,7 +433,7 @@ Page: Learning/notebook.
 | `ready` | variable | `HTMLButtonElement` | LearningScene → create | [44](../test-client/src/scenes/LearningScene.ts#L44) |
 | `next` | variable | `PublicRun \| undefined` | LearningScene → create → (callback) | [45](../test-client/src/scenes/LearningScene.ts#L45) |
 | `concepts` | variable | `HTMLUListElement` | LearningScene → create | [51](../test-client/src/scenes/LearningScene.ts#L51) |
-| `c` | parameter | `{ id: string; title: string; }` | LearningScene → create → (callback) | [51](../test-client/src/scenes/LearningScene.ts#L51) |
+| `c` | parameter | `{ id: string; title: string; summary?: string \| undefined; }` | LearningScene → create → (callback) | [51](../test-client/src/scenes/LearningScene.ts#L51) |
 | `left` | variable | `HTMLDivElement` | LearningScene → create | [52](../test-client/src/scenes/LearningScene.ts#L52) |
 | `right` | variable | `HTMLDivElement` | LearningScene → create | [59](../test-client/src/scenes/LearningScene.ts#L59) |
 | `md` | parameter | `string` | LearningScene → setNotebook | [67](../test-client/src/scenes/LearningScene.ts#L67) |

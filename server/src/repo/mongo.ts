@@ -21,6 +21,8 @@ export function createMongoRepository(db: Db): Repository {
   const runs = db.collection<Doc<Run>>('runs');
 
   return {
+    async listCoursePacks() { return (await courses.find({}).toArray()).map(d => strip<CoursePack>(d)!); },
+    async listRuns() { return (await runs.find({}).sort({updatedAt:-1}).toArray()).map(d => strip<Run>(d)!); },
     async init() {
       // createIndex is idempotent.
       await questions.createIndex({ courseId: 1 });

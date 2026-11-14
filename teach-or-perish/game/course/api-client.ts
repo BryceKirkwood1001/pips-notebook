@@ -179,12 +179,15 @@ export interface PublicStudentQuestion {
 export interface PublicRunRoom {
   id: string;
   title: string;
-  concepts: { id: string; title: string }[];
+  description?: string;
+  learningObjectives?: string[];
+  concepts: { id: string; title: string; summary?: string }[];
   ready: boolean;
   state: 'upcoming' | 'current' | 'passed';
 }
 
 export interface PublicRun {
+  pausedAt?: string;
   id: string;
   courseId: string;
   courseTitle: string;
@@ -234,8 +237,8 @@ export interface PublicCourse {
   title: string;
   status: { stage: IngestStage; conceptsReady: string[]; error?: string; activity?: CourseActivity };
   files: { id: string; name: string; type: 'pdf' | 'txt' | 'md'; pages: number }[];
-  units: { id: string; title: string; concepts: { id: string; title: string; ready: boolean }[] }[];
-  rooms: { id: string; title: string; conceptIds: string[]; ready: boolean }[];
+  units: { id: string; title: string; concepts: { id: string; title: string; summary?: string; ready: boolean }[] }[];
+  rooms: { id: string; title: string; description?: string; learningObjectives?: string[]; conceptIds: string[]; ready: boolean }[];
   styleSummary: {
     voice: string;
     notation: string;
@@ -251,6 +254,11 @@ export interface CreateRunBody {
   studentEmoji?: StudentEmoji;
   /** Defaults to every room of the course. */
   scope?: { roomIds: string[] };
+}
+
+export interface ArchiveResponse {
+  courses: PublicCourse[];
+  runs: {id: string; courseId: string; phase: RunPhase; roomIndex: number; updatedAt: string; pausedAt?: string}[];
 }
 
 export interface TeachResponse {
@@ -350,6 +358,7 @@ export function createApiClient(options: ApiClientOptions = {}) {
 
     /** GET /samples: the cached sample packs that seedCourse() accepts. */
     listSamples: () => request<{ samples: { id: string; title: string }[] }>('GET', '/samples'),
+    listArchive: () => request<ArchiveResponse>('GET', '/archive'),
 
     /** POST /courses/seed/:sample: load a cached sample pack instantly. */
     seedCourse: (sample: string) => request<{ courseId: string }>('POST', `/courses/seed/${enc(sample)}`),
@@ -374,6 +383,8 @@ export function createApiClient(options: ApiClientOptions = {}) {
 
     /** GET /runs/:id */
     getRun: (runId: string) => request<PublicRun>('GET', `/runs/${enc(runId)}`),
+    pauseRun: (runId: string) => request<PublicRun>('POST', `/runs/${enc(runId)}/pause`),
+    resumeRun: (runId: string) => request<PublicRun>('POST', `/runs/${enc(runId)}/resume`),
 
     /** POST /runs/:id/teach (phase: learning). The student takes notes and may ask questions. */
     teach: (runId: string, explanation: string) =>

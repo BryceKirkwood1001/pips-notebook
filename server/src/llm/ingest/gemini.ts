@@ -41,6 +41,7 @@ import {
 } from '../../prompts/ingest';
 import type { IngestTasks, LlmClient, MisconceptionDraft, OutlineDraft, QuestionDraft, QuoteRef } from '../types';
 import { outlineBatches } from './outline-batches';
+import { LessonPlanSchema, lessonPlanPrompt, PLAN_LESSONS_SYSTEM } from '../../ingest/lesson-plan';
 
 // ── small helpers ───────────────────────────────────────────────────────────
 
@@ -450,11 +451,14 @@ export function createIngestTasks(llm: LlmClient, _config: Config): IngestTasks 
     [...new Set([...concepts.flatMap((c) => c.keyPoints.map((k) => k.evidence.fileId)), ...items.map((i) => i.evidence.fileId)])];
 
   return {
+    planLessons: input => llm.generateJson(LessonPlanSchema, lessonPlanPrompt(input.title, input.concepts), {
+      system: PLAN_LESSONS_SYSTEM, label: 'planLessons', temperature: 0.2,
+    }),
     async extractOutline({ files, titleHint, onProgress }) {
       const parts: FlatOutline[] = [];
       const batches = outlineBatches(files);
       const seenScope = new Set<string>();
-      const courseScope = files.flatMap(file => file.pages.filter((page, index) => index === 0 || /learning\s+(?:objectives|outcomes)|what\s+(?:we|you)\s+(?:will|just)\s+(?:uncover|learn)|(?:course|lesson)\s+(?:goals|objectives)/i.test(page.text))
+      const courseScope = files.flatMap(file => file.pages.filter((page, index) => index === 0 || /learning\s+(?:objectives|outcomes)|(?:short\s+)?outline|agenda|what\s+(?:we|you)\s+(?:will|just)\s+(?:uncover|learn)|(?:course|lesson)\s+(?:goals|objectives)/i.test(page.text))
         .filter(page => { const key = page.text.replace(/\s+/g, ' ').trim(); if (!key || seenScope.has(key)) return false; seenScope.add(key); return true; })
         .map(page => `[file ${file.fileId} page ${page.page}]\n${page.text.slice(0, 1500)}`)).join('\n\n').slice(0, 6000);
       // Sequential batches bound rate/concurrency and stop immediately if a provider call fails.

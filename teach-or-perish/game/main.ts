@@ -8,12 +8,13 @@ import { LearningScene } from './course/Learning.js';
 import { ResultsScene } from './course/Results.js';
 import { arena, Battle } from './course/battle.js';
 import { SettingsScene } from './course/Settings.js';
+import { MenuScene } from './course/Menu.js';
 
 mount();
-const screens:Screen[]=['Title','Upload','Learning','Fight','Boss','Results','Settings'];
+const screens:Screen[]=['Title','Upload','Learning','Fight','Boss','Results','Settings','Menu'];
 let page:Page;
 for(const name of screens) game.scenes.register({name,enter(){
-    const screen={Title:'title',Upload:'setup',Learning:'room',Fight:'room',Boss:'boss',Results:'report',Settings:'settings'}[name];
+    const screen={Title:'title',Upload:'setup',Learning:'room',Fight:'room',Boss:'boss',Results:'report',Settings:'settings',Menu:'menu'}[name];
     frame(screen);arena(state.run,screen);
     if(name==='Title'){
         page=new Page();
@@ -24,7 +25,7 @@ for(const name of screens) game.scenes.register({name,enter(){
             id?btn('New lesson',()=>{setRun(null);goTo('Upload');},'alt'):null));
         if(id)void resume(id);
     }else {
-        const next=name==='Upload'?new UploadScene():name==='Learning'?new LearningScene():name==='Results'?new ResultsScene():name==='Settings'?new SettingsScene():new Battle(name==='Boss');
+        const next=name==='Upload'?new UploadScene():name==='Learning'?new LearningScene():name==='Results'?new ResultsScene():name==='Settings'?new SettingsScene():name==='Menu'?new MenuScene():new Battle(name==='Boss');
         page=next;void next.create();
     }
 },exit(){page?.close();}});
