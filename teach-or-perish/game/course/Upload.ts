@@ -1,11 +1,11 @@
 import { Page, panel, title } from './page.js';
 import { STUDENT_EMOJIS, TARGET_GRADES, type PublicCourse, type StudentEmoji, type TargetGrade } from './api-client.js';
-import { api, call, describeError, goTo, setRun, showError, state } from './app.js';
+import { api, call, courseSource, describeError, goTo, openCoursePicker, setRun, showError, state } from './app.js';
 import { btn, el, clock, inline } from './ui.js';
 import { resume } from './app.js';
 import { lessonGuide } from './lesson-guide.js';
 import { travel } from './transition.js';
-import { canPlay, describeRun, endExpedition, removeExpedition } from './expedition.js';
+import { canPlay, describeRun, endExpedition, removeDungeon, removeExpedition } from './expedition.js';
 import { setArrival } from '../art.js';
 
 const STAGES = ['parsing', 'outline', 'style', 'concepts', 'ready'];
@@ -67,7 +67,8 @@ export class UploadScene extends Page {
       for (const c of res.archive.courses) {
         const runs = res.archive.runs.filter(r=>r.courseId===c.id);
         const entry=el('article','saved-course',el('h4','',c.title),el('p','dim',`${c.rooms.length} lessons · ${c.status.stage}`),
-          btn('View lessons',()=>this.begin({courseId:c.id}),'alt'));
+          el('div','saved-course-actions',btn('View lessons',()=>this.begin({courseId:c.id}),'alt'),
+            btn('Delete dungeon',async()=>{ if (await removeDungeon(c.id,c.title,runs.length) && this.active) openCoursePicker('Library'); },'alt remove')));
         // Every expedition on this course, most recent first: open it, end it early, or remove it.
         if (runs.length) entry.append(el('ul','saved-runs',...runs.map(r=>{
           const open=btn(r.phase==='results'?'View results':r.endedAt?'View record':'Resume',()=>void resume(r.id),r.endedAt?'alt':'gold');
@@ -139,7 +140,7 @@ export class UploadScene extends Page {
     };
     bookmarks.append(...buttons);
     this.sourceEl.append(el('h2', '', 'My archive'), bookmarks, ...methods.map(m => m.body));
-    select(0);
+    select(methods.findIndex(method => method.name === courseSource));
   }
 
   private begin(res: { courseId: string } | undefined) {

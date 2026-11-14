@@ -1,0 +1,59 @@
+{
+  "backup": ".local/pre-student-review-20261114T155404232264Z",
+  "before": {
+    "repository.json": "76d53beadd304c6ce31699658e404040c1d787c8da11e00f756fc186b34df748",
+    "chunks.json": "8d010526d863387fb052db53dd5d9c6c642deac67bc9f9913be1b12bf86bbcee"
+  },
+  "courses": 2,
+  "runs": 2,
+  "after": {
+    "repository.json": "76d53beadd304c6ce31699658e404040c1d787c8da11e00f756fc186b34df748",
+    "chunks.json": "8d010526d863387fb052db53dd5d9c6c642deac67bc9f9913be1b12bf86bbcee"
+  },
+  "archiveUnchanged": true,
+  "verifiedAt": "2026-11-14T15:58:47.194944+00:00",
+  "model": "gpt-6-luna",
+  "approvedReviewInvocations": 6,
+  "savedRunTeachCalls": 0,
+  "cases": [
+    {
+      "explanation": "the orange juice is big",
+      "beforeNotes": 0,
+      "afterNotes": 0,
+      "feedback": "I\u2019m not sure how the orange juice relates to accessing dictionary data. Could you show me an example of retrieving a value from a dictionary?",
+      "notes": []
+    },
+    {
+      "explanation": "get() gives u the index and the vlaue",
+      "beforeNotes": 0,
+      "afterNotes": 1,
+      "feedback": "I heard that `get()` gives me an index and a value. What do you mean by \u201cindex\u201d here?",
+      "notes": [
+        {
+          "conceptId": "c1",
+          "text": "I heard that `get()` gives me an index and a value."
+        }
+      ]
+    },
+    {
+      "explanation": "ictionaries in Python store data in key-value pairs (rather than using numeric indexes like lists). W",
+      "beforeNotes": 0,
+      "afterNotes": 1,
+      "feedback": "I heard that Python dictionaries store data as key-value pairs rather than using numeric indexes like lists. What would you like to explain about accessing dictionary data?",
+      "notes": [
+        {
+          "conceptId": "c1",
+          "text": "I learned that Python dictionaries store data in key-value pairs rather than using numeric indexes like lists."
+        }
+      ]
+    }
+  ],
+  "tests": {
+    "passed": 404,
+    "files": 39
+  },
+  "typecheck": "passed",
+  "gameBuild": "passed",
+  "browserCheck": "Isolated replay of approved live outputs on an in-memory copy of the dictionary course; no provider calls or saved-run writes.",
+  "temporaryServerStopped": true
+}

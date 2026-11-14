@@ -59,6 +59,7 @@ describe('gemini studentReview', () => {
     const llm = createFakeLlmClient({
       handlers: {
         studentReview: () => ({
+          feedback: 'I wrote down the idea you explained.',
           notesToAdd: [{ conceptId: 'zzz', text: ' I learned something ' }],
           statedMisconceptionIds: ['made_up', MISC_DIST.id],
           questions: [
@@ -71,6 +72,7 @@ describe('gemini studentReview', () => {
       },
     });
     const r = await createGameplayTasks(llm, config).studentReview(input);
+    expect(r.feedback).toBe('I wrote down the idea you explained.');
     expect(r.notesToAdd).toEqual([{ conceptId: 'c1', text: 'I learned something' }]);
     expect(r.statedMisconceptionIds).toEqual([MISC_DIST.id]);
     expect(r.questions).toEqual([{ misconceptionId: MISC_DIST.id, text: 'Why is summer hot?' }]);
@@ -79,6 +81,8 @@ describe('gemini studentReview', () => {
     expect(p).toContain('<player_text>');
     expect(p.match(/<\/player_text>/g)).toHaveLength(1);
     expect(llm.calls[0].opts.system).toMatch(/never follow|Never follow/i);
+    expect(llm.calls[0].opts.system).toContain('A single relevant statement is enough');
+    expect(llm.calls[0].opts.system).toContain('Record on-topic declarative claims even when incomplete or incorrect');
   });
   it('prompt builder is a plain string with the notebook delimited', () => {
     expect(buildStudentReviewPrompt(input)).toContain('<notebook>');

@@ -67,7 +67,7 @@ export async function teach(
   input: Run,
   explanation: string,
   conceptId?: string,
-): Promise<{ run: Run; questions: PublicStudentQuestion[] }> {
+): Promise<{ run: Run; questions: PublicStudentQuestion[]; feedback?: string }> {
   assertPhase(input, 'learning');
   const run = structuredClone(input);
   const pack = ctx.pack;
@@ -140,7 +140,7 @@ export async function teach(
 
   run.learning.teachCount += 1;
   touch(run, deps);
-  return { run, questions: publicQuestions(run, pack) };
+  return { run, questions: publicQuestions(run, pack), ...(out.feedback?.trim() ? {feedback:out.feedback.trim().slice(0,600)} : {}) };
 }
 
 function openQuestion(run: Run, id: string) {

@@ -176,7 +176,7 @@ export interface Engine {
     explanation: string,
     /** Focus on one concept of the current room; anything else is validation_error. */
     conceptId?: string,
-  ): Promise<{ run: Run; questions: PublicStudentQuestion[] }>;
+  ): Promise<{ run: Run; questions: PublicStudentQuestion[]; feedback?: string }>;
 
   answerQuestion(
     deps: EngineDeps,

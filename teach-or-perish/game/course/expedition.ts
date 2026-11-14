@@ -3,20 +3,26 @@
 import { api, call, setRun, state } from './app.js';
 import type { ArchiveResponse } from './api-client.js';
 import { stage } from './page.js';
-import { btn, el } from './ui.js';
+import { btn, el, host } from './ui.js';
 
 type Summary = ArchiveResponse['runs'][number];
 
 /** An in-game yes/no question over the whole stage. Escape and Cancel say no; Cancel has the focus. */
 export function confirmChoice(opts: { title: string; message: string; confirm: string }): Promise<boolean> {
   return new Promise(resolve => {
-    const done = (yes: boolean) => { veil.remove(); content.inert = false; header.inert = false; resolve(yes); };
+    const opener = host.activeElement as HTMLElement | null;
+    const done = (yes: boolean) => { veil.remove(); content.inert = false; header.inert = false; opener?.focus(); resolve(yes); };
     const cancel = btn('Cancel', () => done(false), 'alt');
     const ok = btn(opts.confirm, () => done(true), 'alt remove');
     const box = el('section', 'folio confirm-folio', el('h2', '', opts.title), el('p', '', opts.message), el('div', 'menu-actions', cancel, ok));
     const veil = el('div', 'veil confirm-veil', box);
     veil.setAttribute('role', 'alertdialog'); veil.setAttribute('aria-modal', 'true'); veil.setAttribute('aria-label', opts.title);
-    veil.addEventListener('keydown', event => { if (event.key === 'Escape') { event.stopPropagation(); done(false); } });
+    veil.addEventListener('keydown', event => {
+      if (event.key === 'Escape') { event.stopPropagation(); done(false); }
+      if (event.key === 'Tab' && ((event.shiftKey && host.activeElement === cancel) || (!event.shiftKey && host.activeElement === ok))) {
+        event.preventDefault(); (event.shiftKey ? ok : cancel).focus();
+      }
+    });
     const content = stage.querySelector<HTMLElement>('section')!, header = stage.querySelector<HTMLElement>('header')!;
     content.inert = true; header.inert = true;
     stage.append(veil);
@@ -45,6 +51,18 @@ export async function removeExpedition(runId: string): Promise<boolean> {
   const removed = await call(() => api.deleteRun(runId));
   if (!removed) return false;
   if (state.run?.id === runId) { setRun(null); state.results = null; }
+  return true;
+}
+
+/** Deletes the dungeon and every expedition on it after an explicit in-game confirmation. */
+export async function removeDungeon(courseId: string, title: string, expeditions: number): Promise<boolean> {
+  const yes = await confirmChoice({ title: 'Delete this dungeon?',
+    message: `Permanently delete “${title}” and its lessons, saved source material and questions.${expeditions ? ` This also deletes ${expeditions} saved expedition${expeditions === 1 ? '' : 's'}, including notebooks and progress.` : ''} This can’t be undone.`,
+    confirm: 'Delete dungeon' });
+  if (!yes) return false;
+  const removed = await call(() => api.deleteCourse(courseId));
+  if (!removed) return false;
+  if (state.run?.courseId === courseId) { setRun(null); state.results = null; }
   return true;
 }
 

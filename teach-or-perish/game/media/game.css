@@ -43,7 +43,7 @@ h1,h2,.card strong,.gold,.ghost,.eyebrow,header>span,.energy,.gauge,.numbers str
 .pip-bubble {
     position:absolute;translate:-50% -100%;padding:10px 20px;white-space:nowrap;
     background:#fff0c9;color:var(--ink);border:3px solid #563746;font:15px Silkscreen,monospace;
-    box-shadow:inset 0 0 0 2px #eac58c,3px 4px #281924
+    box-shadow:inset 0 0 0 2px #eac58c,3px 4px #281924;animation:bob 1.8s ease-in-out infinite
 }
 .pip-bubble::after {content:'';position:absolute;bottom:-10px;left:50%;width:13px;height:13px;
     rotate:45deg;background:#fff0c9;border-right:3px solid #563746;border-bottom:3px solid #563746}
@@ -395,8 +395,12 @@ body.settings-preview{margin:0;min-height:100vh;overflow:hidden;background:#160f
 /* Long topic titles stay on two lines in the card (the full title is its tooltip and is in the full report). */
 .report-card .weak-points strong{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .report-head{display:flex;justify-content:space-between;font:12px Silkscreen,monospace;color:#f1c779;letter-spacing:1px}
-.report-stats{display:flex;gap:14px;font-size:13px;color:#d8c7ad}
-.report-stats strong{font:bold 17px Silkscreen,monospace;color:#fff0d1}
+.report-stats{display:grid;grid-template-columns:1fr 2fr;gap:14px;color:#d8c7ad}
+.report-stat{display:grid;align-content:start;gap:3px;min-width:0}
+.report-stats strong{font:bold 22px/1.1 Georgia,serif;font-variant-numeric:tabular-nums;color:#fff0d1;white-space:nowrap}
+.report-stats small{font:12px/1.3 Georgia,serif}
+.report-accuracy{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.report-answer-count{white-space:nowrap}
 .course-stage .report-card h3{margin:4px 0 0;font:12px Silkscreen,monospace;color:#f1c779;letter-spacing:1px}
 .weak-points{list-style:none;margin:0;padding:0;display:grid;gap:6px}
 .weak-points li{display:grid;grid-template-columns:20px minmax(0,1fr);gap:7px;align-items:start}
@@ -420,6 +424,18 @@ body.settings-preview{margin:0;min-height:100vh;overflow:hidden;background:#160f
 .course-stage .cover .gold{font-size:18px}
 .course-stage .cover p{max-width:560px}
 
+/* A centered title menu, with every starting action in one keyboard-friendly stack. */
+.course-stage[data-screen=title]{background:radial-gradient(ellipse at center,#21121d40,#160f1b99)}
+.course-stage[data-screen=title] .cover{left:50%;top:50%;translate:-50% -50%;width:min(560px,calc(100% - 64px));text-align:center}
+.title-menu{padding:28px 36px 32px;background:#291c2be8;border:3px solid #a37a49;
+    box-shadow:inset 0 0 0 3px #48313a,5px 6px #1a101e}
+.course-stage .title-menu h1{font-size:58px;line-height:1.05;margin:0 0 12px;letter-spacing:0}
+.course-stage .title-menu p{font-size:18px;line-height:1.4;margin:0 0 22px;color:#efdab8}
+.title-actions{display:grid;gap:10px;width:min(290px,100%);margin:auto}
+.course-stage .title-actions button{display:flex;align-items:center;justify-content:center;min-height:46px;width:100%;font:16px Silkscreen,monospace}
+.title-actions button:hover:not(:disabled),.title-actions button:focus-visible{border-color:#ffe3a4;color:#fff0ce;background:#65414b}
+.title-actions .gold:hover:not(:disabled),.title-actions .gold:focus-visible{background:#ffdc96;color:#36202a}
+
 /* Expeditions in My archive: open, end early or remove each one. Remove is the one red (destructive) control. */
 .saved-runs{list-style:none;margin:10px 0 0;padding:0!important;display:grid;gap:6px}
 .saved-runs li{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;background:#fff3d6;border-left:3px solid #6f9a5e}
@@ -428,6 +444,7 @@ body.settings-preview{margin:0;min-height:100vh;overflow:hidden;background:#160f
 .saved-runs strong{font:13px Silkscreen,monospace;color:#5b2d3b}
 .saved-runs small{font-size:14px}
 .saved-run-actions{display:flex;flex-wrap:wrap;gap:6px}
+.saved-course-actions{display:flex;flex-wrap:wrap;gap:10px}
 .course-stage .folio .saved-run-actions button{margin:0;padding:6px 12px;font-size:12px;min-height:0}
 .course-stage .alt.remove{background:#6e2b31;border-color:#e69979;color:#ffe2d6}
 /* The confirm dialog sits above everything on the stage. */

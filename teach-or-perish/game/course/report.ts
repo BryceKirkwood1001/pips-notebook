@@ -77,12 +77,16 @@ export function reportCard(run: PublicRun, openFull?: () => void): HTMLElement {
   const meter = el('progress'); meter.max = run.rooms.length; meter.value = s.cleared;
   meter.setAttribute('aria-label', 'Rooms cleared');
   const points = weakPoints(run);
+  const accuracy = el('strong', '', s.accuracy === null ? '—' : `${s.accuracy}%`);
+  accuracy.title = s.total ? `${s.correct} of ${s.total} battle answers correct across completed attempts` : 'No completed battles yet';
   const card = el('aside', 'report-card',
     el('div', 'report-head', el('small', '', 'Expedition log'), el('small', '', `Room ${Math.min(run.roomIndex + 1, run.rooms.length)} of ${run.rooms.length}`)),
     meter,
     el('div', 'report-stats',
-      el('span', '', el('strong', '', String(s.cleared)), ' cleared'),
-      el('span', '', el('strong', '', s.accuracy === null ? '—' : `${s.accuracy}%`), ' battle accuracy')),
+      el('span', 'report-stat', el('strong', '', String(s.cleared)), el('small', '', 'Rooms cleared')),
+      el('span', 'report-stat', el('span', 'report-accuracy', accuracy,
+        el('small', 'report-answer-count', s.total ? `${s.correct}/${s.total} correct` : 'No battles yet')),
+        el('small', '', 'Battle accuracy'))),
     el('h3', '', 'Weak points'), weakList(points.slice(0, CARD_WEAK_POINTS)));
   if (openFull) card.append(btn(points.length > CARD_WEAK_POINTS ? `Full report (+${points.length - CARD_WEAK_POINTS})` : 'Full report', openFull, 'report-more'));
   card.setAttribute('aria-label', 'Expedition log');

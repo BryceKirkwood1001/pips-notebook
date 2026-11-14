@@ -41,7 +41,7 @@ import {
 } from '../../prompts/ingest';
 import type { IngestTasks, LlmClient, MisconceptionDraft, OutlineDraft, QuestionDraft, QuoteRef } from '../types';
 import { outlineBatches } from './outline-batches';
-import { LessonPlanSchema, lessonPlanPrompt, PLAN_LESSONS_SYSTEM } from '../../ingest/lesson-plan';
+import { lessonPlanSchemaFor, lessonPlanPrompt, PLAN_LESSONS_SYSTEM } from '../../ingest/lesson-plan';
 
 // ── small helpers ───────────────────────────────────────────────────────────
 
@@ -451,7 +451,7 @@ export function createIngestTasks(llm: LlmClient, _config: Config): IngestTasks 
     [...new Set([...concepts.flatMap((c) => c.keyPoints.map((k) => k.evidence.fileId)), ...items.map((i) => i.evidence.fileId)])];
 
   return {
-    planLessons: input => llm.generateJson(LessonPlanSchema, lessonPlanPrompt(input.title, input.concepts), {
+    planLessons: input => llm.generateJson(lessonPlanSchemaFor(input.concepts), lessonPlanPrompt(input.title, input.concepts, input.repair), {
       system: PLAN_LESSONS_SYSTEM, label: 'planLessons', temperature: 0.2,
     }),
     async extractOutline({ files, titleHint, onProgress }) {

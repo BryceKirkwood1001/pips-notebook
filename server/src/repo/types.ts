@@ -30,6 +30,8 @@ export interface Repository {
   saveCoursePack(pack: CoursePack): Promise<void>;
   getCoursePack(courseId: string): Promise<CoursePack | null>;
   listCoursePacks(): Promise<CoursePack[]>;
+  /** Removes the course, its questions/stats and every associated run. Chunks are owned by VectorStore. */
+  deleteCourse(courseId: string): Promise<boolean>;
 
   // Questions
   /** Insert or replace by question id. */

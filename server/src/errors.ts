@@ -15,6 +15,8 @@ export const ERROR_STATUS = {
   run_paused: 409,
   /** The expedition was ended; it can be viewed or removed but not played. */
   run_ended: 409,
+  /** Deleting an actively preparing course would allow background writes to recreate it. */
+  course_busy: 409,
   /** The "Help me!" event id is not the pending one (already answered, or never existed). */
   help_event_not_pending: 409,
   /** A learning-phase question that is not open (already answered or skipped). */

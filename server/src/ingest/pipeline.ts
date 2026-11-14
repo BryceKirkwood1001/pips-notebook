@@ -25,7 +25,7 @@ import type { ParsedFile, RetrievedChunk } from '../rag/types';
 import { checkCoverage, gapFor, multiConceptNeed, preferredTypes, roomPoolNeed } from './coverage';
 import { createLimiter } from './limiter';
 import { buildOutline, tagChunks } from './outline';
-import { applyLessonPlan } from './lesson-plan';
+import { applyLessonPlan, LessonPlanCoverageError, type LessonPlanRepair } from './lesson-plan';
 import type { IngestDeps, IngestInput, IngestReport } from './types';
 import { questionKey, shuffleOrdering, slugify, toPublicQuestion } from './util';
 import { validateQuestion } from './validate';
@@ -48,6 +48,7 @@ interface Run {
 }
 
 const MAX_ROUNDS = 3; // LLM calls per stage and gap before giving up
+const LESSON_PLAN_ATTEMPTS = 2;
 const clampInt = (x: number, min: number, max: number): number => Math.min(max, Math.max(min, Math.round(x)));
 const unique = <T>(xs: T[]): T[] => [...new Set(xs)];
 
@@ -486,7 +487,20 @@ export async function runIngest(deps: IngestDeps, input: IngestInput): Promise<I
     if (outline.concepts.length === 0) throw new Error('The outline has no concept with a findable quote.');
     if (deps.tasks.planLessons) {
       await activity({ message: 'Combining overlapping topics into complete lessons and writing teaching goals.' });
-      outline = applyLessonPlan(outline, await deps.tasks.planLessons({title: input.title || draft.title, concepts: outline.concepts}));
+      let repair: LessonPlanRepair | undefined;
+      for (let attempt = 0; attempt < LESSON_PLAN_ATTEMPTS; attempt++) {
+        const plan = await deps.tasks.planLessons({title: input.title || draft.title, concepts: outline.concepts, ...(repair ? {repair} : {})});
+        try {
+          outline = applyLessonPlan(outline, plan);
+          break;
+        } catch (error) {
+          if (!(error instanceof LessonPlanCoverageError)) throw error;
+          if (attempt === LESSON_PLAN_ATTEMPTS-1) throw new Error('Could not create a complete lesson plan after checking every topic twice. Retry preparation. ' + error.message);
+          repair = error.repair;
+          log('lesson plan coverage invalid; requesting correction', {missingIds:repair.missingIds,duplicateIds:repair.duplicateIds,unknownIds:repair.unknownIds});
+          await activity({ message: 'Repairing the lesson plan so every uploaded topic is included exactly once.' });
+        }
+      }
     }
     if (!input.title) current.title = draft.title || current.title;
     current.language = draft.language || 'en';

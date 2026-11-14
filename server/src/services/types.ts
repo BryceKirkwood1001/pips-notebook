@@ -40,6 +40,7 @@ export interface Services {
   /** Saves an empty pack, starts progressive ingest in the background and returns at once. */
   createCourse(input: { title?: string; files: UploadInput[] }): Promise<CreateCourseResponse>;
   getCourse(courseId: string): Promise<PublicCourse>;
+  deleteCourse(courseId: string): Promise<{ deleted: true; id: string }>;
   listArchive(): Promise<{ courses: PublicCourse[]; runs: { id: string; courseId: string; phase: PublicRun['phase']; roomIndex: number; rooms: number; updatedAt: string; pausedAt?: string; endedAt?: string }[] }>;
 
   // Runs

@@ -113,6 +113,8 @@ export interface StudentReviewInput {
 }
 
 export interface StudentReviewOutput {
+  /** Public student reply, based only on the teacher's explanation; no hidden corrections. */
+  feedback?: string;
   /** New notes, in the student's curious, slightly naive voice, derived ONLY from the explanation. */
   notesToAdd: { conceptId: string; text: string }[];
   /** Misconceptions the explanation itself STATES. They become active with origin 'stated'. */
@@ -299,7 +301,7 @@ export interface VerifyQuestionOutput {
 }
 
 export interface IngestTasks {
-  planLessons?(input: {title: string; concepts: Concept[]}): Promise<import('../ingest/lesson-plan').LessonPlan>;
+  planLessons?(input: {title: string; concepts: Concept[]; repair?: import('../ingest/lesson-plan').LessonPlanRepair}): Promise<import('../ingest/lesson-plan').LessonPlan>;
   /** Reads the material (PDFs natively when `file.uploaded` is set, page text otherwise). */
   extractOutline(input: { files: ParsedFile[]; titleHint?: string; onProgress?: (activity: CourseActivity) => Promise<void> }): Promise<OutlineDraft>;
   /** Style profile from the material's own items and a few sample pages. */

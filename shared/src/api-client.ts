@@ -290,6 +290,8 @@ export interface ArchiveResponse {
 }
 
 export interface TeachResponse {
+  /** Pip's reply to this explanation; may be absent on older/offline backends. */
+  feedback?: string;
   notebookMd: string;
   questions: PublicStudentQuestion[];
 }
@@ -405,6 +407,8 @@ export function createApiClient(options: ApiClientOptions = {}) {
 
     /** GET /courses/:id: ingest status, units, rooms. */
     getCourse: (courseId: string) => request<PublicCourse>('GET', `/courses/${enc(courseId)}`),
+    /** Permanently deletes a dungeon, its lessons and all associated expeditions. */
+    deleteCourse: (courseId: string) => request<{ deleted: true; id: string }>('DELETE', `/courses/${enc(courseId)}`),
 
     /** POST /runs. 425 if the first room in scope isn't ingested yet. */
     createRun: (body: CreateRunBody) => request<PublicRun>('POST', '/runs', body),

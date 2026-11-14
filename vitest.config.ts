@@ -1,6 +1,6 @@
 import { defineConfig } from 'vitest/config';
 
-// One Vitest run for the whole backend. The teammate's game (teach-or-perish/) is never touched.
+// Backend/shared tests and isolated frontend controller checks; no native game test discovery.
 export default defineConfig({
   test: {
     include: ['server/**/*.test.ts', 'shared/**/*.test.ts', 'scripts/**/*.test.ts'],

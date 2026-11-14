@@ -46,6 +46,19 @@ export function createFileRepository(directory: string): Repository {
     saveCoursePack: pack => data.update(s => put(s.courses, pack, p => p.id)),
     getCoursePack: async id => data.read().courses.find(p => p.id === id) ?? null,
     listCoursePacks: async () => data.read().courses,
+    deleteCourse: async id => {
+      if (!data.read().courses.some(c => c.id === id)) return false;
+      let removed = false;
+      await data.update(s => {
+        const questionIds = new Set(s.questions.filter(q => q.courseId === id).map(q => q.id));
+        removed = s.courses.some(c => c.id === id);
+        s.courses = s.courses.filter(c => c.id !== id);
+        s.questions = s.questions.filter(q => q.courseId !== id);
+        s.stats = s.stats.filter(stat => !questionIds.has(stat.questionId));
+        s.runs = s.runs.filter(r => r.courseId !== id);
+      });
+      return removed;
+    },
     upsertQuestions: list => data.update(s => { for (const q of list) put(s.questions, q, q => q.id); }),
     listQuestions: async (id, options) => data.read().questions.filter(q => q.courseId === id && (!options?.verifiedOnly || q.verified)),
     deleteQuestions: id => data.update(s => { s.questions = s.questions.filter(q => q.courseId !== id); }),

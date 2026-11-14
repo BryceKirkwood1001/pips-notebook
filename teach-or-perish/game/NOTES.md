@@ -3,13 +3,17 @@
 ## How to test
 
 `?mock=1` plays the canned practice API (room 1 is lost once on purpose, then everything passes);
-`?api=<origin>` picks a backend (default 8787). Play opens My archive / Your saved dungeons.
+`?api=<origin>` picks a backend (default 8787). My archive lists Your saved dungeons.
+Title: centered main menu with Play (Files), My archive (Library), Settings and Music on/off.
+Title controls live in the menu; the usual header returns on other screens. Settings Back returns here.
 Start run shows a title card (curtain), then Pip walks into the library.
 
 Learning (library): Talk to Pip opens the lesson book: Overview, one page per topic (its own
 explanation box, Dictate, Pip's reply thread and Pip's questions for that topic), then Review.
+Its speech bubble floats gently (1.8s); open questions keep the faster 1.1s bob. Reduced motion disables both.
+Pip replies to each explanation; short/partial statements can become notes, including mistaken claims you must reteach.
 Teach sends `conceptId`, so Pip only notes/asks about that topic. The Expedition log card (top right)
-shows rooms cleared, battle accuracy and weak points from `PublicRun.history` and the notebook;
+shows rooms cleared, battle accuracy (readable percentage plus correct/total) and weak points from `PublicRun.history` and the notebook;
 Report opens the full report (also in the Rooms/Pause menu). Ready shows a battle title card.
 
 Battle: arena and monster scale with the room's position (danger tier, `art.ts` `tiers`/`tierFor`):
@@ -41,11 +45,14 @@ Expeditions: My archive lists every expedition per course (In progress / Ended /
 Resume (or View record / View results), End and Remove; the Rooms/Pause menu has End expedition and
 Remove expedition. Both ask first (in-game dialog, Cancel focused, Escape cancels). End keeps the run
 as a read-only record (opens in the menu as "Expedition ended"); Remove deletes it, the course stays.
+Delete dungeon in My archive removes its lessons and all expeditions after confirmation; active preparation blocks deletion.
 
 Header: the Teach or Perish chip is Home (pauses a run in progress, which stays in My archive);
 Music on/off is remembered per browser. Soundtrack (`course/soundtrack.ts`, teammate): menu, learning,
 mini-boss by danger tier (miniboss_1..3), finalboss. Results: Play this course again, Expedition report,
 My archive (top and bottom).
+Track changes fade out over 650ms, then fade in over 900ms once playback starts. Shared tracks continue;
+rapid navigation replaces pending fades. Music off silences immediately; returning to the tab fades in.
 
 Settings: OpenAI / Gemini / Offline, write-only keys, Test/Save, connection and preparation
 timeouts (see root docs/API_SETTINGS.md).

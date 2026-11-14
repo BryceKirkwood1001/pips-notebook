@@ -1,0 +1,36 @@
+{
+  "backup": ".local/pre-dungeon-delete-20261114T152942015659Z",
+  "before": {
+    "repository.json": "a245751d0072fce830467f654203eb29dac7619ba943a38f707925e3b14391a5",
+    "chunks.json": "256495c889e2b75d00ece3785435c4d9e29f91f5be715a592d8c017ac73fb0d3"
+  },
+  "courses": 4,
+  "runs": 1,
+  "after": {
+    "repository.json": "a245751d0072fce830467f654203eb29dac7619ba943a38f707925e3b14391a5",
+    "chunks.json": "256495c889e2b75d00ece3785435c4d9e29f91f5be715a592d8c017ac73fb0d3"
+  },
+  "unchanged": true,
+  "verifiedAt": "2026-11-14T15:35:33.126375+00:00",
+  "tests": {
+    "passed": 401,
+    "files": 38
+  },
+  "typecheck": "passed",
+  "gameBuild": "passed",
+  "offlineHttpGauntlet": "passed",
+  "apiDocs": {
+    "captures": 32,
+    "endpoints": 26
+  },
+  "plannerLiveProviderCheck": false,
+  "savedDungeonsDeleted": 0,
+  "savedRunsMutated": 0,
+  "browserChecks": [
+    "delete controls on all saved courses",
+    "cancel",
+    "escape",
+    "keyboard focus loop and return"
+  ],
+  "backendPort": 8787
+}

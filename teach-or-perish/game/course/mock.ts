@@ -211,6 +211,12 @@ export function createMockApi(): ApiClient {
       run = null; pending = null;
       return { deleted: true as const, id };
     },
+    deleteCourse: async (id) => {
+      if (!run || id !== 'mock-course') throw new ApiError(404, 'not_found', 'No practice dungeon');
+      run = null; pending = null; questions = []; notebook = '# Notebook\n'; polls = 0;
+      notes = {}; learned = {asked:0,answered:0,skipped:0}; attempt = 1; helpCount = 0; over = false; failed = [];
+      return { deleted: true as const, id };
+    },
     health: async () => ({ ok: true, llmProvider: 'mock', storage: 'browser', debug: true }),
     listSamples: async () => (await wait(), { samples: [{ id: 'seasons', title: 'Seasons (mock sample)' }] }),
     seedCourse: async () => (await wait(), polls = 0, { courseId: 'mock-course' }),
@@ -388,7 +394,7 @@ export function createMockApi(): ApiClient {
     save();
     return result;
   };
-  return {...api, pauseRun: remember(api.pauseRun), resumeRun: remember(api.resumeRun), endRun: remember(api.endRun), deleteRun: remember(api.deleteRun),
+  return {...api, pauseRun: remember(api.pauseRun), resumeRun: remember(api.resumeRun), endRun: remember(api.endRun), deleteRun: remember(api.deleteRun), deleteCourse: remember(api.deleteCourse),
     createRun: remember(api.createRun), teach: remember(api.teach),
     answerQuestion: remember(api.answerQuestion), skipQuestion: remember(api.skipQuestion),
     ready: remember(api.ready), turn: remember(api.turn), help: remember(api.help),

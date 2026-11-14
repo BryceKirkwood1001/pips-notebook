@@ -134,6 +134,7 @@ export function createMockApi(): ApiClient {
       run = null; pending = null;
       return { deleted: true as const, id };
     },
+    deleteCourse: async () => { throw new ApiError(404, 'not_found', 'No saved practice dungeon'); },
     pauseRun: async () => { if (!run) throw new ApiError(404,'not_found','No practice run'); run.pausedAt ??= new Date().toISOString(); return view(); },
     resumeRun: async () => {
       if (!run) throw new ApiError(404,'not_found','No practice run');

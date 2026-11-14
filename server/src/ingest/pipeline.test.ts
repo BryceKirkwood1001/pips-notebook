@@ -1,5 +1,6 @@
 import { QuestionSchema } from '@top/shared';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+import type { IngestTasks } from '../llm/types';
 import { computeTimeBudget } from '../core/timeBudget';
 import { quoteInText } from '../rag';
 import { buildFixture, checkCoverage, runIngest, validateQuestion } from './index';
@@ -12,6 +13,34 @@ async function ingest(name: string, opts: Parameters<typeof makeDeps>[0] = {}) {
   const questions = await ctx.repo.listQuestions(`sample-${name}`);
   return { ...ctx, report, pack, questions };
 }
+
+it('repairs invalid lesson-plan coverage once and finishes ingestion without losing topics',async()=>{
+  const planner=vi.fn<NonNullable<IngestTasks['planLessons']>>(async ({concepts,repair})=>({lessons:concepts.map((c,i)=>({
+    title:`Teach the topic: ${c.title}`,description:`Explain the source material about ${c.title}. ${c.summary}`,
+    learningObjectives:[`Explain ${c.title} using the source material.`,`Give a supported example of ${c.title}.`],
+    concepts:[{sourceIds:[!repair && i===1?concepts[0].id:c.id],title:c.title,summary:c.summary}],
+  }))}));
+  const {report,pack,saves}=await ingest('seasons',{tasks:{planLessons:planner}});
+  expect(report.ok).toBe(true);
+  expect(planner).toHaveBeenCalledTimes(2);
+  expect(planner.mock.calls[1][0].repair).toMatchObject({missingIds:['c2'],duplicateIds:['c1'],unknownIds:[]});
+  expect(pack.concepts).toHaveLength(3);
+  expect(saves.some(p=>p.status.activity?.message.startsWith('Repairing the lesson plan'))).toBe(true);
+});
+
+it('bounds lesson-plan repair and never generates questions from an incomplete plan',async()=>{
+  const planner=vi.fn<NonNullable<IngestTasks['planLessons']>>(async ({concepts})=>({lessons:[{
+    title:'Incomplete seasons lesson',description:'Explain only the first topic, deliberately leaving other source topics out.',
+    learningObjectives:['Explain one source topic clearly.','Give a supported example from the notes.'],
+    concepts:[{sourceIds:[concepts[0].id],title:concepts[0].title,summary:concepts[0].summary}],
+  }]}));
+  const {report,pack,questions}=await ingest('seasons',{tasks:{planLessons:planner}});
+  expect(planner).toHaveBeenCalledTimes(2);
+  expect(report.ok).toBe(false);
+  expect(pack.status.error).toContain('Retry preparation');
+  expect(pack.status.error).toContain('Missing: c2, c3');
+  expect(questions).toHaveLength(0);
+});
 
 it('persists bounded public analysis summaries while outline work is still running', async () => {
   const base = makeDeps().deps.tasks;

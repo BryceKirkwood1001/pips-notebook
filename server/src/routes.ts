@@ -97,6 +97,7 @@ export function registerRoutes(app: FastifyInstance, services: Services, setting
   });
 
   app.get('/api/courses/:id', async (req) => services.getCourse(param(req, 'id')));
+  app.delete('/api/courses/:id', async req => services.deleteCourse(param(req, 'id')));
 
   // ── Runs ──────────────────────────────────────────────────────────────────
 

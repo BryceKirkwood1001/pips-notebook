@@ -74,12 +74,16 @@ export class RoomView {
         this.opener = undefined;
     }
 }
+export function musicButton() {
+    const music=btn(musicOn()?'Music on':'Music off',()=>{ const on=toggleMusic(); music.textContent=on?'Music on':'Music off'; music.setAttribute('aria-pressed',String(on)); },'alt');
+    music.setAttribute('aria-pressed',String(musicOn()));
+    return music;
+}
 export function frame(screen:string) {
     const badge=state.run ? 'Target grade '+state.run.targetGrade : mock ? 'Practice course' : 'My archive';
     const home=btn('Teach or Perish',()=>void goHome(),'home-link');
     home.title=state.run?'Home (your expedition is paused and saved in My archive)':'Home';
-    const music=btn(musicOn()?'Music on':'Music off',()=>{ const on=toggleMusic(); music.textContent=on?'Music on':'Music off'; music.setAttribute('aria-pressed',String(on)); },'alt');
-    music.setAttribute('aria-pressed',String(musicOn()));
+    const music=musicButton();
     const header=el('header','',home,el('div','nav-right',badge),music);
     if (screen !== 'settings') header.append(btn('Settings', openSettings, 'alt'));
     if (state.run && screen !== 'menu') {
@@ -90,7 +94,7 @@ export function frame(screen:string) {
     stage.dataset.phase=state.run?.phase ?? '';
     stage.classList.remove('ending');
     heading.replaceChildren(); content.replaceChildren();
-    stage.replaceChildren(header,heading,content,banner,el('div','busy-chip','Pip is thinking'));
+    stage.replaceChildren(...(screen === 'title' ? [] : [header]),heading,content,banner,el('div','busy-chip','Pip is thinking'));
     if (state.run && state.run.phase !== 'learning' && (screen === 'room' || screen === 'boss')) {
         const run = state.run;
         const complete = run.rooms.filter(r => r.state === 'passed').length + (run.phase === 'room_result' && run.room?.passed ? 1 : 0);

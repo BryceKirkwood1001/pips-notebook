@@ -1,7 +1,7 @@
 import { game } from './engine.js';
 import { loadArt } from './art.js';
-import { goTo, resume, setRun, state, type Screen } from './course/app.js';
-import { frame, mount, Page, panel } from './course/page.js';
+import { goTo, openCoursePicker, openSettings, resume, state, type Screen } from './course/app.js';
+import { frame, mount, musicButton, Page, panel } from './course/page.js';
 import { btn, el } from './course/ui.js';
 import { UploadScene } from './course/Upload.js';
 import { LearningScene } from './course/Learning.js';
@@ -22,9 +22,13 @@ for(const name of screens) game.scenes.register({name,enter(){
         page=new Page();
         const id=new URLSearchParams(location.search).get('run');
         const heading=el('h1','','Teach',el('br'),el('em','','or'),' Perish');
-        panel(page,el('div','',heading,el('p','','Your apprentice must face the dungeon alone. All Pip can carry is what you teach.'),
-            btn(id?'Resume run':'Play →',()=>id?void resume(id):goTo('Upload')),
-            id?btn('New lesson',()=>{setRun(null);goTo('Upload');},'alt'):null));
+        const menu=el('nav','title-actions',
+            btn('Play',()=>id?void resume(id):openCoursePicker('Files')),
+            btn('My archive',()=>openCoursePicker('Library'),'alt'),
+            btn('Settings',openSettings,'alt'),musicButton());
+        menu.setAttribute('aria-label','Main menu');
+        panel(page,el('div','title-menu',heading,
+            el('p','','All Pip can carry is what you teach.'),menu));
         if(id)void resume(id);
     }else {
         const next=name==='Upload'?new UploadScene():name==='Learning'?new LearningScene():name==='Results'?new ResultsScene():name==='Settings'?new SettingsScene():name==='Menu'?new MenuScene():new Battle(name==='Boss');

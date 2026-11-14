@@ -28,7 +28,7 @@ import { AppError } from '../errors';
 import type { IngestDeps, IngestInput, IngestReport } from '../ingest/types';
 import type { GameplayTasks } from '../llm/types';
 import type { Embedder, Retriever, SourceFile, VectorStore } from '../rag/types';
-import type { Repository } from '../repo/types';
+import type { Repository, StatsEvent } from '../repo/types';
 import type { Services, UploadInput } from './types';
 
 export interface ServiceDeps {
@@ -109,12 +109,24 @@ export function createServices(deps: ServiceDeps): Services {
 
   /** Background ingests still running, so tests and scripts can wait for them. */
   const ingests = new Set<Promise<unknown>>();
+  const ingestingCourses = new Set<string>();
+  /** Deletion shares a queue with course/run writes, so completed requests cannot resurrect deleted data. */
+  const courseLocks = new Map<string, Promise<unknown>>();
+  function withCourseLock<T>(courseId: string, fn: () => Promise<T>): Promise<T> {
+    const next = (courseLocks.get(courseId) ?? Promise.resolve()).catch(() => undefined).then(fn);
+    courseLocks.set(courseId, next);
+    void next.catch(() => undefined).finally(() => { if (courseLocks.get(courseId) === next) courseLocks.delete(courseId); });
+    return next;
+  }
 
   /** One queue per run: two requests for the same run never interleave (double submits). */
   const locks = new Map<string, Promise<unknown>>();
   function withRunLock<T>(runId: string, fn: () => Promise<T>): Promise<T> {
     const previous = locks.get(runId) ?? Promise.resolve();
-    const next = previous.catch(() => undefined).then(fn);
+    const next = previous.catch(() => undefined).then(async () => {
+      const run = await repo.getRun(runId);
+      return run ? withCourseLock(run.courseId, fn) : fn();
+    });
     locks.set(runId, next);
     void next
       .catch(() => undefined)
@@ -156,7 +168,7 @@ export function createServices(deps: ServiceDeps): Services {
    * Load the run, call one engine function with the run's RNG, store the RNG state and the new run.
    * Everything happens under the run's lock.
    */
-  function mutate<T extends { run: Run }>(
+  function mutate<T extends { run: Run; stats?: StatsEvent[] }>(
     runId: string,
     fn: (d: EngineDeps, ctx: EngineContext, run: Run) => T | Promise<T>,
   ): Promise<{ out: T; ctx: EngineContext }> {
@@ -169,6 +181,7 @@ export function createServices(deps: ServiceDeps): Services {
       const out = await fn(engineDeps(rng), ctx, run);
       out.run.rngState = rng.state();
       await repo.saveRun(out.run);
+      if (out.stats?.length) await repo.recordStats(out.stats);
       return { out, ctx };
     });
   }
@@ -206,6 +219,14 @@ export function createServices(deps: ServiceDeps): Services {
         ...(r.pausedAt ? {pausedAt:r.pausedAt}: {}), ...(r.endedAt ? {endedAt:r.endedAt}: {}) }));
       return { courses, runs };
     },
+
+    deleteCourse: courseId => withCourseLock(courseId, async () => {
+      if (!(await repo.getCoursePack(courseId))) throw new AppError('not_found', `Course "${courseId}" not found`);
+      if (ingestingCourses.has(courseId)) throw new AppError('course_busy', 'This dungeon is still being prepared. Wait for preparation to finish before deleting it.');
+      await deps.store.deleteCourse(courseId);
+      if (!(await repo.deleteCourse(courseId))) throw new AppError('not_found', `Course "${courseId}" not found`);
+      return { deleted: true as const, id: courseId };
+    }),
 
     pauseRun: runId => withRunLock(runId, async () => {
       const run = await loadRun(runId);
@@ -272,21 +293,23 @@ export function createServices(deps: ServiceDeps): Services {
 
     async seedCourse(sample) {
       const fixture = await readFixture(sample);
-      const ingest = deps.makeIngestDeps();
-      const embedder = ingest.embedder;
-      let chunks = fixture.chunks;
-      // Vectors from another embedder live in a different space: embed the chunk texts again.
-      if (chunks.length > 0 && fixture.embedderId !== embedder.id) {
-        const vectors = await embedder.embedDocuments(chunks.map((c) => c.text));
-        chunks = chunks.map((c, i) => ({ ...c, embedding: vectors[i] }));
-      }
-      await deps.store.deleteCourse(fixture.pack.id);
-      await deps.store.upsert(chunks);
-      await repo.deleteQuestions(fixture.pack.id);
-      await repo.upsertQuestions(fixture.questions);
-      fixture.pack.embeddingProfile = { provider: ingest.config.llmProvider, model: ingest.config.embeddingModel, dims: ingest.config.embeddingDims };
-      await repo.saveCoursePack(fixture.pack);
-      return { courseId: fixture.pack.id };
+      return withCourseLock(fixture.pack.id, async () => {
+        const ingest = deps.makeIngestDeps();
+        const embedder = ingest.embedder;
+        let chunks = fixture.chunks;
+        // Vectors from another embedder live in a different space: embed the chunk texts again.
+        if (chunks.length > 0 && fixture.embedderId !== embedder.id) {
+          const vectors = await embedder.embedDocuments(chunks.map((c) => c.text));
+          chunks = chunks.map((c, i) => ({ ...c, embedding: vectors[i] }));
+        }
+        await deps.store.deleteCourse(fixture.pack.id);
+        await deps.store.upsert(chunks);
+        await repo.deleteQuestions(fixture.pack.id);
+        await repo.upsertQuestions(fixture.questions);
+        fixture.pack.embeddingProfile = { provider: ingest.config.llmProvider, model: ingest.config.embeddingModel, dims: ingest.config.embeddingDims };
+        await repo.saveCoursePack(fixture.pack);
+        return { courseId: fixture.pack.id };
+      });
     },
 
     async createCourse(input) {
@@ -307,8 +330,9 @@ export function createServices(deps: ServiceDeps): Services {
       await repo.saveCoursePack(emptyCoursePack(courseId, title, clock.now().toISOString()));
 
       // Progressive ingest runs in the background; the client polls GET /courses/:id.
-      const job: Promise<void> = deps
-        .runIngest(deps.makeIngestDeps(), { courseId, title: input.title, files })
+      ingestingCourses.add(courseId);
+      const job: Promise<void> = Promise.resolve()
+        .then(() => deps.runIngest(deps.makeIngestDeps(), { courseId, title: input.title, files }))
         .then((report) => {
           if (report.error) console.error(`[ingest] ${courseId} failed: ${report.error}`);
           else if (!report.ok) console.warn(`[ingest] ${courseId} is ready, but some coverage targets were not met`);
@@ -323,7 +347,7 @@ export function createServices(deps: ServiceDeps): Services {
           }
         })
         .catch((err: unknown) => console.error(`[ingest] ${courseId} could not record its failure:`, err))
-        .finally(() => ingests.delete(job));
+        .finally(() => { ingests.delete(job); ingestingCourses.delete(courseId); });
       ingests.add(job);
 
       return { courseId };
@@ -335,7 +359,7 @@ export function createServices(deps: ServiceDeps): Services {
       return toPublicCourse(pack);
     },
 
-    async createRun(body) {
+    createRun: body => withCourseLock(body.courseId, async () => {
       const ctx = await loadContext(body.courseId);
       const seed = deps.newSeed();
       const rng = createRng(seed);
@@ -343,7 +367,7 @@ export function createServices(deps: ServiceDeps): Services {
       run.rngState = rng.state();
       await repo.saveRun(run);
       return publicRun(run, ctx);
-    },
+    }),
 
     async getRun(runId) {
       const run = await loadRun(runId);
@@ -352,7 +376,7 @@ export function createServices(deps: ServiceDeps): Services {
 
     async teach(runId, explanation, conceptId) {
       const { out } = await mutate(runId, (d, ctx, run) => engine.teach(d, ctx, run, explanation, conceptId));
-      return { notebookMd: out.run.notebookMd, questions: out.questions };
+      return { notebookMd: out.run.notebookMd, questions: out.questions, ...(out.feedback ? {feedback:out.feedback} : {}) };
     },
 
     async answerQuestion(runId, studentQuestionId, answer) {
@@ -374,13 +398,11 @@ export function createServices(deps: ServiceDeps): Services {
 
     async turn(runId) {
       const { out } = await mutate(runId, (d, ctx, run) => engine.takeTurn(d, ctx, run));
-      if (out.stats.length > 0) await repo.recordStats(out.stats);
       return out.result;
     },
 
     async help(runId, eventId, answer) {
       const { out } = await mutate(runId, (d, ctx, run) => engine.submitHelp(d, ctx, run, eventId, answer));
-      if (out.stats.length > 0) await repo.recordStats(out.stats);
       return out.result;
     },
 

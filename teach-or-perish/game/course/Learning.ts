@@ -214,9 +214,11 @@ export class LearningScene extends Page {
     const fresh = after.filter(n => !before.includes(n));
     const asking = res.questions.filter(q => q.status === 'open' && q.conceptId === concept.id);
     pending.className = 'bubble pip';
-    pending.replaceChildren(fresh.length
-      ? el('span', '', el('b', '', 'Got it! I wrote down:'), el('ul', '', ...fresh.map(n => el('li', '', inline(n)))))
-      : el('span', '', 'Hmm, nothing new for my notes there. Could you explain it another way, with an example?'));
+    const reply = res.feedback?.trim() || (fresh.length ? 'I wrote down what you taught me:'
+      : after.length ? 'That idea may already be in my notes. Can you add a detail or show me an example?'
+      : `I still need a statement about ${concept.title.toLowerCase()} to write down. What does one part of it mean?`);
+    pending.replaceChildren(el('span', '', inline(reply)));
+    if (fresh.length) pending.append(el('ul', '', ...fresh.map(n => el('li', '', inline(n)))));
     if (asking.length) pending.append(el('span', 'bubble-ask', `I have ${asking.length === 1 ? 'a question' : `${asking.length} questions`} below.`));
     status.textContent = '';
     this.renderStep(); // the thread node is kept per topic, so the conversation stays on the page

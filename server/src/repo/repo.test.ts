@@ -36,6 +36,11 @@ function fakeCollection(store: Map<string, Doc>, indexes: string[]) {
     async deleteMany(filter: Doc) {
       for (const [id, d] of store) if (matches(d, filter)) store.delete(id);
     },
+    async deleteOne(filter: Doc) {
+      const found=[...store.entries()].find(([,doc])=>matches(doc,filter));
+      if (!found) return {deletedCount:0};
+      store.delete(found[0]);return {deletedCount:1};
+    },
     async updateOne(filter: Doc, update: Doc, opts?: { upsert?: boolean }) {
       let found = [...store.values()].find((d) => matches(d, filter));
       if (!found) {
@@ -150,6 +155,26 @@ describe.each(implementations)('Repository: %s', (_name, make) => {
     await repo.saveRun({ ...run, phase: 'room' });
     expect((await repo.getRun(run.id))!.phase).toBe('room');
     expect(await repo.getRun('missing')).toBeNull();
+  });
+
+  it('deleting a dungeon cascades through questions, stats and runs, preserving another course',async()=>{
+    const repo=make(), pack=buildPack(), questions=buildQuestions();
+    await repo.saveCoursePack(pack);
+    await repo.saveCoursePack({...pack,id:'other'});
+    await repo.upsertQuestions([...questions,{...questions[0],id:'other_q',courseId:'other'}]);
+    await repo.recordStats([{questionId:questions[0].id,kind:'student_correct'},{questionId:'other_q',kind:'student_wrong'}]);
+    const run={...newRun(createDeps(),defaultCtx),courseId:pack.id};
+    await repo.saveRun(run);await repo.saveRun({...run,id:'other_run',courseId:'other'});
+    expect(await repo.deleteCourse(pack.id)).toBe(true);
+    expect(await repo.deleteCourse(pack.id)).toBe(false);
+    expect(await repo.getCoursePack(pack.id)).toBeNull();
+    expect(await repo.listQuestions(pack.id)).toEqual([]);
+    expect(await repo.getQuestionStats([questions[0].id])).toEqual([]);
+    expect(await repo.getRun(run.id)).toBeNull();
+    expect(await repo.getCoursePack('other')).not.toBeNull();
+    expect(await repo.listQuestions('other')).toHaveLength(1);
+    expect(await repo.getQuestionStats(['other_q'])).toHaveLength(1);
+    expect(await repo.getRun('other_run')).not.toBeNull();
   });
 });
 

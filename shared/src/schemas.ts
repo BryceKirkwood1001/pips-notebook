@@ -1008,6 +1008,7 @@ export const TeachBodySchema = z.object({
 export type TeachBody = z.infer<typeof TeachBodySchema>;
 
 export const TeachResponseSchema = z.object({
+  feedback: z.string().max(600).optional(),
   notebookMd: z.string(),
   /** Every question of the current learning phase (open, answered and skipped). */
   questions: z.array(PublicStudentQuestionSchema),

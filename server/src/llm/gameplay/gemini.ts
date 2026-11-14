@@ -67,6 +67,7 @@ export function toAnswer(question: PublicQuestion, raw: Record<string, unknown>)
 }
 
 const ReviewSchema = z.object({
+  feedback: z.string().min(1).max(600),
   notesToAdd: z.array(z.object({ conceptId: z.string(), text: z.string() })),
   statedMisconceptionIds: z.array(z.string()),
   questions: z.array(z.object({ misconceptionId: z.string(), text: z.string() })),
@@ -112,6 +113,7 @@ export function createGameplayTasks(llm: LlmClient, _config: Config): GameplayTa
       const fallbackConcept = input.concepts[0]?.id ?? '';
       const stated = [...new Set(out.statedMisconceptionIds.filter((id) => known.has(id)))];
       return {
+        feedback: out.feedback.trim(),
         notesToAdd: out.notesToAdd
           .filter((n) => n.text.trim().length > 0)
           .map((n) => ({ conceptId: conceptIds.has(n.conceptId) ? n.conceptId : fallbackConcept, text: n.text.trim() })),

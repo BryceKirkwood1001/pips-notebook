@@ -113,6 +113,13 @@ async function main() {
     const ended = seen(await api.endRun(spare.id));
     check(!!ended.endedAt, 'end keeps an ended, read-only record');
     check(seen(await api.deleteRun(spare.id)).deleted === true, 'remove deletes the expedition');
+    if (!flag('url')) { // Only cascade-delete data in the disposable in-process server.
+      const disposable=seen(await api.seedCourse(sample==='seasons'?'binary-search':'seasons'));
+      await api.createRun({courseId:disposable.courseId,targetGrade:'B'});
+      check(seen(await api.deleteCourse(disposable.courseId)).deleted===true,'delete dungeon removes its course and expeditions');
+      const remaining=seen(await api.listArchive());
+      check(!remaining.courses.some(c=>c.id===disposable.courseId) && !remaining.runs.some(r=>r.courseId===disposable.courseId),'deleted dungeon is absent from the archive');
+    }
     const runId = run.id;
     log(`course ${courseId}, run ${runId}, ${run.rooms.length} rooms`);
 

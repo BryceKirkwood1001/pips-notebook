@@ -103,7 +103,7 @@ describe('local settings HTTP API', () => {
     const llmFactory = (config: Config): LlmClient => {
       used.push(config);
       return { ...createFakeLlmClient({ embeddingDims: config.embeddingDims }), generateJson: async (schema, _prompt, options) => schema.parse(options?.label === 'studentReview'
-        ? { notesToAdd: [], statedMisconceptionIds: [], questions: [], resolvedMisconceptionIds: [] }
+        ? { feedback: 'Could you explain one idea from this topic?', notesToAdd: [], statedMisconceptionIds: [], questions: [], resolvedMisconceptionIds: [] }
         : { ready: true }) };
     };
     const container = await createContainer({ env: { LLM_PROVIDER: 'mock' }, llmFactory, seed: 42 });

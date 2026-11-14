@@ -33,6 +33,24 @@ describe('createRun', () => {
 });
 
 describe('teach', () => {
+  it('returns the specific student reply alongside notes without silently filling in missing facts', async () => {
+    const deps=createDeps();
+    const text='Dictionaries store key-value pairs.';
+    deps.tasks.handlers.review=()=>({notesToAdd:[{conceptId:'c1',text}],statedMisconceptionIds:[],resolvedMisconceptionIds:[],questions:[],feedback:'I wrote down that dictionaries use key-value pairs.'});
+    const result=await engine.teach(deps,ctx,newRun(deps),text,'c1');
+    expect(result.feedback).toBe('I wrote down that dictionaries use key-value pairs.');
+    expect(notebookLines(result.run.notebookMd)).toEqual([text]);
+    expect(result.run.notebookMd).not.toContain('get()');
+  });
+
+  it('can explain an empty-note outcome without claiming that something was learned', async () => {
+    const deps=createDeps();
+    deps.tasks.handlers.review=()=>({notesToAdd:[],statedMisconceptionIds:[],resolvedMisconceptionIds:[],questions:[],feedback:'How does that connect to the topic we are studying?'});
+    const result=await engine.teach(deps,ctx,newRun(deps),'the orange juice is big','c1');
+    expect(result.run.notebookMd).toBe('# Notebook\n');
+    expect(result.feedback).toBe('How does that connect to the topic we are studying?');
+  });
+
   it('adds notes under the right section, in scope order, without duplicates', async () => {
     const deps = createDeps();
     deps.tasks.handlers.review = () => ({

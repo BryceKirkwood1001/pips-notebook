@@ -37,6 +37,14 @@ export function createMongoRepository(db: Db): Repository {
     async getCoursePack(courseId) {
       return strip<CoursePack>(await courses.findOne({ _id: courseId }));
     },
+    async deleteCourse(courseId) {
+      if (!(await courses.findOne({ _id: courseId }))) return false;
+      const ids = (await questions.find({ courseId }).toArray()).map(q => q.id);
+      await stats.deleteMany({ _id: { $in: ids } });
+      await questions.deleteMany({ courseId });
+      await runs.deleteMany({ courseId });
+      return (await courses.deleteOne({ _id: courseId })).deletedCount > 0;
+    },
 
     async upsertQuestions(list) {
       if (list.length === 0) return;

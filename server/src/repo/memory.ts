@@ -29,6 +29,13 @@ export function createMemoryRepository(): Repository {
       const p = courses.get(courseId);
       return p ? structuredClone(p) : null;
     },
+    async deleteCourse(courseId) {
+      if (!courses.has(courseId)) return false;
+      for (const [id, q] of questions) if (q.courseId === courseId) { questions.delete(id); stats.delete(id); }
+      for (const [id, run] of runs) if (run.courseId === courseId) runs.delete(id);
+      courses.delete(courseId);
+      return true;
+    },
 
     async upsertQuestions(list) {
       for (const q of list) questions.set(q.id, structuredClone(q));
