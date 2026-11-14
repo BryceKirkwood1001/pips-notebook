@@ -17,6 +17,7 @@ import { runIngest } from './ingest';
 import type { IngestDeps } from './ingest/types';
 import { createFakeLlmClient, createGameplayTasks, createGeminiClient, createMockGameplayTasks } from './llm';
 import { createIngestTasks, createMockIngestTasks } from './llm/ingest';
+import type { IngestTasks } from './llm/types';
 import {
   createAtlasVectorStore,
   createChunker,
@@ -79,21 +80,24 @@ export async function wire(options: WiringOptions): Promise<Wired> {
   const embedder = createEmbedder(llm, config);
   const retriever = createRetriever({ store, embedder, config });
   const gameplayTasks = useGemini ? createGameplayTasks(llm, config) : createMockGameplayTasks();
-  const ingestTasks = useGemini ? createIngestTasks(llm, config) : createMockIngestTasks();
+  const geminiIngestTasks: IngestTasks | null = useGemini ? createIngestTasks(llm, config) : null;
+  // Only Gemini can read a PDF natively, so the upload is skipped in mock mode.
+  const parser = createMaterialParser({ llm: useGemini ? llm : undefined, config });
+  const chunker = createChunker(config);
 
-  const ingestDeps: IngestDeps = {
+  /** Fresh per ingest: the mock ingest tasks hand each canned question out once per instance. */
+  const makeIngestDeps = (): IngestDeps => ({
     config,
-    tasks: ingestTasks,
-    // Only Gemini can read a PDF natively, so the upload is skipped in mock mode.
-    parser: createMaterialParser({ llm: useGemini ? llm : undefined, config }),
-    chunker: createChunker(config),
+    tasks: geminiIngestTasks ?? createMockIngestTasks(),
+    parser,
+    chunker,
     embedder,
     store,
     retriever,
     repo,
     clock,
     log: config.debug ? (message, data) => console.log(`[ingest] ${message}`, data ?? '') : undefined,
-  };
+  });
 
   const services = createServices({
     config,
@@ -104,7 +108,7 @@ export async function wire(options: WiringOptions): Promise<Wired> {
     retriever,
     store,
     embedder,
-    ingestDeps,
+    makeIngestDeps,
     runIngest,
     samplesDir: options.samplesDir ?? DEFAULT_SAMPLES_DIR,
     newSeed: options.seed === undefined ? randomSeed : () => options.seed as number,

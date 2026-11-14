@@ -15,6 +15,18 @@ import type {
 } from '../types';
 
 export const MOCK_MIN_SHARED_KEYWORDS = 2;
+/** Share of a key point's keywords that the notes must contain for the mock student to "know" it. */
+export const MOCK_KNOWS_COVERAGE = 0.6;
+/** At most this many notes per teach. */
+export const MOCK_MAX_NOTES = 30;
+
+/** Splits text into sentences at . ! ? followed by whitespace, or at newlines. Decimals such as 23.5 stay whole. */
+export function splitSentences(text: string): string[] {
+  return text
+    .split(/(?<=[.!?])\s+|\n+/)
+    .map((s) => s.trim().replace(/[.!?]+$/, '').trim())
+    .filter((s) => s.length > 0);
+}
 
 /** Bullet lines of the notebook without the "- " prefix. */
 export function notebookNotes(notebookMd: string): string[] {
@@ -46,11 +58,39 @@ function mockStudentAnswer(input: StudentAnswerInput, oracle?: StudentOracle): S
     if (wrong) return { answer: wrong, reasoning: `My notes say: ${note}`, citedNotes: [note] };
   }
 
+  // What the student actually knows: its notes, minus any line that is a known wrong belief.
+  const beliefs = new Set(oracle.misconceptions.map((m) => normalizeText(m.beliefStatement)));
+  const knowledge = notes.filter((n) => !beliefs.has(normalizeText(n)));
   const correct = correctAnswerOf(oracle.question);
+  const know = (note: string): StudentAnswerOutput => ({
+    answer: correct.answer,
+    reasoning: `My notes say: ${note}`,
+    citedNotes: [note],
+  });
+
+  if (oracle.keyPoints.length > 0) {
+    // The student can answer when its notes cover every key point the question tests.
+    const all = knowledge.join(' ');
+    const covered = oracle.keyPoints.every((k) => coverage(k.statement, all) >= MOCK_KNOWS_COVERAGE);
+    if (!covered || knowledge.length === 0) return dontKnow("My notes don't cover this question.");
+    // Cite the note that covers the first key point best.
+    let best = knowledge[0];
+    let bestScore = -1;
+    for (const n of knowledge) {
+      const score = coverage(oracle.keyPoints[0].statement, n);
+      if (score > bestScore) {
+        bestScore = score;
+        best = n;
+      }
+    }
+    return know(best);
+  }
+
+  // A question with no key points: fall back to keyword overlap with the prompt and the correct answer.
   const target = keywords(`${input.question.prompt} ${correct.text}`);
   let best = -1;
   let bestScore = 0;
-  notes.forEach((n, i) => {
+  knowledge.forEach((n, i) => {
     let score = 0;
     for (const k of keywords(n)) if (target.has(k)) score += 1;
     if (score > bestScore) {
@@ -58,20 +98,16 @@ function mockStudentAnswer(input: StudentAnswerInput, oracle?: StudentOracle): S
       best = i;
     }
   });
-  if (best >= 0 && bestScore >= MOCK_MIN_SHARED_KEYWORDS) {
-    return { answer: correct.answer, reasoning: `My notes say: ${notes[best]}`, citedNotes: [notes[best]] };
-  }
+  if (best >= 0 && bestScore >= MOCK_MIN_SHARED_KEYWORDS) return know(knowledge[best]);
   return dontKnow("My notes don't cover this question.");
 }
 
 const lowerFirst = (s: string) => (s.length ? s[0].toLowerCase() + s.slice(1) : s);
 
 function mockStudentReview(input: StudentReviewInput): StudentReviewOutput {
-  const sentences = input.explanation
-    .split(/[.!?\n]+/)
-    .map((s) => s.trim())
+  const sentences = splitSentences(input.explanation)
     .filter((s) => s.split(/\s+/).filter(Boolean).length >= 3)
-    .slice(0, 12);
+    .slice(0, MOCK_MAX_NOTES);
 
   const notesToAdd = sentences.map((text) => {
     let conceptId = input.concepts[0]?.id ?? '';

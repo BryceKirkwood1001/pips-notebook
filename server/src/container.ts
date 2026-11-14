@@ -4,13 +4,12 @@
  *   const container = await createContainer();                       // from .env / process.env
  *   const container = await createContainer({ env: { LLM_PROVIDER: 'mock', DEBUG: 'true' }, seed: 42 });
  *
- * PHASE 1: only the config is wired. Every service method answers 501 `not_implemented` until the
- * engine, ingest, RAG and LLM modules are integrated (Phase 3). The signatures below are stable.
+ * The dependency graph itself is built in `wiring.ts`.
  */
 import { loadConfig, loadConfigFromProcess, type Config, type Env } from './config';
 import { systemClock, type Clock } from './engine/types';
-import { AppError } from './errors';
 import type { Services } from './services/types';
+import { wire } from './wiring';
 
 export interface ContainerOptions {
   /** Read config from this object instead of `.env` + `process.env`. Tests always pass this. */
@@ -31,30 +30,14 @@ export interface Container {
   close(): Promise<void>;
 }
 
-const stubServices = (config: Config): Services =>
-  new Proxy({} as Services, {
-    get: (_target, prop) => {
-      if (prop === 'health') {
-        return () => ({
-          ok: true,
-          llmProvider: config.llmProvider,
-          storage: config.mongodbUri ? 'mongodb' : 'memory',
-          debug: config.debug,
-        });
-      }
-      return () => {
-        throw new AppError('not_implemented', `${String(prop)} is not wired yet`);
-      };
-    },
-  });
-
 export async function createContainer(options: ContainerOptions = {}): Promise<Container> {
   const config = options.env ? loadConfig(options.env) : loadConfigFromProcess();
   const clock = options.clock ?? systemClock;
+  const wired = await wire({ config, clock, seed: options.seed, samplesDir: options.samplesDir });
   return {
     config,
     clock,
-    services: stubServices(config),
-    close: async () => {},
+    services: wired.services,
+    close: wired.close,
   };
 }

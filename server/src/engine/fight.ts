@@ -224,6 +224,10 @@ export async function takeTurn(deps: EngineDeps, ctx: EngineContext, input: Run)
     { notebookMd: run.notebookMd, question: pq },
     {
       question: q,
+      keyPoints: ctx.pack.concepts
+        .flatMap((c) => c.keyPoints)
+        .filter((k) => q.keyPointIds.includes(k.id))
+        .map((k) => ({ id: k.id, statement: k.statement })),
       misconceptions: allMisconceptions(ctx.pack),
       activeMisconceptionIds: activeMisconceptionIds(run),
     },

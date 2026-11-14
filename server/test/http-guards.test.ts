@@ -1,3 +1,6 @@
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { startTestApp, type TestApp } from './helpers/app';
 import { Bot } from './helpers/bot';
@@ -71,7 +74,11 @@ describe('phase guards (409 wrong_phase)', () => {
       else await t.post(`/api/runs/${bot.runId}/${run.room.passed ? 'continue' : 'retry'}`);
     }
     const a = actions(bot.runId, 'q_x');
-    for (const name of ['teach', 'ready', 'retry', 'continue', 'results', 'help'] as const) wrongPhase(await a[name]());
+    for (const name of ['teach', 'ready', 'retry', 'continue', 'results'] as const) wrongPhase(await a[name]());
+    // Help IS allowed during a fight, so an unknown event id is not a phase error (see docs/STATE_MACHINE.md).
+    const unknownEvent = await a.help();
+    expect(unknownEvent.status).toBe(409);
+    expect(unknownEvent.body).toMatchObject({ error: { code: 'help_event_not_pending' } });
     await bot.fight();
     for (const name of ['teach', 'ready', 'retry', 'continue', 'help'] as const) wrongPhase(await a[name]());
     expect((await a.results()).status).toBe(200);
@@ -106,13 +113,45 @@ describe('other error codes', () => {
   });
 
   it('an unready room is 425', async () => {
+    // A sample whose first room is still being ingested, and one whose second room is.
+    const dir = mkdtempSync(path.join(tmpdir(), 'top-samples-'));
+    mkdirSync(path.join(dir, 'cache'));
+    const seasons = JSON.parse(readFileSync(new URL('../../samples/cache/seasons.json', import.meta.url), 'utf8'));
+    const withReady = (conceptsReady: string[]) =>
+      JSON.stringify({ ...seasons, pack: { ...seasons.pack, status: { stage: 'concepts', conceptsReady } } });
+    const [c1, c2, c3] = seasons.pack.rooms.map((r: any) => r.conceptIds[0]);
+    writeFileSync(path.join(dir, 'cache', 'first-unready.json'), withReady([c2, c3]));
+    writeFileSync(path.join(dir, 'cache', 'second-unready.json'), withReady([c1, c3]));
+
+    const u = await startTestApp({}, { samplesDir: dir });
+    try {
+      // The first room is not ready: the run cannot start.
+      const first = await u.post('/api/courses/seed/first-unready');
+      const run = await u.post('/api/runs', { courseId: first.body.courseId, targetGrade: 'B' });
+      expect(run.status).toBe(425);
+      expect(run.body).toMatchObject({ error: { code: 'room_not_ready' } });
+
+      // The first room is ready, the second is not: the run starts and stops at the unready room.
+      const bot = new Bot(u);
+      await bot.start('second-unready');
+      await bot.learn();
+      expect(await bot.fight()).toMatchObject({ kind: 'room_end', passed: true });
+      const next = await u.post(`/api/runs/${bot.runId}/continue`);
+      expect(next.status).toBe(425);
+      expect(next.body).toMatchObject({ error: { code: 'room_not_ready' } });
+    } finally {
+      await u.close();
+      rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('an upload is ingested in the background and can then be played', async () => {
     const created = await t.post('/api/courses', { text: '# Tiny\n\nA short note about nothing in particular.', title: 'Tiny' });
     expect(created.status).toBe(202);
-    // Right after upload the first room is not ingested yet.
-    const run = await t.post('/api/runs', { courseId: created.body.courseId, targetGrade: 'B' });
-    expect(run.status).toBe(425);
-    expect(run.body).toMatchObject({ error: { code: 'room_not_ready' } });
     await t.container.services.idle();
+    const course = await t.get(`/api/courses/${created.body.courseId}`);
+    expect(course.status).toBe(200);
+    expect(['ready', 'error']).toContain(course.body.status.stage);
   });
 
   it('seeding is idempotent and the sample list works', async () => {

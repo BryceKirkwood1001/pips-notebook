@@ -24,7 +24,7 @@ describe('gemini studentAnswer', () => {
       handlers: { studentAnswer: () => ({ dontKnow: false, reasoning: 'r', citedNotes: ["Earth's axial tilt causes the seasons."], choiceIndex: 1 }) },
     });
     const tasks = createGameplayTasks(llm, config);
-    const oracle = { question: MCQ, misconceptions: [MISC_DIST], activeMisconceptionIds: [MISC_DIST.id] };
+    const oracle = { question: MCQ, keyPoints: [], misconceptions: [MISC_DIST], activeMisconceptionIds: [MISC_DIST.id] };
     const r = await tasks.studentAnswer({ notebookMd: NOTEBOOK_TILT, question: PUBLIC_MCQ }, oracle);
     expect(r.answer).toEqual({ choiceIndex: 1 });
     const call = llm.calls[0];

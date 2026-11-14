@@ -18,12 +18,16 @@ export interface TestApp {
   close(): Promise<void>;
 }
 
-export async function startTestApp(env: Env = {}, options: { seed?: number; clock?: TestClock } = {}): Promise<TestApp> {
+export async function startTestApp(
+  env: Env = {},
+  options: { seed?: number; clock?: TestClock; samplesDir?: string } = {},
+): Promise<TestApp> {
   const clock = options.clock ?? createTestClock();
   const container = await createContainer({
     env: { LLM_PROVIDER: 'mock', DEBUG: 'true', ...env },
     seed: options.seed ?? 42,
     clock,
+    samplesDir: options.samplesDir,
   });
   const app = await buildApp(container);
   const send = async (method: 'GET' | 'POST', path: string, body?: unknown): Promise<Reply> => {

@@ -40,7 +40,8 @@ export interface ServiceDeps {
   retriever: Retriever;
   store: VectorStore;
   embedder: Embedder;
-  ingestDeps: IngestDeps;
+  /** Called once per ingest: the mock ingest tasks keep state, so every ingest gets fresh deps. */
+  makeIngestDeps: () => IngestDeps;
   runIngest: (deps: IngestDeps, input: IngestInput) => Promise<IngestReport>;
   /** Folder holding `cache/<sample>.json`. */
   samplesDir: string;
@@ -252,9 +253,10 @@ export function createServices(deps: ServiceDeps): Services {
 
       // Progressive ingest runs in the background; the client polls GET /courses/:id.
       const job: Promise<void> = deps
-        .runIngest(deps.ingestDeps, { courseId, title: input.title, files })
+        .runIngest(deps.makeIngestDeps(), { courseId, title: input.title, files })
         .then((report) => {
-          if (!report.ok) console.error(`[ingest] ${courseId} failed: ${report.error ?? 'unknown error'}`);
+          if (report.error) console.error(`[ingest] ${courseId} failed: ${report.error}`);
+          else if (!report.ok) console.warn(`[ingest] ${courseId} is ready, but some coverage targets were not met`);
         })
         .catch(async (err: unknown) => {
           // runIngest should never reject; if it does, don't leave the pack stuck in 'parsing'.

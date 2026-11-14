@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { Question } from '@top/shared';
 import { coverage, keywords } from '../mock-text';
-import { createMockGameplayTasks, MOCK_MIN_SHARED_KEYWORDS } from './mock';
+import { createMockGameplayTasks, MOCK_KNOWS_COVERAGE, MOCK_MIN_SHARED_KEYWORDS, splitSentences } from './mock';
 import { MCQ, MISC_DIST, MISC_MOON, NOTEBOOK_TILT, NOTEBOOK_WRONG, PUBLIC_MCQ } from './fixtures';
 
 const tasks = createMockGameplayTasks();
-const oracle = (active: string[] = []) => ({ question: MCQ, misconceptions: [MISC_DIST, MISC_MOON], activeMisconceptionIds: active });
+const TILT_KEY_POINT = { id: 'k1', statement: "Seasons are caused by the tilt of Earth's axis." };
+const oracle = (active: string[] = [], keyPoints = [TILT_KEY_POINT]) => ({
+  question: MCQ,
+  keyPoints,
+  misconceptions: [MISC_DIST, MISC_MOON],
+  activeMisconceptionIds: active,
+});
 
 describe('mock-text', () => {
   it('keywords: lowercases, drops stopwords and short words, keeps numbers, strips one s', () => {
@@ -31,11 +37,35 @@ describe('mock studentAnswer', () => {
     const r = await tasks.studentAnswer({ notebookMd: NOTEBOOK_WRONG, question: PUBLIC_MCQ }, oracle([]));
     expect(r.answer).toEqual({ choiceIndex: 1 });
   });
-  it('answers correctly from the best note and cites it', async () => {
-    expect(MOCK_MIN_SHARED_KEYWORDS).toBe(2);
+  it('answers correctly when the notes cover the key point, and cites the best note', async () => {
+    expect(MOCK_KNOWS_COVERAGE).toBe(0.6);
     const r = await tasks.studentAnswer({ notebookMd: NOTEBOOK_TILT, question: PUBLIC_MCQ }, oracle());
     expect(r.answer).toEqual({ choiceIndex: 1 });
     expect(r.citedNotes).toEqual(["Earth's axial tilt causes the seasons."]);
+  });
+  it('needs every key point of the question to be covered', async () => {
+    const two = [TILT_KEY_POINT, { id: 'k2', statement: 'The two hemispheres always have opposite seasons.' }];
+    const r = await tasks.studentAnswer({ notebookMd: NOTEBOOK_TILT, question: PUBLIC_MCQ }, oracle([], two));
+    expect(r.answer).toEqual({ dontKnow: true });
+  });
+  it('does not count an on-topic wrong belief as knowledge', async () => {
+    // The belief line shares "Sun" and "summer" style keywords with many prompts, but it is not knowledge.
+    const notebookMd = `## Seasons\n- ${MISC_DIST.beliefStatement}`;
+    const r = await tasks.studentAnswer({ notebookMd, question: PUBLIC_MCQ }, oracle([]));
+    expect(r.answer).toEqual({ dontKnow: true });
+  });
+  it('falls back to keyword overlap when the question has no key points', async () => {
+    expect(MOCK_MIN_SHARED_KEYWORDS).toBe(2);
+    const r = await tasks.studentAnswer({ notebookMd: NOTEBOOK_TILT, question: PUBLIC_MCQ }, oracle([], []));
+    expect(r.answer).toEqual({ choiceIndex: 1 });
+    expect(r.citedNotes).toEqual(["Earth's axial tilt causes the seasons."]);
+  });
+  it('splits sentences without breaking decimals', () => {
+    expect(splitSentences("Earth's axis is tilted 23.5 degrees. It points at Polaris!\nsin 30 = 0.5.")).toEqual([
+      "Earth's axis is tilted 23.5 degrees",
+      'It points at Polaris',
+      'sin 30 = 0.5',
+    ]);
   });
   it("says dontKnow when notes don't cover it", async () => {
     const r = await tasks.studentAnswer({ notebookMd: '## X\n- Water boils at 100 degrees.', question: PUBLIC_MCQ }, oracle());

@@ -1,0 +1,1873 @@
+{
+ "match": "Why Earth Has Seasons",
+ "outline": {
+  "title": "Why Earth Has Seasons",
+  "language": "en",
+  "units": [
+   {
+    "title": "Seasons",
+    "concepts": [
+     {
+      "title": "Axial tilt and sunlight angle",
+      "summary": "Earth's tilted axis, not its distance from the Sun, causes the seasons by changing the angle of sunlight; the noon Sun altitude rule quantifies it.",
+      "prerequisites": [],
+      "keyPoints": [
+       {
+        "statement": "Earth's axis is tilted 23.5 degrees from the perpendicular to its orbital plane.",
+        "evidence": {
+         "quote": "Earth's axis is tilted 23.5 degrees from the perpendicular to its orbital plane.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "The axis keeps pointing in the same direction in space all year, toward Polaris.",
+        "evidence": {
+         "quote": "The axis keeps pointing in the same direction in space all year, toward the star Polaris.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "Seasons are caused by the tilt of the axis, not by Earth's distance from the Sun.",
+        "evidence": {
+         "quote": "Seasons are caused by the tilt of Earth's axis, not by Earth's distance from the Sun.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "Earth is closest to the Sun in early January and farthest in early July.",
+        "evidence": {
+         "quote": "In fact, Earth is closest to the Sun in early January, at about 147.1 million km, and farthest in early July, at about 152.1 million km.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "A high Sun concentrates energy on a small area; a low Sun spreads the same beam over a larger area.",
+        "evidence": {
+         "quote": "When the Sun is high in the sky, sunlight hits the ground steeply and its energy is concentrated on a small area.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "Noon altitude = 90 - |latitude - declination|, with declination +23.5, 0 and -23.5 on the June solstice, equinoxes and December solstice.",
+        "evidence": {
+         "quote": "noon altitude = 90 - |latitude - declination|",
+         "page": 1
+        }
+       },
+       {
+        "statement": "Sunlight intensity on flat ground is the full beam intensity times the sine of the Sun's altitude.",
+        "evidence": {
+         "quote": "The intensity of sunlight on flat ground equals the full beam intensity multiplied by the sine of the Sun's altitude.",
+         "page": 1
+        }
+       }
+      ]
+     },
+     {
+      "title": "Day length",
+      "summary": "Day length changes with latitude and season because of the tilt, not because Earth's spin changes; the hottest weather lags the longest day.",
+      "prerequisites": [
+       "Axial tilt and sunlight angle"
+      ],
+      "keyPoints": [
+       {
+        "statement": "On the equinoxes, day and night are each about 12 hours long everywhere on Earth.",
+        "evidence": {
+         "quote": "On the equinoxes, day and night are each about 12 hours long everywhere on Earth.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "At the equator, day length stays close to 12 hours all year.",
+        "evidence": {
+         "quote": "At the equator, day length stays close to 12 hours all year.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "The hemisphere tilted toward the Sun has days longer than 12 hours; the hemisphere tilted away has shorter days.",
+        "evidence": {
+         "quote": "Away from the equator, the hemisphere tilted toward the Sun has days longer than 12 hours and the hemisphere tilted away has days shorter than 12 hours.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "The difference from 12 hours grows with latitude.",
+        "evidence": {
+         "quote": "The difference grows with latitude.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "North of the Arctic Circle the Sun does not set on the June solstice (24 hours of daylight).",
+        "evidence": {
+         "quote": "North of the Arctic Circle, at latitude 66.5, the Sun does not set at all on the June solstice, giving 24 hours of daylight.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "Earth's spin rate does not change with the seasons.",
+        "evidence": {
+         "quote": "Earth takes about 24 hours to spin once, and this spin rate does not change with the seasons.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "The longest day is not the hottest day: seasonal lag delays the heat by several weeks.",
+        "evidence": {
+         "quote": "The longest day of the year is not the hottest day.",
+         "page": 1
+        }
+       }
+      ]
+     },
+     {
+      "title": "Opposite hemispheres",
+      "summary": "The hemispheres have opposite seasons, split by the equator and not by east or west.",
+      "prerequisites": [
+       "Axial tilt and sunlight angle"
+      ],
+      "keyPoints": [
+       {
+        "statement": "The two hemispheres always have opposite seasons.",
+        "evidence": {
+         "quote": "The two hemispheres always have opposite seasons.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "The June solstice starts summer in the Northern Hemisphere and winter in the Southern Hemisphere.",
+        "evidence": {
+         "quote": "The June solstice is the start of summer in the Northern Hemisphere and the start of winter in the Southern Hemisphere.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "On the December solstice the Sun is overhead at the Tropic of Capricorn and the Southern Hemisphere has its longest days.",
+        "evidence": {
+         "quote": "The Sun is directly overhead at latitude -23.5, the Tropic of Capricorn, and the Southern Hemisphere has its longest days.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "The dividing line is the equator, not a line between east and west.",
+        "evidence": {
+         "quote": "The dividing line is the equator, not a line between east and west.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "Two cities at the same latitude have the same season, wherever they are in longitude.",
+        "evidence": {
+         "quote": "Two cities at the same latitude have the same season even if they are on opposite sides of the world.",
+         "page": 1
+        }
+       },
+       {
+        "statement": "On the equinoxes neither hemisphere is tilted toward the Sun.",
+        "evidence": {
+         "quote": "On the equinoxes neither hemisphere is tilted toward the Sun.",
+         "page": 1
+        }
+       }
+      ]
+     }
+    ]
+   }
+  ],
+  "materialItems": [
+   {
+    "kind": "worked_example",
+    "text": "Find the noon Sun altitude in Boston (latitude 42) on the June solstice.",
+    "solution": "The declination is +23.5. The difference between latitude and declination is 42 - 23.5 = 18.5. The noon altitude is 90 - 18.5 = 71.5 degrees.",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle"
+    ],
+    "evidence": {
+     "quote": "Find the noon Sun altitude in Boston (latitude 42) on the June solstice.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "worked_example",
+    "text": "Find the noon Sun altitude in Boston (latitude 42) on the December solstice.",
+    "solution": "The declination is -23.5. The difference is 42 - (-23.5) = 65.5. The noon altitude is 90 - 65.5 = 24.5 degrees. The Sun is much lower in December, so sunlight is spread out and weaker.",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle"
+    ],
+    "evidence": {
+     "quote": "Find the noon Sun altitude in Boston (latitude 42) on the December solstice.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "What is the tilt of Earth's axis, in degrees?",
+    "solution": "23.5",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle"
+    ],
+    "evidence": {
+     "quote": "What is the tilt of Earth's axis, in degrees?",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "What is the main cause of Earth's seasons? A. Earth's distance from the Sun changes during the year B. The tilt of Earth's axis C. The Sun gives off more energy in summer D. Earth spins faster in summer",
+    "solution": "B",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle"
+    ],
+    "evidence": {
+     "quote": "What is the main cause of Earth's seasons?",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "True or false: Earth is closest to the Sun in early January.",
+    "solution": "True",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle"
+    ],
+    "evidence": {
+     "quote": "True or false: Earth is closest to the Sun in early January.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "Find the noon Sun altitude at latitude 30 on the June solstice, in degrees.",
+    "solution": "83.5",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle"
+    ],
+    "evidence": {
+     "quote": "Find the noon Sun altitude at latitude 30 on the June solstice, in degrees.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "Find the noon Sun altitude at latitude 50 on an equinox, in degrees.",
+    "solution": "40",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle"
+    ],
+    "evidence": {
+     "quote": "Find the noon Sun altitude at latitude 50 on an equinox, in degrees.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "The Sun is at an altitude of 30 degrees. What fraction of the full beam intensity reaches flat ground?",
+    "solution": "0.5",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle"
+    ],
+    "evidence": {
+     "quote": "The Sun is at an altitude of 30 degrees. What fraction of the full beam intensity reaches flat ground?",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "How much farther from the Sun is Earth in early July than in early January, in million km?",
+    "solution": "5",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle"
+    ],
+    "evidence": {
+     "quote": "How much farther from the Sun is Earth in early July than in early January, in million km?",
+     "page": 1
+    }
+   },
+   {
+    "kind": "worked_example",
+    "text": "A city at latitude 40 has 15 hours of daylight on the June solstice. How many hours of night does it have on that date, and how much longer is the day than the night?",
+    "solution": "A full day is 24 hours, so the night is 24 - 15 = 9 hours long. The day is 15 - 9 = 6 hours longer than the night.",
+    "conceptTitles": [
+     "Day length"
+    ],
+    "evidence": {
+     "quote": "A city at latitude 40 has 15 hours of daylight on the June solstice.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "How many hours of daylight does the equator get on the December solstice?",
+    "solution": "12",
+    "conceptTitles": [
+     "Day length"
+    ],
+    "evidence": {
+     "quote": "How many hours of daylight does the equator get on the December solstice?",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "True or false: On an equinox, a city at latitude 60 and a city at latitude 20 have about the same day length.",
+    "solution": "True",
+    "conceptTitles": [
+     "Day length"
+    ],
+    "evidence": {
+     "quote": "True or false: On an equinox, a city at latitude 60 and a city at latitude 20 have about the same day length.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "Why are days longer in summer? A. Earth spins more slowly in summer B. The Sun moves more slowly across the sky in summer C. More of your latitude circle is in sunlight when your hemisphere is tilted toward the Sun D. Earth is closer to the Sun in summer",
+    "solution": "C",
+    "conceptTitles": [
+     "Day length"
+    ],
+    "evidence": {
+     "quote": "Why are days longer in summer?",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "A city has 9 hours of daylight on the December solstice. How many hours of night does it have?",
+    "solution": "15",
+    "conceptTitles": [
+     "Day length"
+    ],
+    "evidence": {
+     "quote": "A city has 9 hours of daylight on the December solstice. How many hours of night does it have?",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "Put these places in order from shortest to longest day on the June solstice: latitude 60, the equator, latitude 40, latitude 70.",
+    "solution": "the equator, latitude 40, latitude 60, latitude 70",
+    "conceptTitles": [
+     "Day length"
+    ],
+    "evidence": {
+     "quote": "Put these places in order from shortest to longest day on the June solstice",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "In which month is the Northern Hemisphere's hottest weather most likely: June, July, or December?",
+    "solution": "July",
+    "conceptTitles": [
+     "Day length"
+    ],
+    "evidence": {
+     "quote": "In which month is the Northern Hemisphere's hottest weather most likely: June, July, or December?",
+     "page": 1
+    }
+   },
+   {
+    "kind": "worked_example",
+    "text": "Find the noon Sun altitude in Sydney (latitude -34) on the December solstice.",
+    "solution": "The declination is -23.5. The difference is -34 - (-23.5) = -10.5, and its absolute value is 10.5. The noon altitude is 90 - 10.5 = 79.5 degrees. The Sun is high in the sky, so December is summer in Sydney.",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle",
+     "Opposite hemispheres"
+    ],
+    "evidence": {
+     "quote": "Find the noon Sun altitude in Sydney (latitude -34) on the December solstice.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "It is the June solstice. What season is starting in Argentina?",
+    "solution": "winter",
+    "conceptTitles": [
+     "Opposite hemispheres"
+    ],
+    "evidence": {
+     "quote": "It is the June solstice. What season is starting in Argentina?",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "True or false: When it is summer in Canada, it is also summer in Australia.",
+    "solution": "False",
+    "conceptTitles": [
+     "Opposite hemispheres"
+    ],
+    "evidence": {
+     "quote": "True or false: When it is summer in Canada, it is also summer in Australia.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "On which date is the Sun directly overhead at the Tropic of Capricorn? A. The June solstice B. The March equinox C. The December solstice D. The September equinox",
+    "solution": "C",
+    "conceptTitles": [
+     "Opposite hemispheres"
+    ],
+    "evidence": {
+     "quote": "On which date is the Sun directly overhead at the Tropic of Capricorn?",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "Find the noon Sun altitude at latitude -34 on the June solstice, in degrees.",
+    "solution": "32.5",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle",
+     "Opposite hemispheres"
+    ],
+    "evidence": {
+     "quote": "Find the noon Sun altitude at latitude -34 on the June solstice, in degrees.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "Tokyo (latitude 36) and San Francisco (latitude 38) are on opposite sides of the Pacific Ocean. True or false: they have summer at the same time.",
+    "solution": "True",
+    "conceptTitles": [
+     "Opposite hemispheres"
+    ],
+    "evidence": {
+     "quote": "Tokyo (latitude 36) and San Francisco (latitude 38) are on opposite sides of the Pacific Ocean.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "practice_problem",
+    "text": "Which two things are true on the December solstice? Select all that apply. A. The Southern Hemisphere is tilted toward the Sun B. The Northern Hemisphere has its longest day C. The Sun is directly overhead at latitude -23.5 D. Earth is at its farthest point from the Sun",
+    "solution": "A and C",
+    "conceptTitles": [
+     "Opposite hemispheres"
+    ],
+    "evidence": {
+     "quote": "Which two things are true on the December solstice? Select all that apply.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "quiz_item",
+    "text": "Find the noon Sun altitude at latitude 20 on the December solstice, in degrees.",
+    "solution": "46.5",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle"
+    ],
+    "evidence": {
+     "quote": "Find the noon Sun altitude at latitude 20 on the December solstice, in degrees.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "quiz_item",
+    "text": "A student says the Southern Hemisphere has summer in December because it is closer to the Sun then. What actually causes summer there?",
+    "solution": "The Southern Hemisphere is tilted toward the Sun.",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle",
+     "Opposite hemispheres"
+    ],
+    "evidence": {
+     "quote": "A student says the Southern Hemisphere has summer in December because it is closer to the Sun then.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "quiz_item",
+    "text": "True or false: North of the Arctic Circle, the Sun does not set on the June solstice.",
+    "solution": "True",
+    "conceptTitles": [
+     "Day length"
+    ],
+    "evidence": {
+     "quote": "True or false: North of the Arctic Circle, the Sun does not set on the June solstice.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "quiz_item",
+    "text": "A city at latitude 60 gets 18.5 hours of daylight on the June solstice. How many hours of night does it get?",
+    "solution": "5.5",
+    "conceptTitles": [
+     "Day length"
+    ],
+    "evidence": {
+     "quote": "A city at latitude 60 gets 18.5 hours of daylight on the June solstice.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "quiz_item",
+    "text": "Which place has the higher noon Sun on the June solstice? A. A city at latitude 45 B. A city at latitude -45 C. Both are the same D. It depends on the longitude",
+    "solution": "A",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle",
+     "Opposite hemispheres"
+    ],
+    "evidence": {
+     "quote": "Which place has the higher noon Sun on the June solstice?",
+     "page": 1
+    }
+   },
+   {
+    "kind": "common_mistake",
+    "text": "It is summer when Earth is closer to the Sun. Wrong. Earth is closest to the Sun in early January, during Northern Hemisphere winter. The tilt causes the seasons.",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle"
+    ],
+    "evidence": {
+     "quote": "Earth is closest to the Sun in early January, during Northern Hemisphere winter.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "common_mistake",
+    "text": "Earth's axis tips back and forth during the year. Wrong. The axis keeps pointing in the same direction in space all year. Only Earth's position in its orbit changes.",
+    "conceptTitles": [
+     "Axial tilt and sunlight angle"
+    ],
+    "evidence": {
+     "quote": "Only Earth's position in its orbit changes.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "common_mistake",
+    "text": "Days are longer in summer because Earth spins more slowly. Wrong. Earth's spin rate does not change with the seasons.",
+    "conceptTitles": [
+     "Day length"
+    ],
+    "evidence": {
+     "quote": "Earth's spin rate does not change with the seasons.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "common_mistake",
+    "text": "The longest day of the year is the hottest day. Wrong. The hottest weather comes several weeks later because of seasonal lag.",
+    "conceptTitles": [
+     "Day length"
+    ],
+    "evidence": {
+     "quote": "The hottest weather comes several weeks later because of seasonal lag.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "common_mistake",
+    "text": "It is summer everywhere on Earth at the same time. Wrong. The two hemispheres always have opposite seasons.",
+    "conceptTitles": [
+     "Opposite hemispheres"
+    ],
+    "evidence": {
+     "quote": "The two hemispheres always have opposite seasons.",
+     "page": 1
+    }
+   },
+   {
+    "kind": "common_mistake",
+    "text": "Seasons are opposite in the eastern and western halves of the world. Wrong. The dividing line is the equator, not a line between east and west.",
+    "conceptTitles": [
+     "Opposite hemispheres"
+    ],
+    "evidence": {
+     "quote": "The dividing line is the equator, not a line between east and west.",
+     "page": 1
+    }
+   }
+  ],
+  "examTimeHint": {
+   "totalMinutes": 10,
+   "questionCount": 5
+  }
+ },
+ "style": {
+  "voice": "A short, friendly handout: a rule, a worked example, then direct practice problems with one-line answers.",
+  "notation": "Angles in degrees. Latitude is positive in the north and negative in the south. Distances in million km.",
+  "units": "degrees, hours, million km",
+  "formatMix": {
+   "mcq": 0.15,
+   "true_false": 0.25,
+   "multi_select": 0.03,
+   "numeric": 0.4,
+   "short_text": 0.08,
+   "ordering": 0.03,
+   "free_response": 0.03
+  },
+  "typicalScenarios": [
+   "noon Sun altitude for a city on a solstice or equinox",
+   "hours of daylight and night at a latitude",
+   "which season it is in which hemisphere"
+  ],
+  "avgSolutionSteps": 2.5,
+  "difficultyBand": {
+   "min": 1,
+   "max": 3
+  },
+  "exemplarItemIds": [
+   "m6",
+   "m24",
+   "m13",
+   "m22"
+  ]
+ },
+ "misconceptions": {
+  "Axial tilt and sunlight angle": [
+   {
+    "id": "distance_causes_seasons",
+    "description": "Thinks the seasons happen because Earth is closer to the Sun in summer and farther in winter.",
+    "beliefStatement": "It is summer when Earth is closer to the Sun, and winter when it is farther away.",
+    "correction": "The tilt of Earth's axis causes the seasons. Earth is actually closest to the Sun in early January, in the middle of Northern Hemisphere winter.",
+    "evidence": {
+     "quote": "Earth is closest to the Sun in early January, during Northern Hemisphere winter.",
+     "page": 1
+    },
+    "origin": "material",
+    "likelihood": 3
+   },
+   {
+    "id": "axis_tips_back_and_forth",
+    "description": "Thinks Earth's axis tips back and forth during the year.",
+    "beliefStatement": "Earth's axis tips toward the Sun in summer and tips away in winter.",
+    "correction": "The axis keeps pointing in the same direction in space all year; only Earth's position in its orbit changes.",
+    "evidence": {
+     "quote": "Only Earth's position in its orbit changes.",
+     "page": 1
+    },
+    "origin": "material",
+    "likelihood": 2
+   },
+   {
+    "id": "intensity_linear_in_altitude",
+    "description": "Thinks sunlight intensity is proportional to the Sun's altitude angle, so a 30 degree Sun gives a third of the full beam.",
+    "beliefStatement": "A Sun at 30 degrees gives a third of the full sunlight, because 30 is a third of 90.",
+    "correction": "Intensity follows the sine of the altitude, so a 30 degree Sun gives half of the full beam.",
+    "evidence": {
+     "quote": "At an altitude of 30 degrees the ground receives half of the full beam intensity, because sin 30 = 0.5.",
+     "page": 1
+    },
+    "origin": "inferred",
+    "likelihood": 1
+   },
+   {
+    "id": "latitude_sign_ignored",
+    "description": "Drops the minus sign of southern latitudes when using the noon altitude rule.",
+    "beliefStatement": "For a southern city I can use its latitude as a positive number in the noon altitude rule.",
+    "correction": "Southern latitudes are negative, and the sign matters when you subtract the declination.",
+    "evidence": {
+     "quote": "Northern latitudes are positive and southern latitudes are negative.",
+     "page": 1
+    },
+    "origin": "inferred",
+    "likelihood": 2
+   }
+  ],
+  "Day length": [
+   {
+    "id": "spin_slows_in_summer",
+    "description": "Thinks days are longer in summer because Earth spins more slowly.",
+    "beliefStatement": "Days are longer in summer because Earth spins more slowly then.",
+    "correction": "Earth's spin rate does not change with the seasons; the tilt changes how much of each latitude circle is in sunlight.",
+    "evidence": {
+     "quote": "Earth's spin rate does not change with the seasons.",
+     "page": 1
+    },
+    "origin": "material",
+    "likelihood": 2
+   },
+   {
+    "id": "longest_day_is_hottest",
+    "description": "Thinks the longest day of the year is also the hottest.",
+    "beliefStatement": "The longest day of the year is the hottest day.",
+    "correction": "The hottest weather comes several weeks after the solstice because of seasonal lag.",
+    "evidence": {
+     "quote": "The hottest weather comes several weeks later because of seasonal lag.",
+     "page": 1
+    },
+    "origin": "material",
+    "likelihood": 3
+   }
+  ],
+  "Opposite hemispheres": [
+   {
+    "id": "summer_everywhere",
+    "description": "Thinks it is summer everywhere on Earth at the same time.",
+    "beliefStatement": "When it is summer, it is summer everywhere on Earth at the same time.",
+    "correction": "The two hemispheres always have opposite seasons.",
+    "evidence": {
+     "quote": "The two hemispheres always have opposite seasons.",
+     "page": 1
+    },
+    "origin": "material",
+    "likelihood": 3
+   },
+   {
+    "id": "east_west_seasons",
+    "description": "Thinks the seasons are opposite between the eastern and western halves of the world.",
+    "beliefStatement": "Seasons are opposite in the eastern and western halves of the world.",
+    "correction": "The dividing line is the equator, not a line between east and west.",
+    "evidence": {
+     "quote": "The dividing line is the equator, not a line between east and west.",
+     "page": 1
+    },
+    "origin": "material",
+    "likelihood": 2
+   }
+  ]
+ },
+ "questions": [
+  {
+   "o": "verbatim",
+   "item": "m1",
+   "type": "numeric",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k6"
+   ],
+   "prompt": "Find the noon Sun altitude in Boston (latitude 42) on the June solstice.",
+   "num": 71.5,
+   "tol": 0.1,
+   "unit": "degrees",
+   "numWrong": [],
+   "fa": "71.5 degrees",
+   "ex": "The declination is +23.5, so 90 - |42 - 23.5| = 90 - 18.5 = 71.5 degrees.",
+   "q": "Find the noon Sun altitude in Boston (latitude 42) on the June solstice.",
+   "d": 2,
+   "st": "recall compute compute"
+  },
+  {
+   "o": "verbatim",
+   "item": "m2",
+   "type": "numeric",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k6"
+   ],
+   "prompt": "Find the noon Sun altitude in Boston (latitude 42) on the December solstice.",
+   "num": 24.5,
+   "tol": 0.1,
+   "unit": "degrees",
+   "numWrong": [],
+   "fa": "24.5 degrees",
+   "ex": "The declination is -23.5, so 90 - |42 - (-23.5)| = 90 - 65.5 = 24.5 degrees. The Sun is much lower in December.",
+   "q": "Find the noon Sun altitude in Boston (latitude 42) on the December solstice.",
+   "d": 3,
+   "st": "recall compute compute"
+  },
+  {
+   "o": "verbatim",
+   "item": "m3",
+   "type": "numeric",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k1"
+   ],
+   "prompt": "What is the tilt of Earth's axis, in degrees?",
+   "num": 23.5,
+   "tol": 0.1,
+   "unit": "degrees",
+   "numWrong": [],
+   "fa": "23.5",
+   "ex": "Earth's axis is tilted 23.5 degrees from the perpendicular to its orbital plane.",
+   "q": "What is the tilt of Earth's axis, in degrees?",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "verbatim",
+   "item": "m4",
+   "type": "mcq",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k3"
+   ],
+   "prompt": "What is the main cause of Earth's seasons?",
+   "opts": [
+    "Earth's distance from the Sun changes during the year",
+    "The tilt of Earth's axis",
+    "The Sun gives off more energy in summer",
+    "Earth spins faster in summer"
+   ],
+   "ans": 1,
+   "mis": {
+    "0": "distance_causes_seasons"
+   },
+   "fa": "The tilt of Earth's axis",
+   "ex": "The tilt of Earth's axis changes the angle of sunlight, which causes the seasons.",
+   "q": "What is the main cause of Earth's seasons?",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "verbatim",
+   "item": "m5",
+   "type": "true_false",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k4"
+   ],
+   "prompt": "True or false?",
+   "stmt": "Earth is closest to the Sun in early January.",
+   "tf": true,
+   "tfMis": "distance_causes_seasons",
+   "fa": "True",
+   "ex": "Earth is closest to the Sun in early January, in Northern Hemisphere winter, so distance cannot explain the seasons.",
+   "q": "True or false: Earth is closest to the Sun in early January.",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "verbatim",
+   "item": "m6",
+   "type": "numeric",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k6"
+   ],
+   "prompt": "Find the noon Sun altitude at latitude 30 on the June solstice, in degrees.",
+   "num": 83.5,
+   "tol": 0.1,
+   "unit": "degrees",
+   "numWrong": [],
+   "fa": "83.5 degrees",
+   "ex": "90 - |30 - 23.5| = 90 - 6.5 = 83.5 degrees.",
+   "q": "Find the noon Sun altitude at latitude 30 on the June solstice, in degrees.",
+   "d": 2,
+   "st": "recall compute"
+  },
+  {
+   "o": "verbatim",
+   "item": "m7",
+   "type": "numeric",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k6"
+   ],
+   "prompt": "Find the noon Sun altitude at latitude 50 on an equinox, in degrees.",
+   "num": 40,
+   "tol": 0.1,
+   "unit": "degrees",
+   "numWrong": [],
+   "fa": "40 degrees",
+   "ex": "On an equinox the declination is 0, so 90 - |50 - 0| = 40 degrees.",
+   "q": "Find the noon Sun altitude at latitude 50 on an equinox, in degrees.",
+   "d": 2,
+   "st": "recall compute"
+  },
+  {
+   "o": "verbatim",
+   "item": "m8",
+   "type": "numeric",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k7"
+   ],
+   "prompt": "The Sun is at an altitude of 30 degrees. What fraction of the full beam intensity reaches flat ground?",
+   "num": 0.5,
+   "tol": 0.01,
+   "unit": null,
+   "numWrong": [
+    {
+     "v": 0.333,
+     "m": "intensity_linear_in_altitude"
+    }
+   ],
+   "fa": "0.5",
+   "ex": "Intensity is the full beam times sin(altitude), and sin 30 = 0.5.",
+   "q": "The Sun is at an altitude of 30 degrees. What fraction of the full beam intensity reaches flat ground?",
+   "d": 3,
+   "st": "recall reason"
+  },
+  {
+   "o": "verbatim",
+   "item": "m9",
+   "type": "numeric",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k4"
+   ],
+   "prompt": "How much farther from the Sun is Earth in early July than in early January, in million km?",
+   "num": 5,
+   "tol": 0.1,
+   "unit": "million km",
+   "numWrong": [],
+   "fa": "5 million km",
+   "ex": "152.1 - 147.1 = 5 million km.",
+   "q": "How much farther from the Sun is Earth in early July than in early January, in million km?",
+   "d": 2,
+   "st": "recall compute"
+  },
+  {
+   "o": "verbatim",
+   "item": "m24",
+   "type": "numeric",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k6"
+   ],
+   "prompt": "Find the noon Sun altitude at latitude 20 on the December solstice, in degrees.",
+   "num": 46.5,
+   "tol": 0.1,
+   "unit": "degrees",
+   "numWrong": [],
+   "fa": "46.5 degrees",
+   "ex": "90 - |20 - (-23.5)| = 90 - 43.5 = 46.5 degrees.",
+   "q": "Find the noon Sun altitude at latitude 20 on the December solstice, in degrees.",
+   "d": 2,
+   "st": "recall compute compute"
+  },
+  {
+   "o": "verbatim",
+   "item": "m29",
+   "type": "true_false",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k3"
+   ],
+   "prompt": "True or false?",
+   "stmt": "It is summer when Earth is closer to the Sun.",
+   "tf": false,
+   "tfMis": "distance_causes_seasons",
+   "fa": "False",
+   "ex": "Earth is closest to the Sun in early January, during Northern Hemisphere winter. The tilt causes the seasons.",
+   "q": "Earth is closest to the Sun in early January, during Northern Hemisphere winter.",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "verbatim",
+   "item": "m30",
+   "type": "true_false",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k2"
+   ],
+   "prompt": "True or false?",
+   "stmt": "Earth's axis tips back and forth during the year.",
+   "tf": false,
+   "tfMis": "axis_tips_back_and_forth",
+   "fa": "False",
+   "ex": "The axis keeps pointing in the same direction in space all year. Only Earth's position in its orbit changes.",
+   "q": "Only Earth's position in its orbit changes.",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "verbatim",
+   "item": "m10",
+   "type": "numeric",
+   "c": [
+    "c2"
+   ],
+   "k": [
+    "c2_k4"
+   ],
+   "prompt": "A city at latitude 40 has 15 hours of daylight on the June solstice. How many hours of night does it have on that date?",
+   "num": 9,
+   "tol": 0.1,
+   "unit": "hours",
+   "numWrong": [],
+   "fa": "9 hours",
+   "ex": "A full day is 24 hours, so the night is 24 - 15 = 9 hours long.",
+   "q": "A city at latitude 40 has 15 hours of daylight on the June solstice.",
+   "d": 1,
+   "st": "recall compute"
+  },
+  {
+   "o": "verbatim",
+   "item": "m11",
+   "type": "numeric",
+   "c": [
+    "c2"
+   ],
+   "k": [
+    "c2_k2"
+   ],
+   "prompt": "How many hours of daylight does the equator get on the December solstice?",
+   "num": 12,
+   "tol": 0.1,
+   "unit": "hours",
+   "numWrong": [],
+   "fa": "12 hours",
+   "ex": "At the equator, day length stays close to 12 hours all year.",
+   "q": "How many hours of daylight does the equator get on the December solstice?",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "verbatim",
+   "item": "m12",
+   "type": "true_false",
+   "c": [
+    "c2"
+   ],
+   "k": [
+    "c2_k1"
+   ],
+   "prompt": "True or false?",
+   "stmt": "On an equinox, a city at latitude 60 and a city at latitude 20 have about the same day length.",
+   "tf": true,
+   "tfMis": null,
+   "fa": "True",
+   "ex": "On the equinoxes, day and night are each about 12 hours long everywhere on Earth.",
+   "q": "True or false: On an equinox, a city at latitude 60 and a city at latitude 20 have about the same day length.",
+   "d": 2,
+   "st": "recall reason"
+  },
+  {
+   "o": "verbatim",
+   "item": "m13",
+   "type": "mcq",
+   "c": [
+    "c2"
+   ],
+   "k": [
+    "c2_k3",
+    "c2_k6"
+   ],
+   "prompt": "Why are days longer in summer?",
+   "opts": [
+    "Earth spins more slowly in summer",
+    "The Sun moves more slowly across the sky in summer",
+    "More of your latitude circle is in sunlight when your hemisphere is tilted toward the Sun",
+    "Earth is closer to the Sun in summer"
+   ],
+   "ans": 2,
+   "mis": {
+    "0": "spin_slows_in_summer"
+   },
+   "fa": "More of your latitude circle is in sunlight when your hemisphere is tilted toward the Sun",
+   "ex": "When your hemisphere is tilted toward the Sun, more of your latitude circle is in sunlight. Earth's spin rate does not change.",
+   "q": "Why are days longer in summer?",
+   "d": 2,
+   "st": "recall reason"
+  },
+  {
+   "o": "verbatim",
+   "item": "m14",
+   "type": "numeric",
+   "c": [
+    "c2"
+   ],
+   "k": [
+    "c2_k4"
+   ],
+   "prompt": "A city has 9 hours of daylight on the December solstice. How many hours of night does it have?",
+   "num": 15,
+   "tol": 0.1,
+   "unit": "hours",
+   "numWrong": [],
+   "fa": "15 hours",
+   "ex": "24 - 9 = 15 hours of night.",
+   "q": "A city has 9 hours of daylight on the December solstice. How many hours of night does it have?",
+   "d": 1,
+   "st": "compute"
+  },
+  {
+   "o": "verbatim",
+   "item": "m15",
+   "type": "ordering",
+   "c": [
+    "c2"
+   ],
+   "k": [
+    "c2_k4"
+   ],
+   "prompt": "Put these places in order from shortest to longest day on the June solstice.",
+   "order": [
+    "the equator",
+    "latitude 40",
+    "latitude 60",
+    "latitude 70"
+   ],
+   "ordWrong": [],
+   "fa": "the equator, latitude 40, latitude 60, latitude 70",
+   "ex": "On the June solstice the day gets longer the farther north you go: the equator is about 12 hours, latitude 40 about 15, latitude 60 about 18.5 and latitude 70 has 24.",
+   "q": "Put these places in order from shortest to longest day on the June solstice",
+   "d": 3,
+   "st": "recall reason"
+  },
+  {
+   "o": "verbatim",
+   "item": "m16",
+   "type": "short_text",
+   "c": [
+    "c2"
+   ],
+   "k": [
+    "c2_k7"
+   ],
+   "prompt": "In which month is the Northern Hemisphere's hottest weather most likely: June, July, or December?",
+   "acc": [
+    "July"
+   ],
+   "rubric": "The answer is July: seasonal lag puts the hottest weather weeks after the June solstice.",
+   "txtWrong": [
+    {
+     "p": "June",
+     "m": "longest_day_is_hottest"
+    }
+   ],
+   "fa": "July",
+   "ex": "The ground and oceans keep warming for weeks after the June solstice, so the heat peaks in July or August.",
+   "q": "In which month is the Northern Hemisphere's hottest weather most likely: June, July, or December?",
+   "d": 2,
+   "st": "recall reason"
+  },
+  {
+   "o": "verbatim",
+   "item": "m26",
+   "type": "true_false",
+   "c": [
+    "c2"
+   ],
+   "k": [
+    "c2_k5"
+   ],
+   "prompt": "True or false?",
+   "stmt": "North of the Arctic Circle, the Sun does not set on the June solstice.",
+   "tf": true,
+   "tfMis": null,
+   "fa": "True",
+   "ex": "North of the Arctic Circle (latitude 66.5) the Sun does not set at all on the June solstice.",
+   "q": "True or false: North of the Arctic Circle, the Sun does not set on the June solstice.",
+   "d": 2,
+   "st": "recall"
+  },
+  {
+   "o": "verbatim",
+   "item": "m27",
+   "type": "numeric",
+   "c": [
+    "c2"
+   ],
+   "k": [
+    "c2_k4"
+   ],
+   "prompt": "A city at latitude 60 gets 18.5 hours of daylight on the June solstice. How many hours of night does it get?",
+   "num": 5.5,
+   "tol": 0.1,
+   "unit": "hours",
+   "numWrong": [],
+   "fa": "5.5 hours",
+   "ex": "24 - 18.5 = 5.5 hours.",
+   "q": "A city at latitude 60 gets 18.5 hours of daylight on the June solstice.",
+   "d": 2,
+   "st": "compute"
+  },
+  {
+   "o": "verbatim",
+   "item": "m31",
+   "type": "true_false",
+   "c": [
+    "c2"
+   ],
+   "k": [
+    "c2_k6"
+   ],
+   "prompt": "True or false?",
+   "stmt": "Days are longer in summer because Earth spins more slowly.",
+   "tf": false,
+   "tfMis": "spin_slows_in_summer",
+   "fa": "False",
+   "ex": "Earth's spin rate does not change with the seasons.",
+   "q": "Earth's spin rate does not change with the seasons.",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "verbatim",
+   "item": "m32",
+   "type": "true_false",
+   "c": [
+    "c2"
+   ],
+   "k": [
+    "c2_k7"
+   ],
+   "prompt": "True or false?",
+   "stmt": "The longest day of the year is the hottest day.",
+   "tf": false,
+   "tfMis": "longest_day_is_hottest",
+   "fa": "False",
+   "ex": "The hottest weather comes several weeks later because of seasonal lag.",
+   "q": "The hottest weather comes several weeks later because of seasonal lag.",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "verbatim",
+   "item": "m18",
+   "type": "short_text",
+   "c": [
+    "c3"
+   ],
+   "k": [
+    "c3_k2"
+   ],
+   "prompt": "It is the June solstice. What season is starting in Argentina?",
+   "acc": [
+    "winter"
+   ],
+   "rubric": "The answer is winter: Argentina is in the Southern Hemisphere, which has winter on the June solstice.",
+   "txtWrong": [
+    {
+     "p": "summer",
+     "m": "summer_everywhere"
+    }
+   ],
+   "fa": "winter",
+   "ex": "The June solstice starts summer in the Northern Hemisphere and winter in the Southern Hemisphere.",
+   "q": "It is the June solstice. What season is starting in Argentina?",
+   "d": 2,
+   "st": "recall reason"
+  },
+  {
+   "o": "verbatim",
+   "item": "m19",
+   "type": "true_false",
+   "c": [
+    "c3"
+   ],
+   "k": [
+    "c3_k1"
+   ],
+   "prompt": "True or false?",
+   "stmt": "When it is summer in Canada, it is also summer in Australia.",
+   "tf": false,
+   "tfMis": "summer_everywhere",
+   "fa": "False",
+   "ex": "The two hemispheres always have opposite seasons.",
+   "q": "True or false: When it is summer in Canada, it is also summer in Australia.",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "verbatim",
+   "item": "m20",
+   "type": "mcq",
+   "c": [
+    "c3"
+   ],
+   "k": [
+    "c3_k3"
+   ],
+   "prompt": "On which date is the Sun directly overhead at the Tropic of Capricorn?",
+   "opts": [
+    "The June solstice",
+    "The March equinox",
+    "The December solstice",
+    "The September equinox"
+   ],
+   "ans": 2,
+   "mis": {},
+   "fa": "The December solstice",
+   "ex": "On the December solstice the Sun is directly overhead at latitude -23.5, the Tropic of Capricorn.",
+   "q": "On which date is the Sun directly overhead at the Tropic of Capricorn?",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "verbatim",
+   "item": "m22",
+   "type": "true_false",
+   "c": [
+    "c3"
+   ],
+   "k": [
+    "c3_k5"
+   ],
+   "prompt": "Tokyo (latitude 36) and San Francisco (latitude 38) are on opposite sides of the Pacific Ocean.",
+   "stmt": "They have summer at the same time.",
+   "tf": true,
+   "tfMis": "east_west_seasons",
+   "fa": "True",
+   "ex": "Two cities at the same latitude have the same season even if they are on opposite sides of the world. Both are in the Northern Hemisphere.",
+   "q": "Tokyo (latitude 36) and San Francisco (latitude 38) are on opposite sides of the Pacific Ocean.",
+   "d": 2,
+   "st": "recall reason"
+  },
+  {
+   "o": "verbatim",
+   "item": "m23",
+   "type": "multi_select",
+   "c": [
+    "c3"
+   ],
+   "k": [
+    "c3_k3"
+   ],
+   "prompt": "Which two things are true on the December solstice? Select all that apply.",
+   "opts": [
+    "The Southern Hemisphere is tilted toward the Sun",
+    "The Northern Hemisphere has its longest day",
+    "The Sun is directly overhead at latitude -23.5",
+    "Earth is at its farthest point from the Sun"
+   ],
+   "ans": [
+    0,
+    2
+   ],
+   "mis": {
+    "1": "summer_everywhere"
+   },
+   "fa": "The Southern Hemisphere is tilted toward the Sun; The Sun is directly overhead at latitude -23.5",
+   "ex": "On the December solstice the Southern Hemisphere is tilted toward the Sun and the Sun is overhead at latitude -23.5. The Northern Hemisphere has its shortest day.",
+   "q": "Which two things are true on the December solstice? Select all that apply.",
+   "d": 3,
+   "st": "recall reason"
+  },
+  {
+   "o": "verbatim",
+   "item": "m33",
+   "type": "true_false",
+   "c": [
+    "c3"
+   ],
+   "k": [
+    "c3_k1"
+   ],
+   "prompt": "True or false?",
+   "stmt": "It is summer everywhere on Earth at the same time.",
+   "tf": false,
+   "tfMis": "summer_everywhere",
+   "fa": "False",
+   "ex": "The two hemispheres always have opposite seasons.",
+   "q": "The two hemispheres always have opposite seasons.",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "verbatim",
+   "item": "m34",
+   "type": "true_false",
+   "c": [
+    "c3"
+   ],
+   "k": [
+    "c3_k4"
+   ],
+   "prompt": "True or false?",
+   "stmt": "Seasons are opposite in the eastern and western halves of the world.",
+   "tf": false,
+   "tfMis": "east_west_seasons",
+   "fa": "False",
+   "ex": "The dividing line is the equator, not a line between east and west.",
+   "q": "The dividing line is the equator, not a line between east and west.",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "verbatim",
+   "item": "m17",
+   "type": "numeric",
+   "c": [
+    "c1",
+    "c3"
+   ],
+   "k": [
+    "c1_k6",
+    "c3_k3"
+   ],
+   "prompt": "Find the noon Sun altitude in Sydney (latitude -34) on the December solstice.",
+   "num": 79.5,
+   "tol": 0.1,
+   "unit": "degrees",
+   "numWrong": [],
+   "fa": "79.5 degrees",
+   "ex": "The declination is -23.5, so 90 - |-34 - (-23.5)| = 90 - 10.5 = 79.5 degrees. December is summer in Sydney.",
+   "q": "Find the noon Sun altitude in Sydney (latitude -34) on the December solstice.",
+   "d": 3,
+   "st": "recall compute compute"
+  },
+  {
+   "o": "verbatim",
+   "item": "m21",
+   "type": "numeric",
+   "c": [
+    "c1",
+    "c3"
+   ],
+   "k": [
+    "c1_k6",
+    "c3_k2"
+   ],
+   "prompt": "Find the noon Sun altitude at latitude -34 on the June solstice, in degrees.",
+   "num": 32.5,
+   "tol": 0.1,
+   "unit": "degrees",
+   "numWrong": [
+    {
+     "v": 79.5,
+     "m": "latitude_sign_ignored"
+    }
+   ],
+   "fa": "32.5 degrees",
+   "ex": "90 - |-34 - 23.5| = 90 - 57.5 = 32.5 degrees. The Southern Hemisphere is tilted away from the Sun in June.",
+   "q": "Find the noon Sun altitude at latitude -34 on the June solstice, in degrees.",
+   "d": 3,
+   "st": "recall compute compute"
+  },
+  {
+   "o": "verbatim",
+   "item": "m25",
+   "type": "free_response",
+   "c": [
+    "c1",
+    "c3"
+   ],
+   "k": [
+    "c1_k3",
+    "c3_k3"
+   ],
+   "prompt": "A student says the Southern Hemisphere has summer in December because it is closer to the Sun then. What actually causes summer there?",
+   "rubric": "Full credit: the Southern Hemisphere is tilted toward the Sun in December, which makes sunlight steeper and days longer. Not distance.",
+   "model": "The Southern Hemisphere is tilted toward the Sun.",
+   "frMis": [
+    "distance_causes_seasons"
+   ],
+   "fa": "The Southern Hemisphere is tilted toward the Sun.",
+   "ex": "Seasons come from the tilt of Earth's axis, not from distance. In December the Southern Hemisphere leans toward the Sun.",
+   "q": "A student says the Southern Hemisphere has summer in December because it is closer to the Sun then.",
+   "d": 3,
+   "st": "recall reason write"
+  },
+  {
+   "o": "verbatim",
+   "item": "m28",
+   "type": "mcq",
+   "c": [
+    "c1",
+    "c3"
+   ],
+   "k": [
+    "c1_k6",
+    "c3_k2"
+   ],
+   "prompt": "Which place has the higher noon Sun on the June solstice?",
+   "opts": [
+    "A city at latitude 45",
+    "A city at latitude -45",
+    "Both are the same",
+    "It depends on the longitude"
+   ],
+   "ans": 0,
+   "mis": {
+    "2": "latitude_sign_ignored"
+   },
+   "fa": "A city at latitude 45",
+   "ex": "On the June solstice the Sun is overhead at +23.5, so latitude 45 has a noon altitude of 68.5 degrees and latitude -45 only 21.5 degrees.",
+   "q": "Which place has the higher noon Sun on the June solstice?",
+   "d": 3,
+   "st": "recall compute reason"
+  },
+  {
+   "o": "adapted",
+   "item": "m6",
+   "type": "numeric",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k6"
+   ],
+   "prompt": "Find the noon Sun altitude at latitude -10 on the June solstice, in degrees.",
+   "num": 56.5,
+   "tol": 0.1,
+   "unit": "degrees",
+   "numWrong": [
+    {
+     "v": 76.5,
+     "m": "latitude_sign_ignored"
+    }
+   ],
+   "fa": "56.5 degrees",
+   "ex": "90 - |-10 - 23.5| = 90 - 33.5 = 56.5 degrees. Southern latitudes are negative.",
+   "q": "Find the noon Sun altitude at latitude 30 on the June solstice, in degrees.",
+   "d": 3,
+   "st": "recall compute compute"
+  },
+  {
+   "o": "adapted",
+   "item": "m4",
+   "type": "mcq",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k2"
+   ],
+   "prompt": "Which statement about the direction of Earth's axis during the year is correct?",
+   "opts": [
+    "It keeps pointing toward Polaris",
+    "It tips toward the Sun in summer and away in winter",
+    "It always points at the Sun",
+    "It swings back and forth every month"
+   ],
+   "ans": 0,
+   "mis": {
+    "1": "axis_tips_back_and_forth"
+   },
+   "fa": "It keeps pointing toward Polaris",
+   "ex": "The axis keeps pointing in the same direction in space all year, toward Polaris.",
+   "q": "The axis keeps pointing in the same direction in space all year, toward the star Polaris.",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "adapted",
+   "item": "m8",
+   "type": "true_false",
+   "c": [
+    "c1"
+   ],
+   "k": [
+    "c1_k5"
+   ],
+   "prompt": "True or false?",
+   "stmt": "When the Sun is low in the sky, the same beam of sunlight is spread over a larger area.",
+   "tf": true,
+   "tfMis": null,
+   "fa": "True",
+   "ex": "A low Sun spreads the same beam over a larger area, so each square meter receives less energy.",
+   "q": "When the Sun is low in the sky, the same beam of sunlight is spread over a larger area, so each square meter receives less energy.",
+   "d": 2,
+   "st": "recall reason"
+  },
+  {
+   "o": "adapted",
+   "item": "m14",
+   "type": "numeric",
+   "c": [
+    "c2"
+   ],
+   "k": [
+    "c2_k4"
+   ],
+   "prompt": "A city has 7 hours of daylight on the December solstice. How many hours of night does it have?",
+   "num": 17,
+   "tol": 0.1,
+   "unit": "hours",
+   "numWrong": [],
+   "fa": "17 hours",
+   "ex": "24 - 7 = 17 hours of night.",
+   "q": "A city has 9 hours of daylight on the December solstice. How many hours of night does it have?",
+   "d": 1,
+   "st": "compute"
+  },
+  {
+   "o": "adapted",
+   "item": "m16",
+   "type": "mcq",
+   "c": [
+    "c2"
+   ],
+   "k": [
+    "c2_k7"
+   ],
+   "prompt": "Why is the hottest weather in the Northern Hemisphere usually in July or August and not on the June solstice?",
+   "opts": [
+    "Earth is closest to the Sun in July",
+    "The ground and oceans keep warming for several weeks after the solstice",
+    "The Sun is higher in the sky in July than in June",
+    "The longest day is the hottest day"
+   ],
+   "ans": 1,
+   "mis": {
+    "3": "longest_day_is_hottest"
+   },
+   "fa": "The ground and oceans keep warming for several weeks after the solstice",
+   "ex": "This delay is called seasonal lag: the ground and oceans keep warming for several weeks after the June solstice.",
+   "q": "The ground and oceans keep warming for several weeks after the June solstice, so the hottest weather in the Northern Hemisphere usually comes in July or August.",
+   "d": 2,
+   "st": "recall reason"
+  },
+  {
+   "o": "adapted",
+   "item": "m12",
+   "type": "true_false",
+   "c": [
+    "c2"
+   ],
+   "k": [
+    "c2_k2"
+   ],
+   "prompt": "True or false?",
+   "stmt": "At the equator, day length stays close to 12 hours all year.",
+   "tf": true,
+   "tfMis": null,
+   "fa": "True",
+   "ex": "At the equator, day length stays close to 12 hours all year.",
+   "q": "At the equator, day length stays close to 12 hours all year.",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "adapted",
+   "item": "m18",
+   "type": "short_text",
+   "c": [
+    "c3"
+   ],
+   "k": [
+    "c3_k2"
+   ],
+   "prompt": "It is the December solstice. What season is starting in Australia?",
+   "acc": [
+    "summer"
+   ],
+   "rubric": "The answer is summer: Australia is in the Southern Hemisphere, which has summer on the December solstice.",
+   "txtWrong": [
+    {
+     "p": "winter",
+     "m": "summer_everywhere"
+    }
+   ],
+   "fa": "summer",
+   "ex": "On the December solstice the Southern Hemisphere is tilted toward the Sun, so summer starts in Australia.",
+   "q": "That is why December is a summer month in Australia, Argentina, and South Africa.",
+   "d": 2,
+   "st": "recall reason"
+  },
+  {
+   "o": "adapted",
+   "item": "m19",
+   "type": "true_false",
+   "c": [
+    "c3"
+   ],
+   "k": [
+    "c3_k1"
+   ],
+   "prompt": "True or false?",
+   "stmt": "When it is winter in Chile, it is summer in Norway.",
+   "tf": true,
+   "tfMis": "summer_everywhere",
+   "fa": "True",
+   "ex": "The two hemispheres always have opposite seasons: Chile is in the south, Norway in the north.",
+   "q": "The two hemispheres always have opposite seasons.",
+   "d": 2,
+   "st": "recall reason"
+  },
+  {
+   "o": "adapted",
+   "item": "m22",
+   "type": "true_false",
+   "c": [
+    "c3"
+   ],
+   "k": [
+    "c3_k5"
+   ],
+   "prompt": "Sydney (latitude -34) and Johannesburg (latitude -26) are far apart from east to west.",
+   "stmt": "They have summer at the same time.",
+   "tf": true,
+   "tfMis": "east_west_seasons",
+   "fa": "True",
+   "ex": "Both cities are in the Southern Hemisphere, and the dividing line is the equator, not east or west.",
+   "q": "Two cities at the same latitude have the same season even if they are on opposite sides of the world.",
+   "d": 2,
+   "st": "recall reason"
+  },
+  {
+   "o": "adapted",
+   "item": "m20",
+   "type": "mcq",
+   "c": [
+    "c3"
+   ],
+   "k": [
+    "c3_k2"
+   ],
+   "prompt": "On which date is the Sun directly overhead at the Tropic of Cancer (latitude 23.5)?",
+   "opts": [
+    "The June solstice",
+    "The March equinox",
+    "The December solstice",
+    "The September equinox"
+   ],
+   "ans": 0,
+   "mis": {},
+   "fa": "The June solstice",
+   "ex": "The declination is +23.5 on the June solstice.",
+   "q": "The declination is +23.5 on the June solstice, 0 on the equinoxes, and -23.5 on the December solstice.",
+   "d": 2,
+   "st": "recall"
+  },
+  {
+   "o": "adapted",
+   "item": "m21",
+   "type": "numeric",
+   "c": [
+    "c1",
+    "c3"
+   ],
+   "k": [
+    "c1_k6",
+    "c3_k2"
+   ],
+   "prompt": "Find the noon Sun altitude at latitude -20 on the June solstice, in degrees.",
+   "num": 46.5,
+   "tol": 0.1,
+   "unit": "degrees",
+   "numWrong": [
+    {
+     "v": 86.5,
+     "m": "latitude_sign_ignored"
+    }
+   ],
+   "fa": "46.5 degrees",
+   "ex": "90 - |-20 - 23.5| = 90 - 43.5 = 46.5 degrees.",
+   "q": "Find the noon Sun altitude at latitude -34 on the June solstice, in degrees.",
+   "d": 3,
+   "st": "recall compute compute"
+  },
+  {
+   "o": "adapted",
+   "item": "m28",
+   "type": "mcq",
+   "c": [
+    "c1",
+    "c3"
+   ],
+   "k": [
+    "c1_k6",
+    "c3_k3"
+   ],
+   "prompt": "Which place has the lower noon Sun on the December solstice?",
+   "opts": [
+    "A city at latitude 45",
+    "A city at latitude -45",
+    "Both are the same",
+    "It depends on the longitude"
+   ],
+   "ans": 0,
+   "mis": {
+    "2": "latitude_sign_ignored"
+   },
+   "fa": "A city at latitude 45",
+   "ex": "On the December solstice the Sun is overhead at -23.5: latitude 45 has a noon altitude of 21.5 degrees and latitude -45 has 68.5 degrees.",
+   "q": "Which place has the higher noon Sun on the June solstice?",
+   "d": 3,
+   "st": "recall compute reason"
+  },
+  {
+   "o": "adapted",
+   "item": "m24",
+   "type": "numeric",
+   "c": [
+    "c1",
+    "c2"
+   ],
+   "k": [
+    "c1_k6",
+    "c2_k4"
+   ],
+   "prompt": "Find the noon Sun altitude at latitude 40 on the June solstice, in degrees.",
+   "num": 73.5,
+   "tol": 0.1,
+   "unit": "degrees",
+   "numWrong": [],
+   "fa": "73.5 degrees",
+   "ex": "90 - |40 - 23.5| = 90 - 16.5 = 73.5 degrees. This is a city with about 15 hours of daylight.",
+   "q": "Find the noon Sun altitude at latitude 20 on the December solstice, in degrees.",
+   "d": 2,
+   "st": "recall compute compute"
+  },
+  {
+   "o": "generated",
+   "item": null,
+   "type": "true_false",
+   "c": [
+    "c3"
+   ],
+   "k": [
+    "c3_k6"
+   ],
+   "prompt": "True or false?",
+   "stmt": "On the equinoxes the Sun is directly overhead at the equator.",
+   "tf": true,
+   "tfMis": null,
+   "fa": "True",
+   "ex": "On the equinoxes neither hemisphere is tilted toward the Sun, and the Sun is directly overhead at the equator.",
+   "q": "The Sun is directly overhead at the equator, and both hemispheres receive the same amount of sunlight.",
+   "d": 1,
+   "st": "recall"
+  },
+  {
+   "o": "generated",
+   "item": null,
+   "type": "true_false",
+   "c": [
+    "c2",
+    "c3"
+   ],
+   "k": [
+    "c2_k3",
+    "c3_k2"
+   ],
+   "prompt": "True or false?",
+   "stmt": "On the June solstice, a city in Argentina has a shorter day than a city in Canada.",
+   "tf": true,
+   "tfMis": "summer_everywhere",
+   "fa": "True",
+   "ex": "On the June solstice the Southern Hemisphere is tilted away from the Sun, so its days are shorter than 12 hours, while the Northern Hemisphere has long days.",
+   "q": "The June solstice is the start of summer in the Northern Hemisphere and the start of winter in the Southern Hemisphere.",
+   "d": 3,
+   "st": "recall reason"
+  },
+  {
+   "o": "generated",
+   "item": null,
+   "type": "true_false",
+   "c": [
+    "c1",
+    "c2"
+   ],
+   "k": [
+    "c1_k5",
+    "c2_k3"
+   ],
+   "prompt": "True or false?",
+   "stmt": "Summer is warmer for two reasons: the sunlight is steeper and the days are longer.",
+   "tf": true,
+   "tfMis": null,
+   "fa": "True",
+   "ex": "In summer a location gets more intense sunlight and gets it for more hours.",
+   "q": "In summer a location gets more intense sunlight and gets it for more hours, so summer is warmer for two reasons.",
+   "d": 2,
+   "st": "recall reason"
+  }
+ ]
+}

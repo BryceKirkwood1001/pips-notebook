@@ -161,6 +161,8 @@ export interface StudentAnswerOutput {
  */
 export interface StudentOracle {
   question: Question;
+  /** The key points this question tests (`question.keyPointIds`). The mock answers correctly only if its notes cover them. */
+  keyPoints: { id: string; statement: string }[];
   /** Every misconception of the course (for `beliefStatement` lookups). */
   misconceptions: Misconception[];
   activeMisconceptionIds: string[];

@@ -1,5 +1,5 @@
 import type { Question } from '@top/shared';
-import { targetsMisconception } from '../core/grading';
+import { targetsMisconception, wrongAnswerFor } from '../core/grading';
 import type { Rng } from '../core/rng';
 
 /** min(n, pool) ids, no repeats, preferring ids not in `seen`. */
@@ -39,7 +39,9 @@ export function composeBoss(
     if (Object.keys(targetedMap).length >= k) break;
     const candidates = pool.filter((q) => !isChosen(q) && targetsMisconception(q, m.id));
     if (candidates.length === 0) continue;
-    const q = rng.pick(candidates);
+    // Prefer a question where the wrong belief leads to one definite wrong answer (not a free response).
+    const definite = candidates.filter((q) => wrongAnswerFor(q, m.id) !== null);
+    const q = rng.pick(definite.length > 0 ? definite : candidates);
     chosen.push(q);
     targetedMap[q.id] = m.id;
   }
