@@ -43,20 +43,20 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
     const remove = el('input'); remove.type = 'checkbox';
     const state = el('span', 'dim', 'No key saved');
     const box = el('section', 'provider-fields',
-      field(`${titleFor(provider)} API key`, key, 'Leave blank to keep a saved key. Keys stay on this backend.'),
+      field(`${titleFor(provider)} API key`, key, 'Leave blank to keep your saved key. Keys stay on your computer.'),
       el('div', 'key-options', state, el('label', '', remove, ' Remove saved key')),
       el('div', 'model-fields', field('Generation model', model), field('Embedding model', embedding)),
     );
     profiles[provider] = { box, model, embedding, key, remove, state };
     fields.append(box);
   }
-  const offline = el('section', 'provider-fields offline-note', el('h3', '', 'A lesson without a key'),
-    el('p', '', 'Play the sample courses with a deterministic student. No account, network calls, or API credits required.'),
-    el('small', 'dim', 'Best for checking the game flow. Choose OpenAI or Gemini to learn from new course material.'));
+  const offline = el('section', 'provider-fields offline-note', el('h3', '', 'Play without a key'),
+    el('p', '', 'Play the sample lessons with a built-in practice student. No account, internet, or API credits needed.'),
+    el('small', 'dim', 'To learn from your own material, choose OpenAI or Gemini.'));
   fields.append(offline);
   const cards = new Map<LlmProvider, HTMLButtonElement>();
   for (const [provider, label, detail] of [
-    ['openai', 'OpenAI', 'Responses + embeddings'], ['gemini', 'Google Gemini', 'Native PDF + embeddings'], ['mock', 'Offline', 'Sample courses · no key'],
+    ['openai', 'OpenAI', 'Use your OpenAI key'], ['gemini', 'Google Gemini', 'Use your Google AI key'], ['mock', 'Offline', 'Sample lessons · no key needed'],
   ] as const) {
     const choice = btn('', () => choose(provider), 'provider-choice');
     choice.append(el('b', '', label), el('small', '', detail));
@@ -91,9 +91,6 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
       view.state.textContent = saved.hasApiKey ? 'Key saved on backend' : 'No key saved';
       view.state.className = saved.hasApiKey ? 'ok' : 'dim';
     }
-    persistence.textContent = settings.persistence === 'local'
-      ? 'Saved on this machine and restored when the backend restarts.' : 'Session settings: this backend is running without local persistence.';
-    dimensions.textContent = `Retrieval uses ${settings.embeddingDims} dimensions. Existing courses retain their original embedding model.`;
   }
   function body(): UpdateApiSettingsBody {
     const seconds = Number(timeout.value);
@@ -146,24 +143,22 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
       const apiOrigin = serverOrigin(); connection = clientFor(apiOrigin);
       const settings = await connection.getApiSettings();
       if (!active) return;
-      apply(settings); showStatus('Connected. Choose how your student learns.');
+      apply(settings); showStatus('Connected.');
     });
   }
-  const persistence = el('p', 'dim');
-  const dimensions = el('p', 'dim');
   const advanced = el('details', 'setup-advanced', el('summary', '', 'Connection details'),
     el('div', 'connection-fields', field('Backend URL', origin, 'Changing servers starts a new game session.'), load, field('Request timeout (seconds)', timeout)),
     field('Course preparation timeout (seconds)', ingestTimeout, 'Per request while preparing your course. Active OpenAI document streams extend this idle budget, with a 10-minute request cap.'));
   root.append(
-    el('div', 'setup-heading', el('div', '', el('span', 'setup-eyebrow', 'SETTINGS / API SETUP'), el('h2', '', 'Choose your oracle.'),
-      el('p', 'dim', 'The same dungeon. A different mind behind the notebook.')), keyStatus),
+    el('div', 'setup-heading', el('div', '', el('span', 'setup-eyebrow', 'SETTINGS'), el('h2', '', 'Choose an AI provider'),
+      el('p', 'dim', "This AI writes Pip's questions and notes and prepares your courses. You can switch anytime.")), keyStatus),
     providerCards,
-    el('div', 'setup-grid', fields, el('aside', 'setup-aside', el('h3', '', 'Keep the lesson yours.'),
-      el('p', '', 'Your student still knows only what you teach. The provider powers its questions, notes, and course preparation.'),
-      el('div', 'setup-rule'), persistence, dimensions,
+    el('div', 'setup-grid', fields, el('aside', 'setup-aside', el('h3', '', 'How it works'),
+      el('p', '', 'Pip still only knows what you teach. In battle, the AI answers as Pip using nothing but Pip\'s notebook.'),
+      el('div', 'setup-rule'), el('p', 'dim', 'No key? Choose Offline to play the sample lessons.'),
       options.practice ? el('p', 'warn', 'Practice mode uses canned responses. These settings apply when you play through the backend.') : null)),
     advanced,
-    el('div', 'setup-footer', el('div', 'actions', test, save), el('small', 'dim', 'The connection test makes a small generation and embedding request.')),
+    el('div', 'setup-footer', el('div', 'actions', test, save), el('small', 'dim', 'Testing sends one small request to the AI, which may use a little API credit.')),
     status,
     el('div', 'setup-back', back),
   );

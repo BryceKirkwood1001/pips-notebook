@@ -56,8 +56,8 @@ No API key, MongoDB URI, hidden misconception state or answer key belongs in bro
 | `timeout` / `timeoutMs` | Seconds input / integer milliseconds | UI accepts 1–180 whole seconds |
 | `ingestTimeout` / `ingestTimeoutMs` | Seconds input / integer milliseconds | Per-request course preparation budget; 1–600 whole seconds, default 180; separate from interactive turns |
 | `origin` / `apiOrigin` | URL input / string | Backend origin; query parameter overrides `top.apiOrigin` in localStorage, then localhost default |
-| `persistence` / response `persistence` | Paragraph / `'local' \| 'session'` | Backend persistence feedback |
-| `dimensions` / response `embeddingDims` | Paragraph / number | Read-only retrieval dimensions |
+| response `persistence` | `'local' \| 'session'` | Returned by the API; not shown on the page |
+| response `embeddingDims` | number | Returned by the API; not shown on the page |
 | `loaded`, `active` | boolean | Gate Save/Test until load; ignore responses after scene closes |
 | `controller` | AbortController | Cancel browser requests when leaving Settings; each request also has a deadline |
 | `root`, `status`, `keyStatus`, `providerCards`, `cards`, `fields`, `offline` | DOM handles / map | Component structure, selected state and request feedback |
