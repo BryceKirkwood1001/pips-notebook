@@ -9,11 +9,13 @@ import { ResultsScene } from './course/Results.js';
 import { arena, Battle } from './course/battle.js';
 import { SettingsScene } from './course/Settings.js';
 import { MenuScene } from './course/Menu.js';
+import { playSceneMusic } from './course/soundtrack.js';
 
 mount();
 const screens:Screen[]=['Title','Upload','Learning','Fight','Boss','Results','Settings','Menu'];
 let page:Page;
 for(const name of screens) game.scenes.register({name,enter(){
+    playSceneMusic(name);
     const screen={Title:'title',Upload:'setup',Learning:'room',Fight:'room',Boss:'boss',Results:'report',Settings:'settings',Menu:'menu'}[name];
     frame(screen);arena(state.run,screen);
     if(name==='Title'){
