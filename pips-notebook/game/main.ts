@@ -23,12 +23,12 @@ for(const name of screens) game.scenes.register({name,enter(){
         const id=new URLSearchParams(location.search).get('run');
         const heading=el('h1', '', "Pip's", el('br'), 'Notebook');
         const menu=el('nav','title-actions',
-            btn('Play',()=>id?void resume(id):openCoursePicker('Files')),
+            btn('Play',()=>id?void resume(id):openCoursePicker('Create New Dungeon')),
             btn('My archive',()=>openCoursePicker('Library'),'alt'),
             btn('Settings',openSettings,'alt'),musicButton());
         menu.setAttribute('aria-label','Main menu');
         panel(page,el('div','title-menu',heading,
-            el('p','','All Pip can carry is what you teach.'),menu));
+            el('p','','Train Pip to conquer the dungeon.'),menu));
         if(id)void resume(id);
     }else {
         const next=name==='Upload'?new UploadScene():name==='Learning'?new LearningScene():name==='Results'?new ResultsScene():name==='Settings'?new SettingsScene():name==='Menu'?new MenuScene():new Battle(name==='Boss');

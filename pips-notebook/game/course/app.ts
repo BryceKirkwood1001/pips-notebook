@@ -12,9 +12,10 @@ try { apiOrigin = params.get('api') || localStorage.getItem('top.apiOrigin') || 
 export let api = mock ? createMockApi() : createApiClient({baseUrl: apiOrigin});
 export const state: {run: PublicRun | null; results: Results | null} = {run:null, results:null};
 export type Screen = 'Title' | 'Upload' | 'Learning' | 'Fight' | 'Boss' | 'Results' | 'Settings' | 'Menu';
-export let courseSource: 'Library' | 'Files' = 'Library';
+export let courseSource: 'Library' | 'Create New Dungeon' = 'Library';
+export function setCourseSource(source: typeof courseSource) { courseSource = source; }
 export function openCoursePicker(source: typeof courseSource) {
-    courseSource = source;
+    setCourseSource(source);
     goTo('Upload');
 }
 let currentScreen: Screen = 'Title';

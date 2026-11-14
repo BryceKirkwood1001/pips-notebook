@@ -1,6 +1,6 @@
 import { Page, panel, title } from './page.js';
-import { STUDENT_EMOJIS, TARGET_GRADES, type PublicCourse, type StudentEmoji, type TargetGrade } from './api-client.js';
-import { api, call, courseSource, describeError, goTo, openCoursePicker, setRun, showError, state } from './app.js';
+import { TARGET_GRADES, type PublicCourse, type TargetGrade } from './api-client.js';
+import { api, call, courseSource, describeError, goTo, openCoursePicker, setCourseSource, setRun, showError, state } from './app.js';
 import { btn, el, clock, inline } from './ui.js';
 import { resume } from './app.js';
 import { lessonGuide } from './lesson-guide.js';
@@ -16,7 +16,6 @@ export class UploadScene extends Page {
   private chosen = new Set<string>();
   private known = new Set<string>();
   private grade: TargetGrade = 'B';
-  private emoji: StudentEmoji = STUDENT_EMOJIS[0];
   private timer = 0;
   private polling = false;
   private retryUpload: (() => Promise<void>) | null = null;
@@ -98,41 +97,47 @@ export class UploadScene extends Page {
     files.onchange = () => {
       selection.textContent = Array.from(files.files ?? [], f => f.name).join(' · ') || 'PDF, text, or Markdown';
     };
-    const fileTitle = el('input');
-    fileTitle.type = 'text';
-    fileTitle.placeholder = 'Course title (optional)';
-    const upload = btn('Upload files', async () => {
-      const list = Array.from(files.files ?? []);
-      if (!list.length) return showError('Choose at least one .pdf, .txt or .md file.');
-      const title = fileTitle.value || undefined;
-      this.retryUpload = async () => this.begin(await call(() => api.uploadCourse(list.map((f) => ({ name: f.name, data: f })), title)));
-      await this.retryUpload();
-    });
-
     const text = el('textarea');
     text.rows = 6;
+    text.id = 'dungeon-notes';
     text.placeholder = 'Paste course notes here';
-    const textTitle = el('input');
-    textTitle.type = 'text';
-    textTitle.maxLength = fileTitle.maxLength = 200;
-    textTitle.placeholder = 'Course title (optional)';
-    const create = btn('Create from text', async () => {
-      if (!text.value.trim()) return showError('Paste some text first.');
-      const notes = text.value, title = textTitle.value || undefined;
-      this.retryUpload = async () => this.begin(await call(() => api.createCourseFromText(notes, title)));
+    text.setAttribute('aria-label', 'Course notes');
+    const courseTitle = el('input');
+    courseTitle.type = 'text';
+    courseTitle.id = 'dungeon-title';
+    courseTitle.maxLength = 200;
+    courseTitle.placeholder = 'Dungeon title (optional)';
+    const titleLabel = el('label', 'dungeon-title-label', 'Dungeon title (optional)');
+    titleLabel.htmlFor = courseTitle.id;
+    const create = btn('Create dungeon', async () => {
+      const list = Array.from(files.files ?? [], file => ({ name: file.name, data: file }));
+      const notes = text.value;
+      if (!list.length && !notes.trim()) return showError('Add at least one file or paste some notes. You can use both.');
+      const title = courseTitle.value.trim() || undefined;
+      this.retryUpload = async () => this.begin(await call(() => list.length
+        ? api.uploadCourse(list, title, notes)
+        : api.createCourseFromText(notes, title)));
       await this.retryUpload();
     });
 
     const methods = [
       { name: 'Library', body: el('div', '', el('h3', '', 'Your saved dungeons'), archive, el('h3', '', 'Sample lessons'), samples) },
-      { name: 'Files', body: el('div', '', el('h3', '', 'Bring your own pages'), picker, fileTitle, upload) },
-      { name: 'Notes', body: el('div', '', el('h3', '', 'Transcribe your notes'), text, textTitle, create) },
-    ];
+      { name: 'Create New Dungeon', body: el('div', 'create-dungeon', el('h3', '', 'Create New Dungeon'),
+        el('p', '', 'Upload files, paste notes, or use both. All your sources become one dungeon.'),
+        el('div', 'dungeon-sources',
+          el('fieldset', 'dungeon-source', el('legend', '', 'Files (optional)'), picker,
+            el('p', 'dim', 'PDF, text, and Markdown files are supported.')),
+          el('fieldset', 'dungeon-source', el('legend', '', 'Notes (optional)'), text,
+            el('p', 'dim', 'Use notes alone, or add context to your files.'))),
+        titleLabel, courseTitle, create) },
+    ] as const;
     const bookmarks = el('div', 'bookmarks');
     bookmarks.setAttribute('role', 'group');
     bookmarks.setAttribute('aria-label', 'Course source');
     const buttons = methods.map(({ name }, i) => btn(name, () => select(i), 'bookmark'));
     const select = (current: number) => {
+      setCourseSource(methods[current]!.name);
+      this.sourceEl.closest('section')?.classList.toggle('creating', methods[current]!.name === 'Create New Dungeon');
       methods.forEach(({ body }, i) => {
         body.hidden = i !== current;
         buttons[i]!.setAttribute('aria-pressed', String(i === current));
@@ -164,23 +169,9 @@ export class UploadScene extends Page {
     for (const g of TARGET_GRADES) grade.append(new Option(g, g, false, g === this.grade));
     grade.onchange = () => (this.grade = grade.value as TargetGrade);
 
-    const emojis = el('div');
-    const drawEmojis = () => {
-      emojis.replaceChildren(
-        ...STUDENT_EMOJIS.map((e) =>
-          btn(e, () => {
-            this.emoji = e;
-            drawEmojis();
-          }, e === this.emoji ? 'sel' : 'alt'),
-        ),
-      );
-    };
-    drawEmojis();
-
     const setup = el(
       'div', '',
       el('h3', '', 'Target grade'), grade,
-      el('h3', '', 'Your student'), emojis,
       el('h3', '', 'Scope (rooms to play)'), this.roomsEl,
     );
     this.courseEl.append(btn('Change course', () => goTo('Upload'), 'alt'),
@@ -285,7 +276,7 @@ export class UploadScene extends Page {
     await travel({ kicker: `Room 1 of ${rooms.length}`, title: rooms[0]?.title ?? this.course.title,
       detail: 'Pip settles into the library. Teach one topic at a time.' }, async () => {
       const run = await call(() =>
-        api.createRun({ courseId: this.courseId!, targetGrade: this.grade, studentEmoji: this.emoji, scope: { roomIds } }),
+        api.createRun({ courseId: this.courseId!, targetGrade: this.grade, scope: { roomIds } }),
       );
       if (!run) return false; // a 425 shows "Not ready yet" in the banner
       setRun(run);

@@ -13,6 +13,7 @@ Built at HackPrinceton (November 13 to 15, 2026).
 ## Current game
 
 - **Centered main menu:** Play, My archive, Settings and Music on/off.
+- **Create New Dungeon:** inside My archive, upload files, paste notes, or combine both in one form with one dungeon title. All sources are prepared together.
 - **Source-grounded preparation:** PDF, Markdown and plain-text uploads, plus pasted notes. The planner normally groups a lecture into 3–5 complete lessons (1–2 for short material, at most 6), with descriptions and teaching objectives. Source-concept coverage and question quality are checked before preparation completes.
 - **Teach topic by topic:** a lesson book with an overview, topic pages and review. A floating Talk to Pip / Pip has a question bubble opens the teaching conversation. Feedback distinguishes new notes, unclear explanations and unrelated messages; incorrect teaching can become a misconception in Pip's notebook.
 - **Readable combat feedback:** room encounters, a final dragon exam, hit animations and a persistent turn outcome above Next turn. Click the outcome to open that turn in the battle log. The expedition report shows room progress, correct/total answers, accuracy and weak points.
@@ -108,7 +109,7 @@ To refresh the examples first, run `npm run e2e -- --capture-file docs/api-examp
 ## Demo script
 
 1. Start the backend and the Phaser game (see below), then open [localhost:4173](http://localhost:4173).
-2. Open **My archive**, pick the **Why Earth Has Seasons** sample from Library, select rooms, choose a target grade and a student, then start.
+2. Open **My archive**, pick the **Why Earth Has Seasons** sample from Library, select rooms and a target grade, then start. Pip is your apprentice throughout the game.
 3. **Learning.** Open Talk to Pip, explain each topic and answer follow-up questions. Check the notebook and review the lesson before sending Pip to fight.
 4. **Room fight.** Press **Next turn** and watch Pip answer from the notebook. Click the turn outcome to inspect the answer, cited notes and grading. Use Rooms or Pause to inspect lesson progress without losing your place.
 5. **"Help me!"** Now and then the student asks you to solve a question yourself, with a time budget that depends on how hard the question is.
@@ -187,7 +188,7 @@ npm run e2e -- --sample binary-search
 
 Build the game with root `npm run build:game` (or `npm run build` from the inner game folder). The root type check covers the backend and shared contracts; the game build checks its own TypeScript. The HTTP gauntlet uses an isolated mock server; it does not prove live-model quality or a complete browser playthrough.
 
-The latest recorded code verification on November 14, 2026 passed **405 tests across 39 files**, the root type check, the native game build and the offline HTTP gauntlet. See [the continuation log](docs/CONTINUATION_LOG.md) for individual checks and live-model diagnostics.
+The latest recorded code verification on November 14, 2026 passed **410 tests across 40 files**, the root type check and the native game build. Both offline HTTP gauntlets also passed at the preceding checkpoint. See [the continuation log](docs/CONTINUATION_LOG.md) for individual checks and live-model diagnostics.
 
 Known verification limits: the native `npm run smoke` simulator fails at the frontend's DOM dependency (`document is not defined`). The older `tests/playthrough.mjs` and `tests/live-course.mjs` browser scripts still reference earlier button labels and teaching controls and need updating before serving as regression gates. On-device speech recognition and audible music transitions still need manual checks in a supporting browser; a full fresh-upload, live-model boss/results playthrough is not claimed.
 

@@ -397,11 +397,17 @@ export function createApiClient(options: ApiClientOptions = {}) {
     createCourseFromText: (text: string, title?: string) =>
       request<{ courseId: string }>('POST', '/courses', { text, title }),
 
-    /** POST /courses as multipart `files` (.pdf, .txt, .md). Ingest runs in the background: poll getCourse(). */
-    uploadCourse: (files: UploadFile[], title?: string) => {
+    /** Multipart sources for one course. Optional notes become a distinct Markdown file, preserving source evidence. */
+    uploadCourse: (files: UploadFile[], title?: string, notes?: string) => {
       const form = new FormData();
       if (title) form.append('title', title);
       for (const f of files) form.append('files', f.data, f.name);
+      if (notes?.trim()) {
+        const names = new Set(files.map(file => file.name.toLowerCase()));
+        let name = 'pasted-notes.md';
+        for (let suffix = 2; names.has(name.toLowerCase()); suffix++) name = `pasted-notes-${suffix}.md`;
+        form.append('files', new Blob([notes], { type: 'text/markdown' }), name);
+      }
       return request<{ courseId: string }>('POST', '/courses', undefined, form);
     },
 

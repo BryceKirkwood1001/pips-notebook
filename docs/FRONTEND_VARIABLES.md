@@ -13,7 +13,7 @@ Use [api-client.ts](../shared/src/api-client.ts) for the exact TypeScript types 
 | Title/resume | `main.ts` | URL run id, `run.phase`, `run.results`, `run.pendingHelpMe` | `getRun` |
 | Course picker/upload | `course/Upload.ts` | `samples`, uploaded `files`, pasted `text`, optional `title`, `courseId` | `listSamples`, `seedCourse`, `uploadCourse`, `createCourseFromText` |
 | Saved dungeons | `course/Upload.ts` | Saved courses and expeditions, selected course/run | `listArchive`, `deleteCourse`, `endRun`, `deleteRun`, `resumeRun` |
-| Ingest progress/run setup | `course/Upload.ts` | `course`, `status`, units, rooms, selected room ids, `targetGrade`, `studentEmoji` | `getCourse`, `createRun` |
+| Ingest progress/run setup | `course/Upload.ts` | `course`, `status`, units, rooms, selected room ids, `targetGrade` | `getCourse`, `createRun` |
 | Learning/notebook | `course/Learning.ts` | `run`, `currentRoom`, `notebookMd`, explanation, student questions, answer text, feedback | `teach`, `answerQuestion`, `skipQuestion`, `ready` |
 | Room fight/failure/retry | `course/battle.ts` | `run.room`, `TurnResult`, hearts, reasoning, cited notes, `passed`, `failedTurns` | `turn`, `help`, `retry`, `continueRun` |
 | Help modal | `course/help.ts` | `eventId`, public `question`, typed `answer`, `timeBudgetSec`, `deadline`, derived time left | `help`, `turn` for expiry |
@@ -37,7 +37,6 @@ The game registers `Title`, `Upload`, `Learning`, `Fight`, `Boss`, `Results`, `S
 | `params.get('run')` / `runId` | `string \| null` | Boot/resume and URL persistence | Reload an existing run |
 | `params.get('mock')` / `mock` | `mock=1` → `true` | API initialization | Use the browser's canned mock API; omit this to test the real backend, even when that backend uses mock LLM tasks |
 | `TARGET_GRADES` | `A, A-, B+, B, B-, C+, C, C-, D` | Setup | Target selector options |
-| `STUDENT_EMOJIS` | Exported `readonly` list from client | Setup, all run headers | Allowed non-human student choices |
 | `ApiError.status`, `.code`, `.message` | `number`, `string`, `string` | Error banner on every screen | Show/handle failed requests; status `0` denotes a network error |
 
 No API key, MongoDB URI, hidden misconception state or answer key belongs in browser configuration or local storage. Settings accepts keys only as temporary password inputs sent to the local backend; the read API exposes only `hasApiKey`. Gameplay settings come from `run.rules`; set server environment variables on the backend.
@@ -79,12 +78,14 @@ The actual game's `UploadScene.retryUpload` retains the submitted file array or 
 |---|---|---|
 | `samples[]` | `{ id: string; title: string }[]` | `listSamples()` → sample buttons |
 | `sample` | `string` (`seasons` or `binary-search`) | Selected sample id → `seedCourse(sample)` |
-| `files[]` | `{ name: string; data: Blob }[]` | File input → `uploadCourse(files, title?)`; a browser `File` is a `Blob` |
-| `text` | Nonempty `string` | Textarea → `createCourseFromText(text, title?)` |
+| `files[]` | `{ name: string; data: Blob }[]` | Files subsection → `uploadCourse(files, title?, text?)`; a browser `File` is a `Blob` |
+| `text` | `string` | Notes subsection; notes alone use `createCourseFromText(text, title?)`, while mixed sources use the third `uploadCourse` argument |
 | `title?` | `string`, max 200 chars for JSON | Optional course title input |
 | `courseId` | `string` | Upload/seed response → poll course and create run |
 
 File formats are `.pdf`, `.txt`, `.md` (`.markdown` is also accepted by the server). `POST /courses` returns 202 before ingest finishes; watch `status` rather than treating upload acceptance as readiness.
+
+My archive switches between Library and Create New Dungeon. The creation form keeps both sources visible, one optional title and one submit action; at least one file or nonblank notes is required. With files present, the shared client adds notes as a uniquely named `pasted-notes.md` source in the same multipart request, preserving text, indentation and source provenance. Section switches retain files, notes and title; Retry preparation uses the complete submitted source snapshot.
 
 ## Ingest/setup: every `PublicCourse` field
 
@@ -123,7 +124,7 @@ Run-creation inputs:
 |---|---|---|
 | `courseId` | Required `string` | Selected/uploaded course |
 | `targetGrade` | Required `TargetGrade` | Target selector; test client starts at `B` |
-| `studentEmoji?` | `StudentEmoji` | Student selector; use `STUDENT_EMOJIS` |
+| `studentEmoji?` | `StudentEmoji` | Optional API compatibility field; main-game setup omits it and always presents Pip |
 | `scope?.roomIds[]` | Nonempty `string[]` if supplied | Selected rooms; omit scope to include every room |
 
 Enable Start once the first selected room is ready. Later rooms can still be ingesting. A 425 response means the requested room needs more time.
@@ -138,7 +139,7 @@ These are available on the run, even if a particular screen does not render them
 | `run.id` | `string` | Every action, resume URL |
 | `run.courseId`, `run.courseTitle` | `string` | Course context, headings |
 | `run.targetGrade` | `TargetGrade` | Learning/fight headers, target display |
-| `run.studentEmoji` | `string` | Student sprite/header |
+| `run.studentEmoji` | `string` | API compatibility metadata; the main game's fixed Pip sprite does not depend on it |
 | `run.phase` | `learning \| room \| room_result \| boss \| results` | Choose the screen |
 | `run.roomIndex` | Zero-based `number` | Progress; display `+1` to the player |
 | `run.rooms[]` | `PublicRunRoom[]` | Gauntlet map/progress |

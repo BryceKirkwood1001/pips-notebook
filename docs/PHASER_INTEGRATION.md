@@ -43,7 +43,7 @@ The integrated `game/main.ts` registers eight screens: `Title`, `Upload`, `Learn
 | Screen | Scene | Calls | Leaves when |
 |---|---|---|---|
 | Title/resume | `Title` in `main.ts` | `getRun(id)` when a run id is in the URL | Play → `Upload`; resume → current phase |
-| Course and run setup | `Upload` (`course/Upload.ts`) | `listSamples()`, `seedCourse(sample)` or `uploadCourse(files)`, poll `getCourse(id)`, `createRun({ courseId, targetGrade, studentEmoji, scope })` | `createRun` succeeds → `Learning` |
+| Course and run setup | `Upload` (`course/Upload.ts`) | `listSamples()`, `seedCourse(sample)` or `uploadCourse(files)`, poll `getCourse(id)`, `createRun({ courseId, targetGrade, scope })` | `createRun` succeeds → `Learning` |
 | Learning phase | `Learning` (`course/Learning.ts`) | `teach`, `answerQuestion`, `skipQuestion`, `ready` | `ready` succeeds → `Fight` |
 | Room fight | `Fight` (`course/battle.ts`) | `turn`, `help`, `retry`, `continueRun` | retry → `Learning`; continue → `Learning` or `Boss` |
 | Boss | `Boss` (`course/battle.ts`) | `turn`, `help` | `boss_end` → `Results` |
@@ -64,8 +64,14 @@ const { samples } = await api.listSamples();            // [{ id: 'seasons', tit
 const { courseId } = await api.seedCourse('seasons');   // instant, for the demo
 
 // or a real upload (File objects from an <input type="file" multiple>):
-const { courseId } = await api.uploadCourse(files.map((f) => ({ name: f.name, data: f })));
+const { courseId } = await api.uploadCourse(
+  files.map((f) => ({ name: f.name, data: f })),
+  'My dungeon',
+  pastedNotes, // optional: combined with every file in the same course
+);
 ```
+
+Create New Dungeon shows Files and Notes together. For notes alone, use `createCourseFromText(notes, title?)`. The optional third `uploadCourse` argument is encoded as a separate Markdown file with a collision-free filename; the backend's existing multi-file ingestion prepares all sources as one course.
 
 After an upload the server builds the course in the background. Poll about once a second:
 
@@ -79,7 +85,7 @@ course.rooms;             // [{ id, title, conceptIds, ready }]
 
 - Show the stage, and a ready or pending mark next to each concept and room.
 - **A run can start as soon as its first room is ready**, while later rooms are still being built. If `createRun` or `ready` answers 425 (`room_not_ready`), show "still preparing this room" and try again in a moment.
-- `createRun` takes the target grade (`TARGET_GRADES`), an optional student emoji (one of `STUDENT_EMOJIS`; the student is never a human) and an optional `scope.roomIds` (default: every room).
+- `createRun` takes the target grade (`TARGET_GRADES`) and an optional `scope.roomIds` (default: every room). The main game always presents Pip and omits the optional `studentEmoji` compatibility field.
 
 ## 4. Learning phase
 
