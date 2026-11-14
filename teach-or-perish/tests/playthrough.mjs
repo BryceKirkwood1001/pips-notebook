@@ -27,40 +27,51 @@ try {
         if(new URL(route.request().url()).origin!==local){remote.push(route.request().url());return route.abort();}
         return route.continue();
     });
-    const press = action=>page.locator('[data-action="'+action+'"]').last().click({timeout:15000});
-    const content=()=>page.locator('main').innerText();
-    const has=async text=>{await page.getByText(text,{exact:false}).first().waitFor({timeout:15000});};
-    async function fight() {
-        for(let i=0;i<30;i++){
-            await page.locator('[data-action="continue"],[data-action="next"],[data-action="retry"],.report').first().waitFor({timeout:15000});
-            if(!await page.locator('[data-action="continue"]').count()) return;
-            await press('continue');
+    await page.goto(local+'/?mock=1');
+    const button=name=>page.getByRole('button',{name,exact:true});
+    await button('Play →').click();
+    await button('Seasons (mock sample)').click();
+    await page.getByRole('checkbox').nth(1).uncheck();
+    await button('🦉').click();await button('Start run').click();
+    await page.getByPlaceholder('Explain this room to your student...').fill('Earth tilts as it orbits.');
+    await button('Teach').click();
+    await page.getByPlaceholder('Your answer...').first().fill('Earth’s tilt changes the sunlight angle.');
+    await button('Answer').first().click();await button('Skip').last().click();
+    await button('Ready: go fight').click();
+    let helped=0,retried=false;
+    for(let n=0;n<65;n++){
+        const actions=page.getByRole('button',{name:/^(Next turn|Show result|Continue|Retry room|Ready: go fight|Start over|Submit)$/});
+        await actions.last().waitFor();
+        if(await button('Start over').isVisible())break;
+        const modal=page.getByRole('dialog');
+        if(await modal.isVisible()){
+            if (!helped) {
+                await page.reload();
+                await modal.waitFor();
+            }
+            const input=modal.locator('input').first();
+            if(await input.count()){
+                const type=await input.getAttribute('type');
+                if(type==='checkbox')await input.check();
+                else await input.fill(type==='number'?'23.5':'equinox');
+            }else{
+                const options=modal.locator('button').filter({hasNotText:/Submit|Reset/});
+                if(await button('Reset').count()){
+                    for(let i=0;i<await options.count();i++)await options.nth(i).click();
+                }else await options.first().click();
+            }
+            await button('Submit').click();await modal.waitFor({state:'detached'});helped++;continue;
         }
-        throw Error('Battle did not terminate');
+        const action=actions.last();
+        if((await action.innerText())==='Retry room')retried=true;
+        await action.click();
+        await page.waitForFunction(()=>!document.body.classList.contains('waiting'));
     }
-    await page.goto(local);
-    await press('setup');
-    await page.locator('input[type=file]').setInputFiles([{name:'lecture.txt',mimeType:'text/plain',buffer:Buffer.from('light')},{name:'remove.txt',mimeType:'text/plain',buffer:Buffer.from('shadow')}]);
-    await press('remove:1'); assert(!(await content()).includes('remove.txt'));
-    await page.locator('#target').fill('91');
-    await press('start');
-    await page.locator('#words').fill('The beam can bend.');
-    await press('teach:Analogy');
-    await press('notes'); await has('The beam can bend.'); await press('notes');
-    await press('battle');await fight();await has('Room cleared.');
-    assert((await content()).includes('88 / 100'));
-    await press('retry');await has('100 / 100');await press('notes');
-    assert(!(await content()).includes('The beam can bend.'));await press('notes');
-    for(let room=0;room<3;room++){
-        await press('teach:Socratic Question');await press('teach:Example');
-        await fight();await press('next');
-    }
-    await has('The Archive Keeper');await press('battle');await fight();await press('next');
-    await has('Target achieved');assert((await content()).includes('91%'));assert((await content()).includes('3/3'));
-    await press('retryLesson');await press('battle');await fight();await press('report');await has('Defeat');await has('91%');
-    await press('menu');await has('Play');
+    await page.getByText(/Predicted grade/).waitFor();
+    assert(helped>=5 && retried);
+    await page.getByText(/seasons.pdf, page 3/).waitFor();
+    await button('Start over').click();
+    assert(!new URL(page.url()).searchParams.has('run'));
     assert.deepEqual(errors,[]);assert.deepEqual(remote,[]);
-    console.log('PASS: files, target, notebook, room rollback, all three rooms, boss, victory, retry lesson, defeat, main menu, offline play.');
+    console.log('PASS: course scope, student, teaching, follow-ups, retry, help, exam, study guide and restart.');
 } finally {await browser?.close();server.close();}
-
-

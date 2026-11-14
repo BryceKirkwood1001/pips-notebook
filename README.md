@@ -1,6 +1,6 @@
 # Teach or Perish
 
-A browser game about teaching Pip, a young dungeon apprentice. Spend three energy per room on examples, analogies, questions, or counterexamples. Pip fights independently using the notebook you helped build. The final examination combines light paths, shadows, and reflection.
+Teach an apprentice using your course material, answer its follow-up questions, and watch it fight from its notebook. The final exam returns a predicted grade and a study guide with references to your material.
 
 ## Run locally
 
@@ -27,16 +27,14 @@ Start the local preview and open [localhost:4173](http://localhost:4173). Reload
 npm run serve
 ```
 
-Play works without a network connection once the dependencies are installed and the game is built. To deploy the prototype, serve the contents of `teach-or-perish/dist/` from a static web server. Progress and selected file metadata last for the current page session.
+## Connect the backend
 
-## Mock services and gameplay
+In a separate checkout of the team's `Dev/backend` branch, install Node.js 22 or later and run `npm ci` followed by `npm run dev:server`. Its default local configuration uses a mock language model and in-memory storage. Backend credentials belong on the server.
 
-`game/lesson.ts` defines the planner, teaching, and answering contracts. Replace `MockLessonPlanner` to supply concepts, questions, and weights. Replace `MockStudent` and `MockAnswer` to interpret a notebook or generate answers. The planner supports promises and falls back to the demo on an invalid response. The student adapters are synchronous today. For networked replacements, await them in the run controller, disable repeat actions while pending, and retain the local fallback.
+Open [the game](http://localhost:4173). Live play uses `http://localhost:8787` by default. To use another server, set `?api=https://your-server.example` (origin only). Allow the game's origin in the server's `CORS_ORIGINS`. File and pasted-text submissions are sent to that server. The game stores the run ID in the URL so reloading restores the server's current phase, notebook, fight log and pending help.
 
-`game/run.ts` owns health, room snapshots, the notebook, and answer history. Room retries rewind all four. Files stay on the device; only metadata reaches the demo planner. Typed notes are saved verbatim. Teaching-card choices determine the mock learning outcomes. Final health is a gameplay score.
-
-`game/main.ts` connects Phaser scenes to the run. `game/art.ts` renders and animates the local images in `game/media/`. `game/interface.ts` provides the accessible HTML controls and reports.
+For an offline demonstration, use [practice mode](http://localhost:4173/?mock=1). This uses the team's canned seasons course, scripted turns and example report. The practice run survives refreshes in the same tab. A live server with a mock language model still uses the default live URL.
 
 ## Verify
 
-From the inner project directory, run `npm run build`. For a full browser playthrough, install Chromium once with `npx -y @phaser-ae/cli@0.8.0 doctor --fix`, then run `node tests/playthrough.mjs`. The check serves the built game locally and blocks external requests.
+From the inner game folder, run `npm run build`. Install test Chromium once with `npx -y @phaser-ae/cli@0.8.0 doctor --fix`. Run `node tests/playthrough.mjs` for the offline playthrough or `node tests/live-course.mjs` with the local server and preview running for a real HTTP smoke test.

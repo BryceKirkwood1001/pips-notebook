@@ -1,5 +1,5 @@
 import { game } from './engine.js';
-import type { DungeonRun } from './run.js';
+
 const files = ['concept_room_background','boss_room_background','student_learning','student_fighting','student_finished'];
 export async function loadArt() {
     for (const key of files) game.pixels('fallback-' + key, ['..oo..','.occo.','ocwwco','.occo.','..oo..'], { o:'#362333', c:'#75acbb', w:'#fff1bd' }, 8);
@@ -18,8 +18,8 @@ export async function loadArt() {
     drawings.forEach((rows,i) => game.pixels('foe'+i, rows,palettes[i]!,8));
     await game.assets.load(files.map(key => ({kind:'image' as const,key,url:'media/'+key+'.png'})));
 }
-export function drawStage(run: DungeonRun) {
-    const boss = run.isBoss || (run.screen === 'report' && run.completed === run.lesson.concepts.length);
+export function drawStage(run: { screen: string; isBoss: boolean; phase: string; index: number; victory: boolean; correct?: boolean }) {
+    const boss = run.isBoss || run.screen === 'report';
     const bg = boss ? 'boss_room_background' : 'concept_room_background';
     const key = (s: string) => game.assets.has(s) ? s : 'fallback-'+s;
     const encounter = run.screen === 'room' || run.isBoss;
@@ -28,14 +28,14 @@ export function drawStage(run: DungeonRun) {
     const teaching = run.phase === 'teach';
     const x = encounter ? teaching ? 704 : 480 : 935;
     const y = encounter ? 249 : 466;
-    const pip = game.spawn({texture:key(pose),x,y,width:encounter ? 148 : 205,layer:'world'});
+    const pip = game.spawn({texture:key(pose),tags:["student"],x,y,width:encounter ? 148 : 205,layer:'world'});
     game.tween.to(pip,{y:y-4},{duration:1.3,yoyo:true,loop:true});
     if (!encounter || teaching) return;
-    const enemy = game.spawn({texture:'foe'+(run.isBoss ? 3 : run.index%3),x:861,y:245,width:run.isBoss?151:111,layer:'world'});
+    const enemy = game.spawn({tags:['monster'],texture:'foe'+(run.isBoss ? 3 : run.index%3),x:861,y:245,width:run.isBoss?151:111,layer:'world'});
     game.tween.to(enemy,{y:237},{duration:0.9,yoyo:true,loop:true});
     if (run.phase === 'won') { game.tween.to(enemy,{alpha:0,scale:0.1},{duration:0.5}); return; }
     if (run.phase === 'answer') {
-        const correct = run.history[run.history.length-1]!.correct;
+        const correct = run.correct;
         const attacker = correct ? pip : enemy;
         const victim = correct ? enemy : pip;
         game.tween.to(attacker,{x:attacker.x+(correct?105:-105)},{duration:0.14,yoyo:true});
