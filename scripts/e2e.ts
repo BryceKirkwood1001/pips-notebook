@@ -2,6 +2,7 @@
  * End-to-end gauntlet with a "teacher bot". Drives the real API (in-process by default) with mocks.
  *
  *   npx tsx scripts/e2e.ts [--url http://localhost:8787] [--sample seasons]
+ *   npm run e2e -- --capture-file docs/api-examples.json
  *
  * The bot reads the hidden course data from /debug ONLY to decide what to type, the way a teacher who
  * knows the subject would. Exits non-zero if any final assertion fails.
@@ -9,8 +10,10 @@
 import { ApiError, createApiClient, type PublicRun, type TurnResult } from '@top/shared/api-client';
 import { buildApp } from '../server/src/app';
 import { createContainer } from '../server/src/container';
-import { correctAnswerOf } from '../server/src/core/grading';
+import { correctAnswerOf, wrongAnswerFor } from '../server/src/core/grading';
 import { FORBIDDEN_KEYS } from '../server/test/helpers/leaks';
+import { coverage } from '../server/src/llm/mock-text';
+import { writeFile } from 'node:fs/promises';
 
 const argv = process.argv.slice(2);
 const flag = (name: string): string | undefined => {
@@ -49,7 +52,33 @@ async function main() {
     close = () => app.close();
     log(`Started an in-process server at ${baseUrl}`);
   }
-  const api = createApiClient({ baseUrl });
+  const captures = new Map<string, unknown>();
+  const api = createApiClient({ baseUrl, fetch: async (input, init) => {
+    const res = await fetch(input, init);
+    if (!flag('capture-file')) return res;
+    const pathname = new URL(String(input)).pathname;
+    const route = pathname.replace(/\/runs\/[^/]+/, '/runs/:id')
+      .replace(/\/questions\/[^/]+/, '/questions/:qid').replace(/\/help\/[^/]+/, '/help/:eventId')
+      .replace(/\/courses\/seed\/[^/]+/, '/courses/seed/:sample').replace(/\/courses\/(?!seed)[^/]+/, '/courses/:id');
+    let response = await res.clone().json() as any;
+    const debug = route.endsWith('/debug');
+    if (!debug) seen(response);
+    if (debug) {
+      response = {
+        run: { id: response.run.id, phase: response.run.phase, hidden: response.run.hidden },
+        pack: { id: response.pack.id, title: response.pack.title },
+        questions: response.questions.slice(0, 1), stats: response.stats.slice(0, 1),
+        timeBudgets: Object.fromEntries(Object.entries(response.timeBudgets).slice(0, 1)),
+      };
+    }
+    const multipart = init?.body instanceof FormData;
+    const request = typeof init?.body === 'string' ? JSON.parse(init.body) : multipart
+      ? [...(init!.body as FormData).entries()].map(([field, value]) => ({ field, value: typeof value === 'string' ? value : { name: value.name, type: value.type, size: value.size } })) : undefined;
+    const key = `${init?.method ?? 'GET'} ${route}${multipart ? ' multipart' : ''}${response.kind ? ` ${response.kind}` : ''}`;
+    if (!captures.has(key)) captures.set(key, { method: init?.method ?? 'GET', route, path: pathname, status: res.status, request,
+      ...(multipart ? { multipart: true } : {}), ...(debug ? { responseIsExcerpt: true } : {}), response });
+    return res;
+  } });
   const failures: string[] = [];
   const check = (ok: boolean, what: string) => {
     log(`${ok ? 'PASS' : 'FAIL'}  ${what}`);
@@ -58,10 +87,16 @@ async function main() {
 
   try {
     // Fail early and clearly while the routes are still stubs.
-    await api.health();
+    seen(await api.health());
+    seen(await api.listSamples());
     head(`Seed "${sample}" and create a run (target B)`);
     const { courseId } = await api.seedCourse(sample);
     seen(await api.getCourse(courseId));
+    if (flag('capture-file')) {
+      const text = '# Seasons\n\nEarth has seasons because its axis is tilted.\n';
+      seen(await api.createCourseFromText(text, 'API upload example'));
+      seen(await api.uploadCourse([{ name: 'seasons.md', data: new Blob([text], { type: 'text/markdown' }) }], 'Multipart example'));
+    }
     let run: PublicRun = seen(await api.createRun({ courseId, targetGrade: 'B' }));
     const runId = run.id;
     log(`course ${courseId}, run ${runId}, ${run.rooms.length} rooms`);
@@ -75,7 +110,7 @@ async function main() {
 
     const printNotebook = (md: string) => log(md.trimEnd().split('\n').map((l) => '    ' + l).join('\n'));
 
-    /** One turn per line; "Help me!" is answered correctly from the debug keys. */
+    /** Rescue ordinary help events, but preserve the chosen wrong belief in the boss demonstration. */
     async function fight(label: string): Promise<TurnResult> {
       dbg = await hidden();
       for (let guard = 0; guard < 100; guard++) {
@@ -88,7 +123,11 @@ async function main() {
           case 'help_me': {
             const q = dbg.questions.find((x: any) => x.id === t.question.id);
             log(`  HELP ME! "${t.question.prompt.slice(0, 50)}" you have ${t.timeBudgetSec}s`);
-            const r = seen(await api.help(runId, t.eventId, correctAnswerOf(q).answer));
+            const targeted = dbg.run.phase === 'boss' && dbg.run.boss.targetedMap[q.id] === skippedMisconception;
+            const answer = targeted ? wrongAnswerFor(q, skippedMisconception) : correctAnswerOf(q).answer;
+            if (!answer) throw new Error('the targeted question needs a deterministic wrong-answer path');
+            if (targeted) log('    demonstrating the skipped belief: the teacher gives its mapped wrong answer');
+            const r = seen(await api.help(runId, t.eventId, answer));
             if (r.kind === 'help_result') log(`    you answered ${r.correct ? 'correctly' : 'wrong'}${r.noteAdded ? `; note: ${r.noteAdded}` : ''}`);
             break;
           }
@@ -108,49 +147,60 @@ async function main() {
     const vague = await api.teach(runId, 'Seasons are just a thing that happens every year.');
     seen(vague);
     printNotebook(vague.notebookMd);
-    log(`  the student asks ${vague.questions.length} question(s); leaving them to be auto-skipped`);
+    dbg = await hidden();
+    const questionToSkip = vague.questions.find((q) => q.status === 'open');
+    if (!questionToSkip) throw new Error('the first teaching must produce a question to skip');
+    const skippedMisconception = dbg.run.learning.pendingQuestions.find((q: any) => q.id === questionToSkip.id).misconceptionId as string;
+    seen(await api.skipQuestion(runId, questionToSkip.id));
+    log(`  SKIPPED: "${questionToSkip.text}" (hidden: ${skippedMisconception}); other questions will be auto-skipped`);
     seen(await api.ready(runId));
     const firstEnd = await fight('room 1');
     const firstAttemptFailed = firstEnd.kind === 'room_end' && !firstEnd.passed;
     check(firstAttemptFailed, 'first attempt of room 1 failed');
 
     // ── Retry: teach properly, skip one question on purpose ──
-    head('Room 1: retry, teaching properly, skipping one student question on purpose');
+    head('Room 1: retry, teaching the key points while keeping the deliberately skipped belief');
     run = seen(await api.retry(runId));
-    let skippedMisconception: string | undefined;
-    async function learnRoom(skipOne: boolean) {
+    async function learnRoom() {
       run = seen(await api.getRun(runId));
-      const text = roomStatements(run).join('. ') + '.';
+      dbg = await hidden();
+      const corrections = run.currentRoom!.concepts.flatMap((c) => concept(c.id).misconceptions)
+        .filter((m: any) => m.id !== skippedMisconception && dbg.run.hidden.misconceptions.some((s: any) => s.id === m.id && s.status === 'active'))
+        .map((m: any) => m.correction as string);
+      let statements = [...roomStatements(run), ...corrections];
+      const keptBelief = misconceptionOf(skippedMisconception);
+      if (run.currentRoom!.concepts.some((c) => c.id === keptBelief.conceptId)) {
+        // The mock resolves by keyword coverage. Leave this one gap in the otherwise useful lesson.
+        while (statements.length > 0 && coverage(keptBelief.correction, statements.join('\n')) >= 0.6) {
+          const choices = statements.map((_, i) => statements.filter((_, j) => i !== j));
+          choices.sort((a, b) => coverage(keptBelief.correction, a.join('\n')) - coverage(keptBelief.correction, b.join('\n')));
+          statements = choices[0];
+        }
+      }
+      const text = statements.join('\n');
       log(`  teaching: ${text.slice(0, 120)}...`);
       const taught = seen(await api.teach(runId, text));
       dbg = await hidden();
-      let skipped = false;
       for (const q of taught.questions.filter((x) => x.status === 'open')) {
         const hid = dbg.run.learning.pendingQuestions.find((p: any) => p.id === q.id);
         const m = misconceptionOf(hid.misconceptionId);
-        if (skipOne && !skipped) {
-          seen(await api.skipQuestion(runId, q.id));
-          skipped = true;
-          skippedMisconception ??= m.id;
-          log(`  SKIPPED: "${q.text}"  (hidden: ${m.id})`);
-        } else {
-          const r = seen(await api.answerQuestion(runId, q.id, m.correction));
-          log(`  answered: "${q.text}" -> ${r.resolved ? 'resolved' : 'not resolved'}`);
-        }
+        const r = seen(await api.answerQuestion(runId, q.id, m.correction));
+        log(`  answered: "${q.text}" -> ${r.resolved ? 'resolved' : 'not resolved'}`);
       }
       const after = seen(await api.getRun(runId));
       printNotebook(after.notebookMd);
       seen(await api.ready(runId));
     }
-    await learnRoom(true);
+    await learnRoom();
     const retryEnd = await fight('room 1 retry');
     check(retryEnd.kind === 'room_end' && retryEnd.passed, 'the retry of room 1 passed');
     run = seen(await api.continueRun(runId));
 
     // ── Later rooms ──
-    while (run.phase === 'learning') {
+    for (let attempts = 0; run.phase === 'learning'; attempts++) {
+      if (attempts >= 30) throw new Error('room retries exceeded the e2e safety limit');
       head(`Room ${run.roomIndex + 1}: ${run.currentRoom!.title}`);
-      await learnRoom(false);
+      await learnRoom();
       const end = await fight(`room ${run.roomIndex + 1}`);
       if (end.kind !== 'room_end') break;
       run = seen(end.passed ? await api.continueRun(runId) : await api.retry(runId));
@@ -177,6 +227,26 @@ async function main() {
     const leaks = bodies.flatMap((b) => findLeaks(b));
     check(leaks.length === 0, `no response contained a hidden key${leaks.length ? ': ' + leaks.slice(0, 5).join(', ') : ''}`);
     check(run.phase === 'results', 'the run ended in phase results');
+    if (flag('results-file')) await writeFile(flag('results-file')!, JSON.stringify(results, null, 2) + '\n');
+    if (flag('capture-file')) {
+      // The good lessons can cover every probe already. Use a separate run to capture an explicit answer.
+      const extra = await api.createRun({ courseId, targetGrade: 'B' });
+      const lesson = await api.teach(extra.id, 'This topic is something we study.');
+      const debug = await api.getDebug(extra.id) as any;
+      const open = lesson.questions.find((q) => q.status === 'open');
+      if (!open) throw new Error('API capture needs an open student question');
+      const id = debug.run.learning.pendingQuestions.find((q: any) => q.id === open.id).misconceptionId;
+      const m = debug.pack.concepts.flatMap((c: any) => c.misconceptions).find((m: any) => m.id === id);
+      await api.answerQuestion(extra.id, open.id, m.correction);
+      try {
+        await api.turn(extra.id);
+        throw new Error('turn in learning should fail');
+      } catch (err) {
+        if (!(err instanceof ApiError) || err.status !== 409) throw err;
+      }
+      check(bodies.flatMap((b) => findLeaks(b)).length === 0, 'capture-only public responses contain no hidden keys');
+      await writeFile(flag('capture-file')!, JSON.stringify({ sample, provider: 'mock', examples: [...captures.values()] }, null, 2) + '\n');
+    }
   } catch (err) {
     const msg = err instanceof ApiError ? `API error ${err.status} ${err.code}: ${err.message}` : err instanceof Error ? err.message : String(err);
     failures.push(msg);

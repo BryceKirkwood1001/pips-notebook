@@ -66,6 +66,13 @@ describe('createGeminiClient.generateJson', () => {
     const b = stub([never]);
     await expect(createGeminiClient(config, b.sdk).generateJson(schema, 'hi', { timeoutMs: 20 })).rejects.toThrow(/timed out/);
   });
+
+  it('keeps provider diagnostics and invalid model output out of public errors', async () => {
+    const a = stub([new Error('secret-key answer-key')]);
+    await expect(createGeminiClient(config, a.sdk).generateJson(schema, 'hi')).rejects.toThrow(/^LLM call failed$/);
+    const b = stub(['answer-key secret-key', 'answer-key secret-key']);
+    await expect(createGeminiClient(config, b.sdk).generateJson(schema, 'hi')).rejects.toThrow(/^LLM reply invalid after retry$/);
+  });
 });
 
 describe('createGeminiClient.embed and uploadFile', () => {
@@ -86,5 +93,20 @@ describe('createGeminiClient.embed and uploadFile', () => {
     await expect(p).resolves.toMatchObject({ uri: 'u', name: 'files/1' });
     expect(get).toHaveBeenCalled();
     vi.useRealTimers();
+  });
+
+  it.each(['upload', 'get'] as const)('times out a stalled Files API %s call', async (method) => {
+    vi.useFakeTimers();
+    try {
+      const { sdk } = stub([]);
+      sdk.files[method] = vi.fn(() => new Promise<never>(() => {}));
+      const pending = createGeminiClient({ ...config, llmTimeoutMs: 50 }, sdk)
+        .uploadFile('/tmp/x.pdf', { mimeType: 'application/pdf' });
+      const assertion = expect(pending).rejects.toMatchObject({ code: 'llm_error', message: expect.stringMatching(/timed out/) });
+      await vi.advanceTimersByTimeAsync(1100);
+      await assertion;
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

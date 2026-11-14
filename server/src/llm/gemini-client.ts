@@ -92,7 +92,7 @@ export function createGeminiClient(config: Config, sdk?: GenAiLike): LlmClient {
       controller.abort();
       req.catch(() => undefined); // the aborted request may reject later; ignore it
       if (err instanceof AppError) throw err;
-      throw new AppError('llm_error', `LLM call failed: ${err instanceof Error ? err.message : String(err)}`);
+      throw new AppError('llm_error', 'LLM call failed');
     }
   }
 
@@ -118,7 +118,7 @@ export function createGeminiClient(config: Config, sdk?: GenAiLike): LlmClient {
       const retryPrompt = `${prompt}\n\nYour previous reply was rejected: ${first.error}\nReply again with valid JSON that matches the schema exactly.`;
       const second = parse(schema, await callOnce(jsonSchema, retryPrompt, opts));
       if (second.ok) return second.value;
-      throw new AppError('llm_error', `LLM reply invalid after retry: ${second.error}`);
+      throw new AppError('llm_error', 'LLM reply invalid after retry');
     },
 
     async embed(texts: string[], taskType: EmbedTaskType) {
@@ -138,7 +138,7 @@ export function createGeminiClient(config: Config, sdk?: GenAiLike): LlmClient {
           );
         } catch (err) {
           if (err instanceof AppError) throw err;
-          throw new AppError('llm_error', `Embedding call failed: ${err instanceof Error ? err.message : String(err)}`);
+          throw new AppError('llm_error', 'Embedding call failed');
         }
         const vectors = res.embeddings ?? [];
         if (vectors.length !== batch.length || vectors.some((e) => !e.values)) {
@@ -155,19 +155,27 @@ export function createGeminiClient(config: Config, sdk?: GenAiLike): LlmClient {
           typeof source === 'string'
             ? source
             : new Blob([source as Uint8Array<ArrayBuffer>], { type: opts.mimeType });
-        let f = await ai.files.upload({ file, config: { mimeType: opts.mimeType, displayName: opts.displayName } });
+        let f = await withTimeout(
+          ai.files.upload({ file, config: { mimeType: opts.mimeType, displayName: opts.displayName } }),
+          config.llmTimeoutMs,
+          'File upload',
+        );
         const deadline = Date.now() + FILE_WAIT_MS;
         while (f.state === 'PROCESSING') {
           if (Date.now() > deadline) throw new Error('file stayed in PROCESSING too long');
           await sleep(FILE_POLL_MS);
-          f = await ai.files.get({ name: f.name as string });
+          f = await withTimeout(
+            ai.files.get({ name: f.name as string }),
+            Math.max(1, Math.min(config.llmTimeoutMs, deadline - Date.now())),
+            'File status check',
+          );
         }
         if (f.state === 'FAILED') throw new Error('file processing failed');
         if (!f.uri || !f.name) throw new Error('upload returned no uri');
         return { uri: f.uri, mimeType: f.mimeType ?? opts.mimeType, name: f.name };
       } catch (err) {
         if (err instanceof AppError) throw err;
-        throw new AppError('llm_error', `File upload failed: ${err instanceof Error ? err.message : String(err)}`);
+        throw new AppError('llm_error', 'File upload failed');
       }
     },
   };

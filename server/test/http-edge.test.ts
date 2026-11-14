@@ -4,6 +4,36 @@ import { startTestApp } from './helpers/app';
 import { Bot } from './helpers/bot';
 
 describe('edge cases over HTTP', () => {
+  it('serializes concurrent turns and concurrent submissions of one help event', async () => {
+    const t = await startTestApp({ HELP_ME_PROB: '0' });
+    try {
+      const bot = new Bot(t);
+      await bot.start();
+      await bot.learn();
+      const replies = await Promise.all([t.post(`/api/runs/${bot.runId}/turn`), t.post(`/api/runs/${bot.runId}/turn`)]);
+      expect(replies.map((r) => r.status)).toEqual([200, 200]);
+      expect(new Set(replies.map((r) => r.body.question.id)).size).toBe(2);
+      expect((await t.get(`/api/runs/${bot.runId}`)).body.room).toMatchObject({ turn: 2, log: expect.any(Array) });
+      expect((await t.get(`/api/runs/${bot.runId}`)).body.room.log).toHaveLength(2);
+    } finally {
+      await t.close();
+    }
+    const h = await startTestApp({ HELP_ME_PROB: '1' });
+    try {
+      const bot = new Bot(h);
+      await bot.start();
+      await bot.learn();
+      const ev = (await h.post(`/api/runs/${bot.runId}/turn`)).body;
+      const dbg = (await h.get(`/api/runs/${bot.runId}/debug`)).body;
+      const answer = correctAnswerOf(dbg.questions.find((q: any) => q.id === ev.question.id)).answer;
+      const replies = await Promise.all([h.post(`/api/runs/${bot.runId}/help/${ev.eventId}`, { answer }), h.post(`/api/runs/${bot.runId}/help/${ev.eventId}`, { answer })]);
+      expect(replies.map((r) => r.status).sort()).toEqual([200, 409]);
+      expect((await h.get(`/api/runs/${bot.runId}`)).body.room.turn).toBe(1);
+    } finally {
+      await h.close();
+    }
+  });
+
   it('double submits: a second /help for one event and a second answer to one student question', async () => {
     const t = await startTestApp({ HELP_ME_PROB: '1', HELP_ME_MAX_PER_ROOM: '1' });
     try {

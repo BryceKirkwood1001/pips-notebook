@@ -119,7 +119,9 @@ export function buildHelp(ev: HelpMeTurn, submit: (a: Answer) => void): { el: HT
   const root = el(
     'div', '',
     el('h2', '', '🆘 Help me!'),
-    el('div', 'warn', `${LEVELS[q.difficulty] ?? 'Hard'} one: ${ev.timeBudgetSec}s`),
+    el('div', ev.deadline ? 'warn' : 'dim', ev.deadline
+      ? `${LEVELS[q.difficulty] ?? 'Hard'} one: ${ev.timeBudgetSec}s`
+      : `${LEVELS[q.difficulty] ?? 'Hard'} one · estimated solve time ${ev.timeBudgetSec}s (no deadline)`),
     questionEl(q),
     input,
     el('div', '', submitBtn),

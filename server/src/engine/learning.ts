@@ -35,13 +35,15 @@ function roomMisconceptions(run: Run, pack: CoursePack): Misconception[] {
 const publicQuestions = (run: Run): PublicStudentQuestion[] =>
   run.learning.pendingQuestions.map((q) => ({ id: q.id, text: q.text, status: q.status }));
 
-/** Writes the belief line as an ordinary note and marks the misconception active (if it has no state yet). */
+/** Writes the belief line as an ordinary note and activates even a previously corrected misconception. */
 function activate(run: Run, pack: CoursePack, m: Misconception, origin: 'stated' | 'skipped'): void {
   const state = run.hidden.misconceptions.find((s) => s.id === m.id);
   if (!state) run.hidden.misconceptions.push({ id: m.id, conceptId: m.conceptId, status: 'active', origin });
-  if (!state || state.status === 'active') {
-    run.notebookMd = addNote(run.notebookMd, scopeTitles(run, pack), conceptTitle(pack, m.conceptId), m.beliefStatement);
+  else {
+    state.status = 'active';
+    state.origin = origin;
   }
+  run.notebookMd = addNote(run.notebookMd, scopeTitles(run, pack), conceptTitle(pack, m.conceptId), m.beliefStatement);
 }
 
 /** Marks resolved and replaces the belief line with the correction (or appends it when the belief is not there). */
@@ -105,12 +107,12 @@ export async function teach(
   // Re-teaching: active misconceptions the explanation corrects.
   for (const id of out.resolvedMisconceptionIds) {
     const m = misById.get(id);
-    if (m && stateOf(id)?.status === 'active') resolve(run, pack, m, m.correction);
+    if (m && stateOf(id)?.status === 'active' && !out.statedMisconceptionIds.includes(id)) resolve(run, pack, m, m.correction);
   }
   // Stated misconceptions become active right away.
   for (const id of out.statedMisconceptionIds) {
     const m = misById.get(id);
-    if (m && !stateOf(id)) activate(run, pack, m, 'stated');
+    if (m) activate(run, pack, m, 'stated');
   }
   // Questions: only probeable misconceptions (stated ones above now have a state entry, so are excluded).
   const room_ = run.roomIndex;

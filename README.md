@@ -36,6 +36,8 @@ npm run dev:client
 
 **No keys are needed to try it.** With an empty `.env` the server uses built-in deterministic mocks in place of the language model and keeps everything in memory, and the two sample courses load instantly.
 
+Use the bundled samples for the offline demo. Arbitrary uploads use a limited heuristic in mock mode and can fail coverage; a `202` upload response means accepted, so keep polling ingest status.
+
 To use the real model and database, fill these in `.env`:
 
 | Variable | What it is |
@@ -67,6 +69,10 @@ Run these from the repository root.
 | `npm run typecheck` | Type-checks `shared`, `server` and `test-client`. |
 | `npm run ingest -- samples/seasons.md` | Builds a course pack from a file and writes it to `samples/cache/`. |
 | `npm run llm:smoke` | Calls each model task once. Skips itself when there is no `GEMINI_API_KEY`. |
+| `npm run docs:api` | Rebuilds the API reference from captured HTTP examples. |
+| `npm run docs:frontend` | Refreshes the per-file frontend variable inventory. |
+
+To refresh the examples first, run `npm run e2e -- --capture-file docs/api-examples.json`. The script starts its own mock API on a temporary localhost port; no separately running server is needed. `npm run e2e -- --sample binary-search` checks the other sample.
 
 ## Demo script
 
@@ -87,8 +93,11 @@ For a shorter demo, set `DEMO_MODE=true`: rooms have 3 questions and the boss ha
 - [docs/API.md](docs/API.md): every endpoint with a real request and response.
 - [docs/STATE_MACHINE.md](docs/STATE_MACHINE.md): the phases of a run and which action is allowed when.
 - [docs/PHASER_INTEGRATION.md](docs/PHASER_INTEGRATION.md): how to wire the Phaser game to the backend.
+- [docs/FRONTEND_VARIABLES.md](docs/FRONTEND_VARIABLES.md): every public field and screen state variable, mapped to the page that uses it; links to the complete source variable inventory.
 - [docs/INGEST.md](docs/INGEST.md): how uploaded material becomes a verified question bank.
 - [docs/SPEC.md](docs/SPEC.md) and [docs/DECISIONS.md](docs/DECISIONS.md): the game rules and the choices made along the way.
+- [docs/CONTINUATION_LOG.md](docs/CONTINUATION_LOG.md): the Codex handoff, changes, verification results and remaining live checks.
+- [docs/REVIEW.md](docs/REVIEW.md): the integration audit, fixes and limitations.
 
 ## The Phaser game
 
@@ -137,4 +146,4 @@ Libraries and services this project uses:
 | [`dotenv`](https://github.com/motdotla/dotenv) | Loading `.env` | BSD-2-Clause |
 | [TypeScript](https://www.typescriptlang.org), [`tsx`](https://tsx.is), [Vitest](https://vitest.dev) | Language, running TypeScript, tests | Apache-2.0, MIT, MIT |
 
-The backend, test client and docs were written during the event with help from Claude Code.
+The backend, test client and docs were written during the event with help from Claude Code and Codex.

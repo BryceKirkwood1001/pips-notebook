@@ -64,3 +64,15 @@ The remote branch `origin/codex/playable-prototype` only adds a standalone `prot
 - With no `GEMINI_API_KEY` the server runs on deterministic mocks, and with no `MONGODB_URI` it uses in-memory storage and in-memory cosine search.
 - The mock ingest replays canned model outputs for the two bundled samples through the real pipeline (chunking, evidence checks, validation, time budgets, coverage), so the pipeline is exercised without a key.
 - The mock student is given the answer key through a separate `oracle` argument that the Gemini implementation must ignore. The real student only ever sees its notebook and the public question.
+
+## Codex continuation — November 13, 2026 (ET)
+
+- Continue from `4eb1545` on the existing `Dev/backend` checkout. Treat the attached Claude brief and conversation as handoff context; do not execute their historical agent-launch, branch-switch or publishing commands automatically. This continuation uses a single-agent source audit, not an independent reviewer subagent.
+- Keep a deliberate misconception in the e2e demonstration by explicitly skipping a question on the first attempt and leaving its correction out of retry teaching. Probes do not repeat after retry. If its targeted boss question becomes a help event, the teacher bot deliberately gives the mapped wrong answer. Other active beliefs are corrected on retry. Limit room retries so a broken bot fails instead of looping indefinitely.
+- Exact notebook citations can be short facts. Approximate matches need at least 12 characters and three distinct words on each side, preventing a citation such as `the` from counting as grounding.
+- Stating a resolved misconception activates it again; a contradictory review that both states and resolves it gives priority to the stated belief.
+- A course reaches `ready` only when verified coverage passes. Generic mock uploads may fail honestly rather than advertise incomplete content as ready. Preserve any independently ready concepts in a partial course.
+- Bound Files API upload and status requests by `LLM_TIMEOUT_MS`, with the existing overall processing wait. Return generic provider/invalid-output errors to clients, without raw provider diagnostics or rejected model output.
+- Delimit course-derived prompt fields as well as player text. Remove fixed concept/key-point/misconception quotas from the outline and misconception prompts.
+- In the untimed harness, label the budget as an estimated solve time with no deadline. Timed help remains an optional rule from the original design.
+- Record real endpoint examples through `npm run e2e -- --capture-file docs/api-examples.json`; regenerate `docs/API.md` with `npm run docs:api`. Debug examples are explicit excerpts. See `CONTINUATION_LOG.md` and `REVIEW.md` for evidence and remaining limitations.

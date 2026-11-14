@@ -36,7 +36,7 @@ export function styleBlock(style: StyleProfile): string {
     .filter(([, v]) => v > 0)
     .map(([k, v]) => `${k} ${Math.round(v * 100)}%`)
     .join(', ');
-  return [
+  return wrap('material', [
     'Course style profile (match it):',
     `- voice: ${style.voice}`,
     `- notation: ${style.notation}`,
@@ -48,7 +48,7 @@ export function styleBlock(style: StyleProfile): string {
     `- difficulty band: ${style.difficultyBand.min} to ${style.difficultyBand.max} (of 5)`,
   ]
     .filter(Boolean)
-    .join('\n');
+    .join('\n'));
 }
 
 export function itemsBlock(items: MaterialItem[]): string {

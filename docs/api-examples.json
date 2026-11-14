@@ -1,0 +1,1356 @@
+{
+  "sample": "seasons",
+  "provider": "mock",
+  "examples": [
+    {
+      "method": "GET",
+      "route": "/api/health",
+      "path": "/api/health",
+      "status": 200,
+      "response": {
+        "ok": true,
+        "llmProvider": "mock",
+        "storage": "memory",
+        "debug": true
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/api/samples",
+      "path": "/api/samples",
+      "status": 200,
+      "response": {
+        "samples": [
+          {
+            "id": "binary-search",
+            "title": "Binary Search"
+          },
+          {
+            "id": "seasons",
+            "title": "Why Earth Has Seasons"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/courses/seed/:sample",
+      "path": "/api/courses/seed/seasons",
+      "status": 200,
+      "response": {
+        "courseId": "sample-seasons"
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/api/courses/:id",
+      "path": "/api/courses/sample-seasons",
+      "status": 200,
+      "response": {
+        "id": "sample-seasons",
+        "title": "Why Earth Has Seasons",
+        "status": {
+          "stage": "ready",
+          "conceptsReady": [
+            "c2",
+            "c1",
+            "c3"
+          ]
+        },
+        "files": [
+          {
+            "id": "f1",
+            "name": "seasons.md",
+            "type": "md",
+            "pages": 1
+          }
+        ],
+        "units": [
+          {
+            "id": "u1",
+            "title": "Seasons",
+            "concepts": [
+              {
+                "id": "c1",
+                "title": "Axial tilt and sunlight angle",
+                "ready": true
+              },
+              {
+                "id": "c2",
+                "title": "Day length",
+                "ready": true
+              },
+              {
+                "id": "c3",
+                "title": "Opposite hemispheres",
+                "ready": true
+              }
+            ]
+          }
+        ],
+        "rooms": [
+          {
+            "id": "r1",
+            "title": "Axial tilt and sunlight angle",
+            "conceptIds": [
+              "c1"
+            ],
+            "ready": true
+          },
+          {
+            "id": "r2",
+            "title": "Day length",
+            "conceptIds": [
+              "c2"
+            ],
+            "ready": true
+          },
+          {
+            "id": "r3",
+            "title": "Opposite hemispheres",
+            "conceptIds": [
+              "c3"
+            ],
+            "ready": true
+          }
+        ],
+        "styleSummary": {
+          "voice": "A short, friendly handout: a rule, a worked example, then direct practice problems with one-line answers.",
+          "notation": "Angles in degrees. Latitude is positive in the north and negative in the south. Distances in million km.",
+          "units": "degrees, hours, million km",
+          "topFormats": [
+            "numeric",
+            "true_false",
+            "mcq",
+            "short_text",
+            "multi_select",
+            "ordering",
+            "free_response"
+          ]
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/courses",
+      "path": "/api/courses",
+      "status": 202,
+      "request": {
+        "text": "# Seasons\n\nEarth has seasons because its axis is tilted.\n",
+        "title": "API upload example"
+      },
+      "response": {
+        "courseId": "crs_1f5f2f209e"
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/courses",
+      "path": "/api/courses",
+      "status": 202,
+      "request": [
+        {
+          "field": "title",
+          "value": "Multipart example"
+        },
+        {
+          "field": "files",
+          "value": {
+            "name": "seasons.md",
+            "type": "text/markdown",
+            "size": 57
+          }
+        }
+      ],
+      "multipart": true,
+      "response": {
+        "courseId": "crs_93280d34e5"
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/runs",
+      "path": "/api/runs",
+      "status": 201,
+      "request": {
+        "courseId": "sample-seasons",
+        "targetGrade": "B"
+      },
+      "response": {
+        "id": "run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c",
+        "courseId": "sample-seasons",
+        "courseTitle": "Why Earth Has Seasons",
+        "targetGrade": "B",
+        "studentEmoji": "🤖",
+        "phase": "learning",
+        "roomIndex": 0,
+        "rooms": [
+          {
+            "id": "r1",
+            "title": "Axial tilt and sunlight angle",
+            "concepts": [
+              {
+                "id": "c1",
+                "title": "Axial tilt and sunlight angle"
+              }
+            ],
+            "ready": true,
+            "state": "current"
+          },
+          {
+            "id": "r2",
+            "title": "Day length",
+            "concepts": [
+              {
+                "id": "c2",
+                "title": "Day length"
+              }
+            ],
+            "ready": true,
+            "state": "upcoming"
+          },
+          {
+            "id": "r3",
+            "title": "Opposite hemispheres",
+            "concepts": [
+              {
+                "id": "c3",
+                "title": "Opposite hemispheres"
+              }
+            ],
+            "ready": true,
+            "state": "upcoming"
+          }
+        ],
+        "currentRoom": {
+          "id": "r1",
+          "title": "Axial tilt and sunlight angle",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle"
+            }
+          ],
+          "ready": true,
+          "state": "current"
+        },
+        "notebookMd": "# Notebook\n",
+        "learning": {
+          "pendingQuestions": [],
+          "teachCount": 0
+        },
+        "rules": {
+          "roomQuestions": 5,
+          "roomHearts": 3,
+          "bossQuestions": 10,
+          "maxStudentQuestions": 3,
+          "helpMeTimed": true
+        },
+        "createdAt": "2026-11-14T03:33:13.323Z",
+        "updatedAt": "2026-11-14T03:33:13.323Z"
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/api/runs/:id/debug",
+      "path": "/api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/debug",
+      "status": 200,
+      "responseIsExcerpt": true,
+      "response": {
+        "run": {
+          "id": "run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c",
+          "phase": "learning",
+          "hidden": {
+            "misconceptions": []
+          }
+        },
+        "pack": {
+          "id": "sample-seasons",
+          "title": "Why Earth Has Seasons"
+        },
+        "questions": [
+          {
+            "id": "sample-seasons_q6",
+            "courseId": "sample-seasons",
+            "conceptIds": [
+              "c2"
+            ],
+            "keyPointIds": [
+              "c2_k4"
+            ],
+            "misconceptionIds": [],
+            "prompt": "A city at latitude 40 has 15 hours of daylight on the June solstice. How many hours of night does it have on that date?",
+            "solution": {
+              "finalAnswer": "9 hours",
+              "workedSteps": [
+                {
+                  "text": "Recall the relevant fact from the notes.",
+                  "kind": "recall"
+                },
+                {
+                  "text": "Work out the number.",
+                  "kind": "compute"
+                }
+              ]
+            },
+            "explanation": "A full day is 24 hours, so the night is 24 - 15 = 9 hours long.",
+            "difficulty": 1,
+            "timeBudgetSec": 40,
+            "provenance": {
+              "origin": "verbatim",
+              "materialItemId": "m10",
+              "evidence": {
+                "chunkId": "sample-seasons_f1_p1_6",
+                "fileId": "f1",
+                "page": 1,
+                "quote": "A city at latitude 40 has 15 hours of daylight on the June solstice.",
+                "sectionPath": [
+                  "Why Earth Has Seasons",
+                  "2. Day length",
+                  "Worked example 2.1"
+                ]
+              }
+            },
+            "verified": true,
+            "type": "numeric",
+            "payload": {
+              "answer": 9,
+              "tolerance": {
+                "kind": "abs",
+                "value": 0.1
+              },
+              "unit": "hours",
+              "wrongAnswers": []
+            }
+          }
+        ],
+        "stats": [],
+        "timeBudgets": {
+          "sample-seasons_q6": {
+            "source": "material_hint",
+            "base": 15,
+            "words": 25,
+            "wordSec": 8.333333333333334,
+            "stepSec": 26,
+            "raw": 49.333333333333336,
+            "difficultyFactor": 0.9,
+            "timeBudgetSec": 40
+          }
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/runs/:id/teach",
+      "path": "/api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/teach",
+      "status": 200,
+      "request": {
+        "explanation": "Seasons are just a thing that happens every year."
+      },
+      "response": {
+        "notebookMd": "# Notebook\n\n## Axial tilt and sunlight angle\n- Seasons are just a thing that happens every year\n",
+        "questions": [
+          {
+            "id": "sq_0_0_1",
+            "text": "Quick question: is it right that it is summer when Earth is closer to the Sun, and winter when it is farther away?",
+            "status": "open"
+          },
+          {
+            "id": "sq_0_0_2",
+            "text": "Quick question: is it right that earth's axis tips toward the Sun in summer and tips away in winter?",
+            "status": "open"
+          },
+          {
+            "id": "sq_0_0_3",
+            "text": "Quick question: is it right that for a southern city I can use its latitude as a positive number in the noon altitude rule?",
+            "status": "open"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/runs/:id/questions/:qid/skip",
+      "path": "/api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/questions/sq_0_0_1/skip",
+      "status": 200,
+      "response": {
+        "notebookMd": "# Notebook\n\n## Axial tilt and sunlight angle\n- Seasons are just a thing that happens every year\n- It is summer when Earth is closer to the Sun, and winter when it is farther away.\n"
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/runs/:id/ready",
+      "path": "/api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/ready",
+      "status": 200,
+      "response": {
+        "id": "run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c",
+        "courseId": "sample-seasons",
+        "courseTitle": "Why Earth Has Seasons",
+        "targetGrade": "B",
+        "studentEmoji": "🤖",
+        "phase": "room",
+        "roomIndex": 0,
+        "rooms": [
+          {
+            "id": "r1",
+            "title": "Axial tilt and sunlight angle",
+            "concepts": [
+              {
+                "id": "c1",
+                "title": "Axial tilt and sunlight angle"
+              }
+            ],
+            "ready": true,
+            "state": "current"
+          },
+          {
+            "id": "r2",
+            "title": "Day length",
+            "concepts": [
+              {
+                "id": "c2",
+                "title": "Day length"
+              }
+            ],
+            "ready": true,
+            "state": "upcoming"
+          },
+          {
+            "id": "r3",
+            "title": "Opposite hemispheres",
+            "concepts": [
+              {
+                "id": "c3",
+                "title": "Opposite hemispheres"
+              }
+            ],
+            "ready": true,
+            "state": "upcoming"
+          }
+        ],
+        "currentRoom": {
+          "id": "r1",
+          "title": "Axial tilt and sunlight angle",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle"
+            }
+          ],
+          "ready": true,
+          "state": "current"
+        },
+        "notebookMd": "# Notebook\n\n## Axial tilt and sunlight angle\n- Seasons are just a thing that happens every year\n- It is summer when Earth is closer to the Sun, and winter when it is farther away.\n- Earth's axis tips toward the Sun in summer and tips away in winter.\n- For a southern city I can use its latitude as a positive number in the noon altitude rule.\n",
+        "learning": {
+          "pendingQuestions": [
+            {
+              "id": "sq_0_0_1",
+              "text": "Quick question: is it right that it is summer when Earth is closer to the Sun, and winter when it is farther away?",
+              "status": "skipped"
+            },
+            {
+              "id": "sq_0_0_2",
+              "text": "Quick question: is it right that earth's axis tips toward the Sun in summer and tips away in winter?",
+              "status": "skipped"
+            },
+            {
+              "id": "sq_0_0_3",
+              "text": "Quick question: is it right that for a southern city I can use its latitude as a positive number in the noon altitude rule?",
+              "status": "skipped"
+            }
+          ],
+          "teachCount": 1
+        },
+        "rules": {
+          "roomQuestions": 5,
+          "roomHearts": 3,
+          "bossQuestions": 10,
+          "maxStudentQuestions": 3,
+          "helpMeTimed": true
+        },
+        "createdAt": "2026-11-14T03:33:13.323Z",
+        "updatedAt": "2026-11-14T03:33:13.344Z",
+        "room": {
+          "attempt": 1,
+          "turn": 0,
+          "totalTurns": 5,
+          "hearts": 3,
+          "maxHearts": 3,
+          "helpMeUsed": 0,
+          "log": []
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/runs/:id/turn",
+      "path": "/api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/turn",
+      "status": 200,
+      "response": {
+        "kind": "student_answer",
+        "question": {
+          "id": "sample-seasons_q1",
+          "prompt": "Find the noon Sun altitude in Boston (latitude 42) on the June solstice.",
+          "difficulty": 2,
+          "timeBudgetSec": 80,
+          "type": "numeric",
+          "payload": {
+            "unit": "degrees"
+          }
+        },
+        "answer": {
+          "dontKnow": true
+        },
+        "answerText": "I don't know",
+        "correct": false,
+        "correctAnswer": {
+          "answer": {
+            "value": 71.5
+          },
+          "text": "71.5 degrees"
+        },
+        "explanation": "The declination is +23.5, so 90 - |42 - 23.5| = 90 - 18.5 = 71.5 degrees.",
+        "reasoning": "My notes don't cover this question.",
+        "citedNotes": [],
+        "reason": "not in my notes",
+        "damage": 1,
+        "hearts": 2,
+        "phaseAfter": "room"
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/runs/:id/turn",
+      "path": "/api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/turn",
+      "status": 200,
+      "response": {
+        "kind": "help_me",
+        "eventId": "help_r0_a1_t1",
+        "question": {
+          "id": "sample-seasons_q17",
+          "prompt": "Find the noon Sun altitude at latitude 50 on an equinox, in degrees.",
+          "difficulty": 2,
+          "timeBudgetSec": 80,
+          "type": "numeric",
+          "payload": {
+            "unit": "degrees"
+          }
+        },
+        "timeBudgetSec": 80,
+        "deadline": "2026-11-14T03:34:33.352Z"
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/runs/:id/help/:eventId",
+      "path": "/api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/help/help_r0_a1_t1",
+      "status": 200,
+      "request": {
+        "answer": {
+          "value": 40
+        }
+      },
+      "response": {
+        "kind": "help_result",
+        "eventId": "help_r0_a1_t1",
+        "question": {
+          "id": "sample-seasons_q17",
+          "prompt": "Find the noon Sun altitude at latitude 50 on an equinox, in degrees.",
+          "difficulty": 2,
+          "timeBudgetSec": 80,
+          "type": "numeric",
+          "payload": {
+            "unit": "degrees"
+          }
+        },
+        "correct": true,
+        "late": false,
+        "correctAnswer": {
+          "answer": {
+            "value": 40
+          },
+          "text": "40 degrees"
+        },
+        "explanation": "On an equinox the declination is 0, so 90 - |50 - 0| = 40 degrees.",
+        "solveTimeSec": 0,
+        "noteAdded": "Teacher showed me: 40 degrees",
+        "damage": 0,
+        "hearts": 2,
+        "phaseAfter": "room"
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/runs/:id/turn",
+      "path": "/api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/turn",
+      "status": 200,
+      "response": {
+        "kind": "room_end",
+        "passed": false,
+        "hearts": 0,
+        "failedTurns": [
+          {
+            "question": {
+              "id": "sample-seasons_q1",
+              "prompt": "Find the noon Sun altitude in Boston (latitude 42) on the June solstice.",
+              "difficulty": 2,
+              "timeBudgetSec": 80,
+              "type": "numeric",
+              "payload": {
+                "unit": "degrees"
+              }
+            },
+            "reasoning": "My notes don't cover this question.",
+            "citedNotes": []
+          },
+          {
+            "question": {
+              "id": "sample-seasons_q29",
+              "prompt": "True or false?",
+              "difficulty": 1,
+              "timeBudgetSec": 40,
+              "type": "true_false",
+              "payload": {
+                "statement": "Earth's axis tips back and forth during the year."
+              }
+            },
+            "reasoning": "My notes say: Earth's axis tips toward the Sun in summer and tips away in winter.",
+            "citedNotes": [
+              "Earth's axis tips toward the Sun in summer and tips away in winter."
+            ]
+          },
+          {
+            "question": {
+              "id": "sample-seasons_q4",
+              "prompt": "What is the main cause of Earth's seasons?",
+              "difficulty": 1,
+              "timeBudgetSec": 40,
+              "type": "mcq",
+              "payload": {
+                "options": [
+                  "Earth's distance from the Sun changes during the year",
+                  "The tilt of Earth's axis",
+                  "The Sun gives off more energy in summer",
+                  "Earth spins faster in summer"
+                ]
+              }
+            },
+            "reasoning": "My notes say: It is summer when Earth is closer to the Sun, and winter when it is farther away.",
+            "citedNotes": [
+              "It is summer when Earth is closer to the Sun, and winter when it is farther away."
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/runs/:id/retry",
+      "path": "/api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/retry",
+      "status": 200,
+      "response": {
+        "id": "run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c",
+        "courseId": "sample-seasons",
+        "courseTitle": "Why Earth Has Seasons",
+        "targetGrade": "B",
+        "studentEmoji": "🤖",
+        "phase": "learning",
+        "roomIndex": 0,
+        "rooms": [
+          {
+            "id": "r1",
+            "title": "Axial tilt and sunlight angle",
+            "concepts": [
+              {
+                "id": "c1",
+                "title": "Axial tilt and sunlight angle"
+              }
+            ],
+            "ready": true,
+            "state": "current"
+          },
+          {
+            "id": "r2",
+            "title": "Day length",
+            "concepts": [
+              {
+                "id": "c2",
+                "title": "Day length"
+              }
+            ],
+            "ready": true,
+            "state": "upcoming"
+          },
+          {
+            "id": "r3",
+            "title": "Opposite hemispheres",
+            "concepts": [
+              {
+                "id": "c3",
+                "title": "Opposite hemispheres"
+              }
+            ],
+            "ready": true,
+            "state": "upcoming"
+          }
+        ],
+        "currentRoom": {
+          "id": "r1",
+          "title": "Axial tilt and sunlight angle",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle"
+            }
+          ],
+          "ready": true,
+          "state": "current"
+        },
+        "notebookMd": "# Notebook\n\n## Axial tilt and sunlight angle\n- Seasons are just a thing that happens every year\n- It is summer when Earth is closer to the Sun, and winter when it is farther away.\n- Earth's axis tips toward the Sun in summer and tips away in winter.\n- For a southern city I can use its latitude as a positive number in the noon altitude rule.\n- Teacher showed me: 40 degrees\n",
+        "learning": {
+          "pendingQuestions": [],
+          "teachCount": 0
+        },
+        "rules": {
+          "roomQuestions": 5,
+          "roomHearts": 3,
+          "bossQuestions": 10,
+          "maxStudentQuestions": 3,
+          "helpMeTimed": true
+        },
+        "createdAt": "2026-11-14T03:33:13.323Z",
+        "updatedAt": "2026-11-14T03:33:13.363Z",
+        "room": {
+          "attempt": 1,
+          "turn": 4,
+          "totalTurns": 5,
+          "hearts": 0,
+          "maxHearts": 3,
+          "helpMeUsed": 1,
+          "log": [
+            {
+              "kind": "student_answer",
+              "question": {
+                "id": "sample-seasons_q1",
+                "prompt": "Find the noon Sun altitude in Boston (latitude 42) on the June solstice.",
+                "difficulty": 2,
+                "timeBudgetSec": 80,
+                "type": "numeric",
+                "payload": {
+                  "unit": "degrees"
+                }
+              },
+              "answer": {
+                "dontKnow": true
+              },
+              "answerText": "I don't know",
+              "correct": false,
+              "correctAnswer": {
+                "answer": {
+                  "value": 71.5
+                },
+                "text": "71.5 degrees"
+              },
+              "explanation": "The declination is +23.5, so 90 - |42 - 23.5| = 90 - 18.5 = 71.5 degrees.",
+              "reasoning": "My notes don't cover this question.",
+              "citedNotes": [],
+              "reason": "not in my notes",
+              "damage": 1,
+              "hearts": 2,
+              "phaseAfter": "room"
+            },
+            {
+              "kind": "help_me",
+              "eventId": "help_r0_a1_t1",
+              "question": {
+                "id": "sample-seasons_q17",
+                "prompt": "Find the noon Sun altitude at latitude 50 on an equinox, in degrees.",
+                "difficulty": 2,
+                "timeBudgetSec": 80,
+                "type": "numeric",
+                "payload": {
+                  "unit": "degrees"
+                }
+              },
+              "timeBudgetSec": 80,
+              "deadline": "2026-11-14T03:34:33.352Z"
+            },
+            {
+              "kind": "help_result",
+              "eventId": "help_r0_a1_t1",
+              "question": {
+                "id": "sample-seasons_q17",
+                "prompt": "Find the noon Sun altitude at latitude 50 on an equinox, in degrees.",
+                "difficulty": 2,
+                "timeBudgetSec": 80,
+                "type": "numeric",
+                "payload": {
+                  "unit": "degrees"
+                }
+              },
+              "correct": true,
+              "late": false,
+              "correctAnswer": {
+                "answer": {
+                  "value": 40
+                },
+                "text": "40 degrees"
+              },
+              "explanation": "On an equinox the declination is 0, so 90 - |50 - 0| = 40 degrees.",
+              "solveTimeSec": 0,
+              "noteAdded": "Teacher showed me: 40 degrees",
+              "damage": 0,
+              "hearts": 2,
+              "phaseAfter": "room"
+            },
+            {
+              "kind": "student_answer",
+              "question": {
+                "id": "sample-seasons_q29",
+                "prompt": "True or false?",
+                "difficulty": 1,
+                "timeBudgetSec": 40,
+                "type": "true_false",
+                "payload": {
+                  "statement": "Earth's axis tips back and forth during the year."
+                }
+              },
+              "answer": {
+                "value": true
+              },
+              "answerText": "True",
+              "correct": false,
+              "correctAnswer": {
+                "answer": {
+                  "value": false
+                },
+                "text": "False"
+              },
+              "explanation": "The axis keeps pointing in the same direction in space all year. Only Earth's position in its orbit changes.",
+              "reasoning": "My notes say: Earth's axis tips toward the Sun in summer and tips away in winter.",
+              "citedNotes": [
+                "Earth's axis tips toward the Sun in summer and tips away in winter."
+              ],
+              "reason": "wrong belief",
+              "damage": 1,
+              "hearts": 1,
+              "phaseAfter": "room"
+            },
+            {
+              "kind": "student_answer",
+              "question": {
+                "id": "sample-seasons_q4",
+                "prompt": "What is the main cause of Earth's seasons?",
+                "difficulty": 1,
+                "timeBudgetSec": 40,
+                "type": "mcq",
+                "payload": {
+                  "options": [
+                    "Earth's distance from the Sun changes during the year",
+                    "The tilt of Earth's axis",
+                    "The Sun gives off more energy in summer",
+                    "Earth spins faster in summer"
+                  ]
+                }
+              },
+              "answer": {
+                "choiceIndex": 0
+              },
+              "answerText": "Earth's distance from the Sun changes during the year",
+              "correct": false,
+              "correctAnswer": {
+                "answer": {
+                  "choiceIndex": 1
+                },
+                "text": "The tilt of Earth's axis"
+              },
+              "explanation": "The tilt of Earth's axis changes the angle of sunlight, which causes the seasons.",
+              "reasoning": "My notes say: It is summer when Earth is closer to the Sun, and winter when it is farther away.",
+              "citedNotes": [
+                "It is summer when Earth is closer to the Sun, and winter when it is farther away."
+              ],
+              "reason": "wrong belief",
+              "damage": 1,
+              "hearts": 0,
+              "phaseAfter": "room_result"
+            }
+          ],
+          "passed": false
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/api/runs/:id",
+      "path": "/api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c",
+      "status": 200,
+      "response": {
+        "id": "run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c",
+        "courseId": "sample-seasons",
+        "courseTitle": "Why Earth Has Seasons",
+        "targetGrade": "B",
+        "studentEmoji": "🤖",
+        "phase": "learning",
+        "roomIndex": 0,
+        "rooms": [
+          {
+            "id": "r1",
+            "title": "Axial tilt and sunlight angle",
+            "concepts": [
+              {
+                "id": "c1",
+                "title": "Axial tilt and sunlight angle"
+              }
+            ],
+            "ready": true,
+            "state": "current"
+          },
+          {
+            "id": "r2",
+            "title": "Day length",
+            "concepts": [
+              {
+                "id": "c2",
+                "title": "Day length"
+              }
+            ],
+            "ready": true,
+            "state": "upcoming"
+          },
+          {
+            "id": "r3",
+            "title": "Opposite hemispheres",
+            "concepts": [
+              {
+                "id": "c3",
+                "title": "Opposite hemispheres"
+              }
+            ],
+            "ready": true,
+            "state": "upcoming"
+          }
+        ],
+        "currentRoom": {
+          "id": "r1",
+          "title": "Axial tilt and sunlight angle",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle"
+            }
+          ],
+          "ready": true,
+          "state": "current"
+        },
+        "notebookMd": "# Notebook\n\n## Axial tilt and sunlight angle\n- Seasons are just a thing that happens every year\n- It is summer when Earth is closer to the Sun, and winter when it is farther away.\n- Earth's axis tips toward the Sun in summer and tips away in winter.\n- For a southern city I can use its latitude as a positive number in the noon altitude rule.\n- Teacher showed me: 40 degrees\n",
+        "learning": {
+          "pendingQuestions": [],
+          "teachCount": 0
+        },
+        "rules": {
+          "roomQuestions": 5,
+          "roomHearts": 3,
+          "bossQuestions": 10,
+          "maxStudentQuestions": 3,
+          "helpMeTimed": true
+        },
+        "createdAt": "2026-11-14T03:33:13.323Z",
+        "updatedAt": "2026-11-14T03:33:13.363Z",
+        "room": {
+          "attempt": 1,
+          "turn": 4,
+          "totalTurns": 5,
+          "hearts": 0,
+          "maxHearts": 3,
+          "helpMeUsed": 1,
+          "log": [
+            {
+              "kind": "student_answer",
+              "question": {
+                "id": "sample-seasons_q1",
+                "prompt": "Find the noon Sun altitude in Boston (latitude 42) on the June solstice.",
+                "difficulty": 2,
+                "timeBudgetSec": 80,
+                "type": "numeric",
+                "payload": {
+                  "unit": "degrees"
+                }
+              },
+              "answer": {
+                "dontKnow": true
+              },
+              "answerText": "I don't know",
+              "correct": false,
+              "correctAnswer": {
+                "answer": {
+                  "value": 71.5
+                },
+                "text": "71.5 degrees"
+              },
+              "explanation": "The declination is +23.5, so 90 - |42 - 23.5| = 90 - 18.5 = 71.5 degrees.",
+              "reasoning": "My notes don't cover this question.",
+              "citedNotes": [],
+              "reason": "not in my notes",
+              "damage": 1,
+              "hearts": 2,
+              "phaseAfter": "room"
+            },
+            {
+              "kind": "help_me",
+              "eventId": "help_r0_a1_t1",
+              "question": {
+                "id": "sample-seasons_q17",
+                "prompt": "Find the noon Sun altitude at latitude 50 on an equinox, in degrees.",
+                "difficulty": 2,
+                "timeBudgetSec": 80,
+                "type": "numeric",
+                "payload": {
+                  "unit": "degrees"
+                }
+              },
+              "timeBudgetSec": 80,
+              "deadline": "2026-11-14T03:34:33.352Z"
+            },
+            {
+              "kind": "help_result",
+              "eventId": "help_r0_a1_t1",
+              "question": {
+                "id": "sample-seasons_q17",
+                "prompt": "Find the noon Sun altitude at latitude 50 on an equinox, in degrees.",
+                "difficulty": 2,
+                "timeBudgetSec": 80,
+                "type": "numeric",
+                "payload": {
+                  "unit": "degrees"
+                }
+              },
+              "correct": true,
+              "late": false,
+              "correctAnswer": {
+                "answer": {
+                  "value": 40
+                },
+                "text": "40 degrees"
+              },
+              "explanation": "On an equinox the declination is 0, so 90 - |50 - 0| = 40 degrees.",
+              "solveTimeSec": 0,
+              "noteAdded": "Teacher showed me: 40 degrees",
+              "damage": 0,
+              "hearts": 2,
+              "phaseAfter": "room"
+            },
+            {
+              "kind": "student_answer",
+              "question": {
+                "id": "sample-seasons_q29",
+                "prompt": "True or false?",
+                "difficulty": 1,
+                "timeBudgetSec": 40,
+                "type": "true_false",
+                "payload": {
+                  "statement": "Earth's axis tips back and forth during the year."
+                }
+              },
+              "answer": {
+                "value": true
+              },
+              "answerText": "True",
+              "correct": false,
+              "correctAnswer": {
+                "answer": {
+                  "value": false
+                },
+                "text": "False"
+              },
+              "explanation": "The axis keeps pointing in the same direction in space all year. Only Earth's position in its orbit changes.",
+              "reasoning": "My notes say: Earth's axis tips toward the Sun in summer and tips away in winter.",
+              "citedNotes": [
+                "Earth's axis tips toward the Sun in summer and tips away in winter."
+              ],
+              "reason": "wrong belief",
+              "damage": 1,
+              "hearts": 1,
+              "phaseAfter": "room"
+            },
+            {
+              "kind": "student_answer",
+              "question": {
+                "id": "sample-seasons_q4",
+                "prompt": "What is the main cause of Earth's seasons?",
+                "difficulty": 1,
+                "timeBudgetSec": 40,
+                "type": "mcq",
+                "payload": {
+                  "options": [
+                    "Earth's distance from the Sun changes during the year",
+                    "The tilt of Earth's axis",
+                    "The Sun gives off more energy in summer",
+                    "Earth spins faster in summer"
+                  ]
+                }
+              },
+              "answer": {
+                "choiceIndex": 0
+              },
+              "answerText": "Earth's distance from the Sun changes during the year",
+              "correct": false,
+              "correctAnswer": {
+                "answer": {
+                  "choiceIndex": 1
+                },
+                "text": "The tilt of Earth's axis"
+              },
+              "explanation": "The tilt of Earth's axis changes the angle of sunlight, which causes the seasons.",
+              "reasoning": "My notes say: It is summer when Earth is closer to the Sun, and winter when it is farther away.",
+              "citedNotes": [
+                "It is summer when Earth is closer to the Sun, and winter when it is farther away."
+              ],
+              "reason": "wrong belief",
+              "damage": 1,
+              "hearts": 0,
+              "phaseAfter": "room_result"
+            }
+          ],
+          "passed": false
+        }
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/runs/:id/continue",
+      "path": "/api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/continue",
+      "status": 200,
+      "response": {
+        "id": "run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c",
+        "courseId": "sample-seasons",
+        "courseTitle": "Why Earth Has Seasons",
+        "targetGrade": "B",
+        "studentEmoji": "🤖",
+        "phase": "learning",
+        "roomIndex": 1,
+        "rooms": [
+          {
+            "id": "r1",
+            "title": "Axial tilt and sunlight angle",
+            "concepts": [
+              {
+                "id": "c1",
+                "title": "Axial tilt and sunlight angle"
+              }
+            ],
+            "ready": true,
+            "state": "passed"
+          },
+          {
+            "id": "r2",
+            "title": "Day length",
+            "concepts": [
+              {
+                "id": "c2",
+                "title": "Day length"
+              }
+            ],
+            "ready": true,
+            "state": "current"
+          },
+          {
+            "id": "r3",
+            "title": "Opposite hemispheres",
+            "concepts": [
+              {
+                "id": "c3",
+                "title": "Opposite hemispheres"
+              }
+            ],
+            "ready": true,
+            "state": "upcoming"
+          }
+        ],
+        "currentRoom": {
+          "id": "r2",
+          "title": "Day length",
+          "concepts": [
+            {
+              "id": "c2",
+              "title": "Day length"
+            }
+          ],
+          "ready": true,
+          "state": "current"
+        },
+        "notebookMd": "# Notebook\n\n## Axial tilt and sunlight angle\n- Seasons are just a thing that happens every year\n- It is summer when Earth is closer to the Sun, and winter when it is farther away.\n- The axis keeps pointing in the same direction in space all year; only Earth's position in its orbit changes.\n- Southern latitudes are negative, and the sign matters when you subtract the declination.\n- Teacher showed me: 40 degrees\n- Earth's axis is tilted 23.5 degrees from the perpendicular to its orbital plane\n- The axis keeps pointing in the same direction in space all year, toward Polaris\n- Seasons are caused by the tilt of the axis, not by Earth's distance from the Sun\n- Earth is closest to the Sun in early January and farthest in early July\n- A high Sun concentrates energy on a small area; a low Sun spreads the same beam over a larger area\n- Noon altitude = 90 - |latitude - declination|, with declination +23.5, 0 and -23.5 on the June solstice, equinoxes and December solstice\n- Sunlight intensity on flat ground is the full beam intensity times the sine of the Sun's altitude\n- The axis keeps pointing in the same direction in space all year; only Earth's position in its orbit changes\n- Southern latitudes are negative, and the sign matters when you subtract the declination\n- Teacher showed me: 5 million km\n",
+        "learning": {
+          "pendingQuestions": [],
+          "teachCount": 0
+        },
+        "rules": {
+          "roomQuestions": 5,
+          "roomHearts": 3,
+          "bossQuestions": 10,
+          "maxStudentQuestions": 3,
+          "helpMeTimed": true
+        },
+        "createdAt": "2026-11-14T03:33:13.323Z",
+        "updatedAt": "2026-11-14T03:33:13.398Z"
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/runs/:id/turn",
+      "path": "/api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/turn",
+      "status": 200,
+      "response": {
+        "kind": "boss_end",
+        "results": {
+          "predictedGradePct": 90,
+          "letter": "A-",
+          "target": "B",
+          "metTarget": true,
+          "conceptAccuracy": [
+            {
+              "conceptId": "c1",
+              "title": "Axial tilt and sunlight angle",
+              "correct": 5,
+              "total": 6,
+              "accuracy": 0.8333333333333334
+            },
+            {
+              "conceptId": "c2",
+              "title": "Day length",
+              "correct": 3,
+              "total": 3,
+              "accuracy": 1
+            },
+            {
+              "conceptId": "c3",
+              "title": "Opposite hemispheres",
+              "correct": 6,
+              "total": 6,
+              "accuracy": 1
+            }
+          ],
+          "helpMe": {
+            "offered": 6,
+            "correct": 5,
+            "wrong": 1,
+            "late": 0,
+            "avgSolveTimeSec": 0
+          },
+          "costlyMisconceptions": [
+            {
+              "id": "distance_causes_seasons",
+              "conceptId": "c1",
+              "conceptTitle": "Axial tilt and sunlight angle",
+              "description": "Thinks the seasons happen because Earth is closer to the Sun in summer and farther in winter.",
+              "beliefStatement": "It is summer when Earth is closer to the Sun, and winter when it is farther away.",
+              "correction": "The tilt of Earth's axis causes the seasons. Earth is actually closest to the Sun in early January, in the middle of Northern Hemisphere winter.",
+              "origin": "skipped",
+              "questionId": "sample-seasons_q5",
+              "questionPrompt": "True or false?",
+              "materialRef": {
+                "fileId": "f1",
+                "fileName": "seasons.md",
+                "page": 1,
+                "sectionPath": [
+                  "Why Earth Has Seasons",
+                  "Common mistakes"
+                ],
+                "quote": "Earth is closest to the Sun in early January, during Northern Hemisphere winter."
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "route": "/api/runs/:id/results",
+      "path": "/api/runs/run_4bbc2a1d-673e-47bd-af17-d32d27eeed3c/results",
+      "status": 200,
+      "response": {
+        "predictedGradePct": 90,
+        "letter": "A-",
+        "target": "B",
+        "metTarget": true,
+        "conceptAccuracy": [
+          {
+            "conceptId": "c1",
+            "title": "Axial tilt and sunlight angle",
+            "correct": 5,
+            "total": 6,
+            "accuracy": 0.8333333333333334
+          },
+          {
+            "conceptId": "c2",
+            "title": "Day length",
+            "correct": 3,
+            "total": 3,
+            "accuracy": 1
+          },
+          {
+            "conceptId": "c3",
+            "title": "Opposite hemispheres",
+            "correct": 6,
+            "total": 6,
+            "accuracy": 1
+          }
+        ],
+        "helpMe": {
+          "offered": 6,
+          "correct": 5,
+          "wrong": 1,
+          "late": 0,
+          "avgSolveTimeSec": 0
+        },
+        "costlyMisconceptions": [
+          {
+            "id": "distance_causes_seasons",
+            "conceptId": "c1",
+            "conceptTitle": "Axial tilt and sunlight angle",
+            "description": "Thinks the seasons happen because Earth is closer to the Sun in summer and farther in winter.",
+            "beliefStatement": "It is summer when Earth is closer to the Sun, and winter when it is farther away.",
+            "correction": "The tilt of Earth's axis causes the seasons. Earth is actually closest to the Sun in early January, in the middle of Northern Hemisphere winter.",
+            "origin": "skipped",
+            "questionId": "sample-seasons_q5",
+            "questionPrompt": "True or false?",
+            "materialRef": {
+              "fileId": "f1",
+              "fileName": "seasons.md",
+              "page": 1,
+              "sectionPath": [
+                "Why Earth Has Seasons",
+                "Common mistakes"
+              ],
+              "quote": "Earth is closest to the Sun in early January, during Northern Hemisphere winter."
+            }
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/runs/:id/questions/:qid/answer",
+      "path": "/api/runs/run_eed4ecf0-b8e4-415f-81ad-a32415399af3/questions/sq_0_0_1/answer",
+      "status": 200,
+      "request": {
+        "answer": "The tilt of Earth's axis causes the seasons. Earth is actually closest to the Sun in early January, in the middle of Northern Hemisphere winter."
+      },
+      "response": {
+        "resolved": true,
+        "notebookMd": "# Notebook\n\n## Axial tilt and sunlight angle\n- This topic is something we study\n- The tilt of Earth's axis causes the seasons. Earth is actually closest to the Sun in early January, in the middle of Northern Hemisphere winter.\n"
+      }
+    },
+    {
+      "method": "POST",
+      "route": "/api/runs/:id/turn",
+      "path": "/api/runs/run_eed4ecf0-b8e4-415f-81ad-a32415399af3/turn",
+      "status": 409,
+      "response": {
+        "error": {
+          "code": "wrong_phase",
+          "message": "no fight in the learning phase"
+        }
+      }
+    }
+  ]
+}

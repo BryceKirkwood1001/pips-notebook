@@ -21,6 +21,9 @@ describe('citationMatches', () => {
     expect(citationMatches('Gravity pulls things down', nb)).toBe(false);
     expect(citationMatches('', nb)).toBe(false);
     expect(citationMatches('Sh', nb)).toBe(false);
+    expect(citationMatches('the', nb)).toBe(false);
+    expect(citationMatches('moon moon moon', nb)).toBe(false);
+    expect(citationMatches('Short', nb)).toBe(true);
   });
 });
 

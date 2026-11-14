@@ -13,8 +13,7 @@ export const CHECK_RESOLUTION_SYSTEM = [
 export function buildCheckResolutionPrompt(input: CheckResolutionInput): string {
   const m = input.misconception;
   return [
-    `The wrong belief: ${m.beliefStatement}`,
-    `The correct idea: ${m.correction}`,
+    wrap('material', `The wrong belief: ${m.beliefStatement}\nThe correct idea: ${m.correction}`),
     '',
     'The student asked:',
     wrap('player_text', input.question),

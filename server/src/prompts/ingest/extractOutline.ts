@@ -5,7 +5,7 @@ export const EXTRACT_OUTLINE_SYSTEM = system(
   [
     'Task: read the course material and produce its outline, its own exercises and any stated time budget.',
     '1. title, and language (BCP-47 code such as "en").',
-    '2. units, each with concepts (aim for 3 to 8 concepts for a short handout; one concept is one teachable idea). Each concept has a short summary, the titles of prerequisite concepts, and 2 to 6 keyPoints: atomic claims a student must know, each with evidence.',
+    '2. units, each with concepts (one concept is one teachable idea). Extract every concept and key point supported by the material, without fixed counts. Each concept has a short summary, the titles of prerequisite concepts, and keyPoints: atomic claims a student must know, each with evidence.',
     '3. materialItems: find EVERY practice problem, worked example, review question, quiz item, definition and "common mistake" callout in the material. kind is one of practice_problem, worked_example, review_question, quiz_item, definition, common_mistake. "text" is the item as written (include its options if it has them) and "solution" the material\'s own solution or answer when it has one. List the concept titles it belongs to, and "points" if the material states them.',
     '4. examTimeHint: only when the material states a time or point budget for an exam or quiz (for example "10 minutes for 5 questions"); otherwise null.',
     QUOTE_RULE,
@@ -21,8 +21,8 @@ export function buildExtractOutlinePrompt(files: ParsedFile[], titleHint?: strin
     })
     .join('\n\n');
   return [
-    titleHint ? `Title hint from the uploader: ${titleHint}` : '',
-    `Files: ${files.map((f) => `${f.fileId} = ${f.name}`).join(', ')}`,
+    titleHint ? wrap('player_text', `Title hint from the uploader: ${titleHint}`) : '',
+    wrap('material', `Files: ${files.map((f) => `${f.fileId} = ${f.name}`).join(', ')}`),
     'Course material:',
     wrap('material', body),
   ]

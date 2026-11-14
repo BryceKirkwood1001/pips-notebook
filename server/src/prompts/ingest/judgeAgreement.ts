@@ -42,7 +42,7 @@ export function keyText(q: Question): string {
 
 export function buildJudgeAgreementPrompt(question: Question, verifierAnswer: string): string {
   return [
-    `Question (${question.type}): ${question.prompt}`,
+    wrap('material', `Question (${question.type}): ${question.prompt}`),
     '',
     'Answer key:',
     wrap('material', keyText(question)),

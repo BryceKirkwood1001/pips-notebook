@@ -1,7 +1,7 @@
 import type { Concept, MaterialItem, StyleProfile } from '@top/shared';
 import type { CoverageGap } from '../../llm/types';
 import type { RetrievedChunk } from '../../rag/types';
-import { conceptsBlock, itemsBlock, labelledEvidenceBlock, styleBlock, system } from './common';
+import { conceptsBlock, itemsBlock, labelledEvidenceBlock, styleBlock, system, wrap } from './common';
 import { FLAT_QUESTION_SPEC } from './questionSpec';
 
 export const ADAPT_QUESTIONS_SYSTEM = system(
@@ -24,7 +24,7 @@ export function gapsBlock(gaps: CoverageGap[], concepts: Concept[]): string {
       `  misconceptions to give a wrong-answer path for: ${g.misconceptionIds.map((id) => `${id} ("${ms.get(id) ?? '?'}")`).join('; ') || 'none specific'}`,
     ].join('\n'),
   );
-  return `Coverage to achieve (${gaps.reduce((s, g) => s + g.count, 0)} questions in total):\n${lines.join('\n')}`;
+  return `Coverage to achieve (${gaps.reduce((s, g) => s + g.count, 0)} questions in total):\n${wrap('material', lines.join('\n'))}`;
 }
 
 export function buildAdaptQuestionsPrompt(

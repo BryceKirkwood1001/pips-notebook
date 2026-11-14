@@ -20,11 +20,10 @@ export function buildGradeOpenPrompt(input: GradeOpenInput): string {
   reference.push(`Final answer: ${q.solution.finalAnswer}`);
   const cands = input.candidateMisconceptions.map((m) => `- id=${m.id}: ${m.description} (belief: ${m.beliefStatement})`).join('\n');
   return [
-    `Question: ${q.prompt}`,
-    ...reference,
+    wrap('material', [`Question: ${q.prompt}`, ...reference].join('\n')),
     '',
     'Candidate misconceptions:',
-    cands || '(none)',
+    wrap('material', cands || '(none)'),
     '',
     'Course material:',
     evidenceBlock(input.evidence),

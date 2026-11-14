@@ -20,7 +20,9 @@
     "typecheck": "tsc -p shared --noEmit && tsc -p server --noEmit && tsc -p test-client --noEmit",
     "e2e": "tsx scripts/e2e.ts",
     "ingest": "tsx server/src/ingest/cli.ts",
-    "llm:smoke": "tsx server/src/llm/smoke.ts"
+    "llm:smoke": "tsx server/src/llm/smoke.ts",
+    "docs:api": "tsx scripts/generate-api-docs.ts",
+    "docs:frontend": "tsx scripts/generate-frontend-inventory.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

@@ -46,5 +46,5 @@ export function renderQuestion(q: PublicQuestion): string {
 }
 
 export function buildStudentAnswerPrompt(notebookMd: string, question: PublicQuestion): string {
-  return [wrap('notebook', notebookMd), '', renderQuestion(question)].join('\n');
+  return [wrap('notebook', notebookMd), '', wrap('material', renderQuestion(question))].join('\n');
 }

@@ -82,17 +82,18 @@ const words = (s: string): string[] => s.split(' ').filter(Boolean);
 
 /**
  * The grounding check (SPEC 5): does the cited note fuzzy-match a notebook bullet? After normalizing both
- * sides: equal, or one contains the other and the shorter has at least 12 characters, or at least 80% of
- * the cited note's words appear in the bullet.
+ * sides: equal, or a substantial excerpt/near-match. Exact short facts remain valid, but approximate
+ * matches require at least three distinct words and 12 characters on both sides.
  */
 export function citationMatches(citedNote: string, notebookMd: string): boolean {
   const cited = normalizeText(citedNote.trim().replace(/^[-*]\s+/, ''));
   if (!cited) return false;
-  const citedWords = words(cited);
+  const citedWords = [...new Set(words(cited))];
   return notebookLines(notebookMd).some((line) => {
     const l = normalizeText(line);
     if (!l) return false;
     if (l === cited) return true;
+    if (Math.min(l.length, cited.length) < 12 || citedWords.length < 3 || new Set(words(l)).size < 3) return false;
     const shorter = l.length < cited.length ? l : cited;
     if ((l.includes(cited) || cited.includes(l)) && shorter.length >= 12) return true;
     const lineWords = new Set(words(l));

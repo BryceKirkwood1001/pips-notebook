@@ -509,7 +509,11 @@ export async function runIngest(deps: IngestDeps, input: IngestInput): Promise<I
       order.map((conceptId) =>
         limit(async () => {
           await processConcept(run, conceptId);
-          current.status.conceptsReady.push(conceptId);
+          const room = current.rooms.find((r) => r.conceptIds.includes(conceptId))!;
+          const share = Math.ceil(roomPoolNeed(deps.config) / room.conceptIds.length);
+          if (gapFor(current, [conceptId], verified(run), share).count === 0) {
+            current.status.conceptsReady.push(conceptId);
+          }
           if (firstRoomReadyMs === undefined && firstRoom.conceptIds.every((id) => current.status.conceptsReady.includes(id))) {
             firstRoomReadyMs = elapsed();
           }
@@ -526,6 +530,13 @@ export async function runIngest(deps: IngestDeps, input: IngestInput): Promise<I
 
     // ── ready ──
     const coverage = checkCoverage(current, run.bank, deps.config);
+    if (!coverage.ok) {
+      const error = 'Could not build enough verified questions to satisfy course coverage.';
+      current.status = { ...current.status, stage: 'error', error };
+      await save();
+      return { courseId, ok: false, error, coverage, firstRoomReadyMs, totalMs: elapsed() };
+    }
+    current.status.conceptsReady = current.concepts.map((c) => c.id);
     current.status.stage = 'ready';
     await save();
     log('ingest finished', coverage);

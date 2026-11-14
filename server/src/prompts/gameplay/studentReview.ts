@@ -23,10 +23,10 @@ export function buildStudentReviewPrompt(input: StudentReviewInput): string {
     .join('\n');
   return [
     'Concepts in this room:',
-    concepts,
+    wrap('material', concepts),
     '',
     'Hidden misconception list (for your eyes only; never mention it to the teacher):',
-    miscs || '(none)',
+    wrap('material', miscs || '(none)'),
     '',
     `Active misconception ids (candidates for "resolvedMisconceptionIds"): ${JSON.stringify(input.activeMisconceptionIds)}`,
     `Probeable misconception ids (the only ids "questions" may use): ${JSON.stringify(input.probeableMisconceptionIds)}`,

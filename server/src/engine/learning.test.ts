@@ -112,6 +112,17 @@ describe('teach', () => {
     expect(second.run.hidden.misconceptions).toHaveLength(1); // m1b was not active: dropped
     expect(notebookLines(second.run.notebookMd)).toEqual(['Actually 1a is false']);
   });
+
+  it('stating a previously resolved belief reactivates it, even if the review also claims resolution', async () => {
+    const deps = createDeps();
+    const run = newRun(deps);
+    run.hidden.misconceptions.push({ id: 'm1a', conceptId: 'c1', status: 'resolved', origin: 'skipped' });
+    deps.tasks.handlers.review = () => ({ notesToAdd: [], statedMisconceptionIds: ['m1a'], questions: [], resolvedMisconceptionIds: ['m1a'] });
+    const { run: after } = await engine.teach(deps, ctx, run, 'Belief 1a is true');
+    expect(after.hidden.misconceptions).toEqual([{ id: 'm1a', conceptId: 'c1', status: 'active', origin: 'stated' }]);
+    expect(notebookLines(after.notebookMd)).toContain('Belief 1a is true');
+    expect(run.hidden.misconceptions[0].status).toBe('resolved');
+  });
 });
 
 describe('answer and skip', () => {

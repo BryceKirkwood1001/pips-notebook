@@ -147,6 +147,16 @@ describe('validation', () => {
 });
 
 describe('failures', () => {
+  it('never marks an unverified or under-covered course ready', async () => {
+    const { report, pack, saves } = await ingest('seasons', {
+      tasks: { verifyQuestion: async () => ({ answer: { dontKnow: true }, workedSteps: [], difficulty: 3 }) },
+    });
+    expect(report.ok).toBe(false);
+    expect(report.coverage?.ok).toBe(false);
+    expect(pack.status).toMatchObject({ stage: 'error', conceptsReady: [], error: expect.stringMatching(/coverage/) });
+    expect(saves.every((p) => p.status.stage !== 'ready' && p.status.conceptsReady.length === 0)).toBe(true);
+  });
+
   it('a failing task leads to stage error and runIngest still resolves', async () => {
     const { report, pack } = await ingest('seasons', {
       tasks: {
@@ -170,13 +180,14 @@ describe('failures', () => {
 });
 
 describe('unknown material (heuristic fallback)', () => {
-  it('does not crash and builds a pack', async () => {
+  it('builds a partial pack and reports unmet coverage honestly', async () => {
     const text = '# Plants\n\n## Photosynthesis\n\nPlants turn sunlight into chemical energy. Chlorophyll absorbs mostly red and blue light. Oxygen is released as a by-product.\n\n## Roots\n\nRoots anchor the plant in the soil. Roots absorb water and minerals from the ground.\n';
     const ctx = makeDeps();
     const report = await runIngest(ctx.deps, { courseId: 'plants', files: [sampleFile('plants', text)] });
     const pack = (await ctx.repo.getCoursePack('plants'))!;
-    expect(report.error).toBeUndefined();
-    expect(pack.status.stage).toBe('ready');
+    expect(report.ok).toBe(false);
+    expect(report.error).toMatch(/coverage/);
+    expect(pack.status.stage).toBe('error');
     expect(pack.concepts.map((c) => c.title)).toEqual(['Photosynthesis', 'Roots']);
     expect((await ctx.repo.listQuestions('plants')).some((q) => q.verified)).toBe(true);
   });

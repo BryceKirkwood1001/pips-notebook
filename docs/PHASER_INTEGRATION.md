@@ -4,6 +4,8 @@ For the front-end teammate. Everything the game needs from the backend goes thro
 
 Related docs: [API.md](API.md) has a real request and response for every endpoint, and [STATE_MACHINE.md](STATE_MACHINE.md) shows which action is allowed when.
 
+[FRONTEND_VARIABLES.md](FRONTEND_VARIABLES.md) lists the variables, types and state updates for each screen. [FRONTEND_SOURCE_VARIABLES.md](FRONTEND_SOURCE_VARIABLES.md) is the generated inventory of every variable, field and parameter in the test client.
+
 ## 1. Setup
 
 | What | Where |

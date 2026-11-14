@@ -24,8 +24,8 @@ flowchart LR
 | `parsing` | Each file is read, split into chunks, embedded and stored. |
 | `outline` | One model call reads the material and returns units, concepts, key points and the material's own items (practice problems, worked examples, review questions, quiz items, definitions, common mistakes). Rooms are formed. |
 | `style` | The style profile is built from the material's items and a few sample pages. |
-| `concepts` | Per concept, in room order: misconceptions, then the question bank, then verification and time budgets. The concept is added to `conceptsReady` and the pack is saved. Multi-concept questions for the boss come last. |
-| `ready` | Every coverage invariant has been checked. |
+| `concepts` | Per concept, in room order: misconceptions, then the question bank, then verification and time budgets. A concept is added to `conceptsReady` only when verified coverage and its share of the room pool are available. The pack is saved progressively. Multi-concept questions for the boss come last. |
+| `ready` | Every coverage invariant passes. Unmet coverage after the bounded fill attempts ends in `error`. |
 | `error` | Something failed. `status.error` has the message. The ingest function itself never throws. |
 
 Concepts are processed in room order, `INGEST_CONCURRENCY` at a time, so the first room is ready first. A run can start as soon as its first room is ready; the target is about 60 seconds after upload.
@@ -33,7 +33,7 @@ Concepts are processed in room order, `INGEST_CONCURRENCY` at a time, so the fir
 ## Two readers for every PDF
 
 1. **Gemini reads the PDF natively.** The file is uploaded through the Files API and attached to the outline call. This keeps diagrams, tables and slide layouts that plain text extraction loses.
-2. **`unpdf` extracts the text layer per page.** This text becomes the chunks and is what evidence quotes are checked against. A page with almost no text (scanned or image-only) is flagged `lowText`, and reader 1 covers it.
+2. **`unpdf` extracts the text layer per page.** This text becomes the chunks and is what evidence quotes are checked against. A page with almost no text (scanned or image-only) is flagged `lowText`. Native PDF reading can supply visual context, but this implementation still requires exact evidence from extracted text. Entirely scanned material without readable text fails ingest; OCR and evidence for image-only pages remain unimplemented. A Files API failure falls back to the text reader.
 
 Text and Markdown files are read directly and split into pages on form feeds.
 
@@ -62,7 +62,7 @@ Questions come from the material wherever possible. Each question records where 
 | 2 | `adapted` | The same structure and style as a material item, with new numbers, names or context. Used to get extra questions for retries. |
 | 3 | `generated` | Only to fill coverage gaps. Generation is conditioned on the course's style profile plus few-shot examples taken from the material, so new questions read like the course: same notation, units, code language, scenario types, depth and phrasing. |
 
-Supported types: `mcq`, `true_false`, `multi_select`, `numeric`, `short_text`, `ordering` and `free_response` (used sparingly, the only type graded by the model). The mix of types follows the style profile, so a physics course gets numeric problems and a programming course gets code-output questions.
+Supported types: `mcq`, `true_false`, `multi_select`, `numeric`, `short_text`, `ordering` and `free_response` (used sparingly). Free responses use model grading; short text first uses deterministic matching, then a model rubric fallback. The mix of types follows the style profile, so a physics course gets numeric problems and a programming course gets code-output questions.
 
 Every wrong answer that a known misconception would produce is mapped to that misconception (a wrong option, the wrong true/false value, a known wrong number, a text pattern or a wrong order). The learning phase and the boss both depend on these mappings.
 
@@ -126,3 +126,9 @@ This ingests the file and writes `samples/cache/seasons.json`, the fixture that 
 ## Prompt safety
 
 Uploaded material is data, never instructions. Every prompt wraps it in `<material>…</material>` and tells the model not to follow anything written inside.
+
+Course-derived titles, filenames, questions, style profiles, rubrics and misconception descriptions are also delimited. Embedded closing tags are escaped. Structural tests check these boundaries; this does not establish immunity to prompt injection in a live model.
+
+## Offline limitations
+
+The two bundled samples replay canned outputs through the real pipeline and satisfy coverage. Unknown uploads use a small heuristic fallback, which may produce a partial pack but cannot guarantee the required pool size or multi-concept coverage. Such packs now report `error` instead of `ready`. Gemini and Atlas have not been checked live in the Codex continuation because credentials were absent.
