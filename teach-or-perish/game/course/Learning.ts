@@ -2,6 +2,7 @@ import { Page, panel, title } from './page.js';
 import type { PublicStudentQuestion } from './api-client.js';
 import { api, call, goTo, sceneForPhase, setRun, state } from './app.js';
 import { btn, el, mdToEl } from './ui.js';
+import { teachingPose } from '../art.js';
 
 interface QBlock {
   status: HTMLElement;
@@ -36,7 +37,7 @@ export class LearningScene extends Page {
     const teach = btn('Teach', async () => {
       if (!explain.value.trim()) return;
       const res = await call(() => api.teach(run.id, explain.value));
-      if (!res) return;
+      if (!res || !this.active) return;
       this.setNotebook(res.notebookMd);
       run.learning.pendingQuestions = res.questions;
       this.syncQuestions(res.questions);
@@ -90,22 +91,30 @@ export class LearningScene extends Page {
         btn('Answer', async () => {
           if (!state.run || !input.value.trim()) return;
           const res = await call(() => api.answerQuestion(state.run!.id, q.id, input.value));
-          if (!res) return;
+          if (!res || !this.active) return;
           this.setNotebook(res.notebookMd);
           q.status = 'answered'; this.setStatus(q.id, 'answered', res.resolved);
+          this.updatePose(res.resolved);
         }),
         btn('Skip', async () => {
           if (!state.run) return;
           const res = await call(() => api.skipQuestion(state.run!.id, q.id));
-          if (!res) return;
+          if (!res || !this.active) return;
           this.setNotebook(res.notebookMd);
           q.status = 'skipped'; this.setStatus(q.id, 'skipped');
+          this.updatePose();
         }, 'alt'),
       );
       this.questionsEl.append(el('div', 'box', el('div', '', `❓ ${q.text}`), status, controls));
       this.blocks.set(q.id, { status, controls });
       this.setStatus(q.id, q.status);
     }
+    this.updatePose();
+  }
+
+  private updatePose(understood = false) {
+    const hasQuestion = Array.from(this.blocks.values()).some(b => b.status.dataset.st === 'open');
+    teachingPose(hasQuestion, understood);
   }
 
   private setStatus(id: string, st: 'open' | 'answered' | 'skipped', resolved?: boolean) {

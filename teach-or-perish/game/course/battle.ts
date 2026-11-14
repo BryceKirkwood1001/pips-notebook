@@ -3,7 +3,7 @@ import type { Answer, HelpMeTurn, PublicRun, TurnResult } from './api-client.js'
 import { buildHelp } from './help.js';
 import { Page, panel, stage, title } from './page.js';
 import { btn, el, mdToEl, questionEl } from './ui.js';
-import { drawStage } from '../art.js';
+import { drawStage, playAttack } from '../art.js';
 import { game } from '../engine.js';
 
 export class Battle extends Page {
@@ -99,6 +99,7 @@ export function arena(run:PublicRun|null,screen:string) {
         phase:run?.phase==='learning'?'teach':run?.room?.passed && screen==='room'?'won':'intro'});
 }
 function animateAnswer(correct:boolean) {
+    playAttack(correct);
     const attacker=game.roster.tagged(correct?'student':'monster')[Symbol.iterator]().next().value;
     const victim=game.roster.tagged(correct?'monster':'student')[Symbol.iterator]().next().value;
     if(attacker)game.tween.to(attacker,{x:attacker.x+(correct?100:-100)},{duration:.14,yoyo:true});
