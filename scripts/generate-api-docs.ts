@@ -22,13 +22,15 @@ const descriptions: Record<string, string> = {
   'GET /api/samples': 'Lists the cached courses accepted by the seed endpoint.',
   'GET /api/archive': 'Lists prepared/uploaded courses as public course projections and recent run summaries. No answer keys, private question banks or hidden beliefs. The real server defaults to local disk storage under ignored `.local/archive`; explicit test containers stay in memory, and configured MongoDB storage remains supported.',
   'POST /api/runs/:id/pause': 'Idempotently pauses an unfinished run and persists `pausedAt`. Gameplay mutations then return 409 `run_paused`. A pending help deadline and solve clock are frozen until resume. Read-only archive/lesson views remain available.',
+  'POST /api/runs/:id/end': 'Ends the expedition early and persists `endedAt` (idempotent). The run stays in the archive as a read-only record: every gameplay mutation and resume then return 409 `run_ended`; pause is a no-op; a pending "Help me!" closes with it. A finished (`results`) run returns 409 `wrong_phase`.',
+  'DELETE /api/runs/:id': 'Permanently removes the run (progress, notebook, history). Its course, questions and stats stay. Returns `{ deleted: true, id }`; an unknown or already removed run is 404.',
   'POST /api/runs/:id/resume': 'Idempotently resumes the run. Shifts a pending help deadline and its started time by the paused duration, including time across server restarts. Does not advance a turn or erase notes.',
   'POST /api/courses/seed/:sample': 'Loads a cached course immediately. Bundled sample ids: `seasons` and `binary-search`.',
   'POST /api/courses': 'Accepts JSON `{ text, title? }` or multipart `files` plus optional `title`. Supported files: `.pdf`, `.txt`, `.md`, `.markdown`. The aggregate file size is capped by `MAX_UPLOAD_MB` (25 by default), with at most 20 files. JSON shares the request size cap. Each file is capped by `MAX_PAGES` (300). A 202 means accepted; poll the course until the first room is ready, or `status.stage` becomes `error`. The short upload examples below intentionally lack enough content for coverage in mock mode.',
   'GET /api/courses/:id': 'Returns public ingest progress, files, units, rooms and a style summary. Optional `status.activity` contains `message` (up to 240 characters), latest public OpenAI document-analysis `summary` (up to 1200 characters), and optional `completed`/`total` counts for the current work. Polling updates the Thinking panel below Stage. Summaries are optional; raw reasoning and question-generation output are excluded. Room readiness comes from `status.conceptsReady`; a complete course reaches `ready` only after coverage passes.',
   'POST /api/runs': 'Creates a run in `learning`. `targetGrade` is required: `A`, `A-`, `B+`, `B`, `B-`, `C+`, `C`, `C-`, `D`. Optional `studentEmoji` must be one of the values exported by the client. Optional `scope.roomIds` selects rooms; the default includes every course room. The first room must be ready (425 otherwise).',
-  'GET /api/runs/:id': 'Returns the current public run, notebook, completed turn logs and pending help event. Store the run id to resume after a reload. Question keys and targeting data are excluded.',
-  'POST /api/runs/:id/teach': 'Allowed in `learning`. `explanation` is trimmed, nonempty, at most 8,000 characters. Adds notebook notes and up to the configured number of open questions. Existing open questions remain. Clear correction can resolve active beliefs; explicitly stating a wrong belief activates it again.',
+  'GET /api/runs/:id': 'Returns the current public run, notebook, completed turn logs and pending help event. Store the run id to resume after a reload. Optional `history` contains completed room attempts, including retries: room title, hearts, answer accuracy/help counts, teaching/question counts and missed prompts with topic titles. Only already-seen outcomes are projected; hidden beliefs, question pools and answer keys remain excluded. Runs saved before this feature may have no history.',
+  'POST /api/runs/:id/teach': 'Allowed in `learning`. `explanation` is trimmed, nonempty, at most 8,000 characters. Optional `conceptId` focuses review, notes and new questions on one concept of the current room; another room\'s concept returns 400 `validation_error` without mutation. Omitting it retains whole-room teaching. Public learning questions include optional `conceptId` so the UI places them on the right topic. Adds notebook notes and up to the configured number of open questions. Existing open questions remain. Clear correction can resolve active beliefs; explicitly stating a wrong belief activates it again.',
   'POST /api/runs/:id/questions/:qid/answer': 'Allowed in `learning` for an open student question. `answer` is nonempty text, at most 4,000 characters. An unresolved answer activates the belief, like a skip. Answering or skipping a closed question returns 409.',
   'POST /api/runs/:id/questions/:qid/skip': 'Allowed in `learning` for an open student question. No body. Adds its belief as an ordinary notebook note and activates the hidden misconception.',
   'POST /api/runs/:id/ready': 'Allowed in `learning`. No body. Auto-skips open questions, draws fresh questions where available and starts a room with full hearts. Returns 425 if the room is still being prepared.',
@@ -41,7 +43,7 @@ const descriptions: Record<string, string> = {
 };
 
 const routeSource = await readFile(new URL('../server/src/routes.ts', import.meta.url), 'utf8');
-const actualRoutes = [...routeSource.matchAll(/app\.(get|post)\('([^']+)'/g)].map((m) => `${m[1].toUpperCase()} ${m[2]}`);
+const actualRoutes = [...routeSource.matchAll(/app\.(get|post|delete)\('([^']+)'/g)].map((m) => `${m[1].toUpperCase()} ${m[2]}`);
 for (const route of actualRoutes) {
   if (!descriptions[route] || !capture.examples.some((e) => `${e.method} ${e.route}` === route && e.status < 400)) {
     throw new Error(`Missing description or HTTP capture for ${route}`);
@@ -81,8 +83,9 @@ for (const key of actualRoutes) {
     let response: unknown = e.response;
     let excerpt = e.responseIsExcerpt;
     if (e.response.phase) {
-      const { id, courseId, phase, roomIndex, currentRoom, learning, rules, pendingHelpMe, pausedAt } = e.response;
+      const { id, courseId, phase, roomIndex, currentRoom, learning, rules, pendingHelpMe, pausedAt, history } = e.response;
       response = { id, courseId, phase, roomIndex, currentRoom, learning, rules, ...(pausedAt ? {pausedAt} : {}),
+        ...(history ? {history} : {}),
         ...(e.response.room ? { room: { attempt: e.response.room.attempt, turn: e.response.room.turn, totalTurns: e.response.room.totalTurns, hearts: e.response.room.hearts, passed: e.response.room.passed } } : {}),
         ...(e.response.boss ? { boss: { turn: e.response.boss.turn, totalTurns: e.response.boss.totalTurns, health: e.response.boss.health } } : {}),
         ...(pendingHelpMe ? { pendingHelpMe } : {}) };

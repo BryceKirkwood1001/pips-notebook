@@ -4,6 +4,9 @@ import { api, call, describeError, goTo, setRun, showError, state } from './app.
 import { btn, el, clock } from './ui.js';
 import { resume } from './app.js';
 import { lessonGuide } from './lesson-guide.js';
+import { travel } from './transition.js';
+import { canPlay, describeRun, endExpedition, removeExpedition } from './expedition.js';
+import { setArrival } from '../art.js';
 
 const STAGES = ['parsing', 'outline', 'style', 'concepts', 'ready'];
 
@@ -65,7 +68,16 @@ export class UploadScene extends Page {
         const runs = res.archive.runs.filter(r=>r.courseId===c.id);
         const entry=el('article','saved-course',el('h4','',c.title),el('p','dim',`${c.rooms.length} lessons · ${c.status.stage}`),
           btn('View lessons',()=>this.begin({courseId:c.id}),'alt'));
-        if (runs[0]) entry.append(btn(runs[0].phase==='results'?'View last results':'Resume expedition',()=>void resume(runs[0].id)));
+        // Every expedition on this course, most recent first: open it, end it early, or remove it.
+        if (runs.length) entry.append(el('ul','saved-runs',...runs.map(r=>{
+          const open=btn(r.phase==='results'?'View results':r.endedAt?'View record':'Resume',()=>void resume(r.id),r.endedAt?'alt':'gold');
+          const row=el('li','',el('span','',el('strong','',r.endedAt?'Ended':r.phase==='results'?'Finished':'In progress'),el('small','dim',describeRun(r))),
+            el('span','saved-run-actions',open,
+              canPlay(r)?btn('End',async()=>{ if (await endExpedition(r.id) && this.active) goTo('Upload'); },'alt'):null,
+              btn('Remove',async()=>{ if (await removeExpedition(r.id) && this.active) goTo('Upload'); },'alt remove')));
+          if (r.endedAt) row.classList.add('ended');
+          return row;
+        })));
         archive.append(entry);
       }
       if (!res.archive.courses.length) archive.append(el('p','dim','Your prepared dungeons will appear here, ready to return to after a restart.'));
@@ -267,14 +279,20 @@ export class UploadScene extends Page {
 
   private async start() {
     if (!this.courseId || !this.course) return;
-    const roomIds = this.course.rooms.filter((r) => this.chosen.has(r.id)).map((r) => r.id);
-    const run = await call(() =>
-      api.createRun({ courseId: this.courseId!, targetGrade: this.grade, studentEmoji: this.emoji, scope: { roomIds } }),
-    );
-    if (!run) return; // a 425 shows "Not ready yet" in the banner
-    setRun(run);
-    state.results = null;
-    goTo('Learning');
+    const rooms = this.course.rooms.filter((r) => this.chosen.has(r.id));
+    const roomIds = rooms.map((r) => r.id);
+    await travel({ kicker: `Room 1 of ${rooms.length}`, title: rooms[0]?.title ?? this.course.title,
+      detail: 'Pip settles into the library. Teach one topic at a time.' }, async () => {
+      const run = await call(() =>
+        api.createRun({ courseId: this.courseId!, targetGrade: this.grade, studentEmoji: this.emoji, scope: { roomIds } }),
+      );
+      if (!run) return false; // a 425 shows "Not ready yet" in the banner
+      setRun(run);
+      state.results = null;
+      setArrival('study');
+      goTo('Learning');
+      return true;
+    });
   }
 }
 

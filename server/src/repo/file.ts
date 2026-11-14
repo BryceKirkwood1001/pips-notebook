@@ -59,6 +59,12 @@ export function createFileRepository(directory: string): Repository {
     saveRun: run => data.update(s => put(s.runs, run, r => r.id)),
     getRun: async id => data.read().runs.find(r => r.id === id) ?? null,
     listRuns: async () => data.read().runs.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
+    deleteRun: async id => {
+      if (!data.read().runs.some(r => r.id === id)) return false; // nothing to rewrite
+      let removed = false; // decided inside the serialized write, so a concurrent delete counts once
+      await data.update(s => { const before = s.runs.length; s.runs = s.runs.filter(r => r.id !== id); removed = s.runs.length < before; });
+      return removed;
+    },
   };
 }
 

@@ -10,6 +10,7 @@ import {
   type HelpMeTurn,
   type PublicCourse,
   type PublicQuestion,
+  type PublicRoomReport,
   type PublicRun,
   type PublicStudentQuestion,
   type Results,
@@ -38,9 +39,19 @@ const STUDENT_QS = [
 ];
 
 const ROOMS = [
-  { id: 'r1', title: 'Why we have seasons', concepts: [{ id: 'c1', title: 'Axial tilt' }, { id: 'c2', title: 'Orbit' }] },
-  { id: 'r2', title: 'Equinoxes and solstices', concepts: [{ id: 'c3', title: 'Solstice' }] },
+  { id: 'r1', title: 'Why we have seasons', description: 'Why Earth has seasons, and why distance to the sun is not the reason.',
+    learningObjectives: ['Explain how the tilted axis changes how directly sunlight arrives', 'Explain why the orbit’s distance is not the cause'],
+    concepts: [{ id: 'c1', title: 'Axial tilt', summary: 'Earth’s axis is tilted about 23.5 degrees, so each hemisphere takes turns facing the sun more directly.' },
+      { id: 'c2', title: 'Orbit', summary: 'Earth’s orbit is nearly circular; it is closest to the sun in January, during northern winter.' }] },
+  { id: 'r2', title: 'Equinoxes and solstices', description: 'The four turning points of the year.',
+    concepts: [{ id: 'c3', title: 'Solstice', summary: 'Solstices are the longest and shortest days; equinoxes have equal day and night.' }] },
 ];
+/** Pip's practice questions, one per topic, asked the first time that topic is taught. */
+const PIP_ASKS: Record<string, string> = {
+  c1: 'Wait, is it hotter in summer because we are closer to the sun?',
+  c2: 'Does the orbit make Earth much closer to the sun in July?',
+  c3: 'What is a solstice?',
+};
 
 const RESULTS: Results = {
   predictedGradePct: 78.4,
@@ -78,6 +89,11 @@ export function createMockApi(): ApiClient {
   let failed: FailedTurn[] = [];
   let questions: PublicStudentQuestion[] = [];
   let notebook = '# Notebook\n';
+  let learned = { asked: 0, answered: 0, skipped: 0 };
+  /** Notes by topic title, rendered into the notebook markdown. */
+  let notes: Record<string, string[]> = {};
+  const render = () => { notebook = '# Notebook\n' + Object.entries(notes).map(([t, list]) => `## ${t}\n${list.map((n) => `- ${n}\n`).join('')}`).join(''); };
+  const note = (title: string, text: string) => { const list = (notes[title] ??= []); if (!list.includes(text)) list.push(text); render(); };
 
   // Each tab owns its practice run. Keep the pending event and original deadline across reloads.
   const storageKey = 'teach-or-perish.practice.v1';
@@ -85,14 +101,16 @@ export function createMockApi(): ApiClient {
     const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? 'null');
     if (saved?.run?.id === 'mock-run') {
       ({ run, attempt, helpCount, pending, over, failed, questions, notebook } = saved);
+      notes = saved.notes ?? {}; learned = saved.learned ?? learned;
     }
   } catch { /* Browser storage can be unavailable. The run still works in memory. */ }
   const save = () => {
-    try { sessionStorage.setItem(storageKey, JSON.stringify({run, attempt, helpCount, pending, over, failed, questions, notebook})); }
+    try { sessionStorage.setItem(storageKey, JSON.stringify({run, attempt, helpCount, pending, over, failed, questions, notebook, notes, learned})); }
     catch { /* Storage is optional in practice mode. */ }
   };
 
   const need = (...phases: RunPhase[]) => {
+    if (run?.endedAt) throw new ApiError(409, 'run_ended', 'This expedition was ended.');
     if (run?.pausedAt) throw new ApiError(409, 'run_paused', 'Resume the expedition first.');
     if (!run || !phases.includes(run.phase)) throw new ApiError(409, 'wrong_phase', `Not allowed in phase ${run?.phase}`);
     return run;
@@ -116,6 +134,22 @@ export function createMockApi(): ApiClient {
     else run!.room = { attempt, turn: 0, totalTurns: 4, hearts: 3, maxHearts: 3, helpMeUsed: 0, log: [] };
   };
 
+  /** A finished room attempt goes into the practice history, like the server's between-room report. */
+  const record = () => {
+    const r = run!;
+    const room = r.room!;
+    const turns = room.log.filter((t): t is Extract<TurnResult, { kind: 'student_answer' | 'help_result' }> => t.kind === 'student_answer' || t.kind === 'help_result');
+    const concepts = r.rooms[r.roomIndex]!.concepts.map((c) => ({ id: c.id, title: c.title }));
+    const report: PublicRoomReport = {
+      roomId: r.rooms[r.roomIndex]!.id, title: r.rooms[r.roomIndex]!.title, attempt, passed: room.hearts > 0,
+      hearts: room.hearts, maxHearts: room.maxHearts, correct: turns.filter((t) => t.correct).length, total: turns.length,
+      helped: turns.filter((t) => t.kind === 'help_result').length, teachCount: r.learning.teachCount,
+      questionsAsked: learned.asked, questionsAnswered: learned.answered, questionsSkipped: learned.skipped,
+      missed: turns.filter((t) => !t.correct).map((t, i) => ({ prompt: t.question.prompt, by: t.kind === 'help_result' ? 'help' as const : 'student' as const, concepts: [concepts[i % concepts.length]!] })),
+    };
+    r.history = [...(r.history ?? []), report];
+  };
+
   /** Apply damage and work out whether the fight is over. */
   const settle = (wrong: boolean) => {
     const r = run!;
@@ -132,15 +166,43 @@ export function createMockApi(): ApiClient {
     return { damage, hearts: boss ? undefined : r.room!.hearts, health: boss ? r.boss!.health : undefined, phaseAfter: r.phase };
   };
 
+  /** The practice course as preparation has got so far (`polls` getCourse calls; room 2 is ready last). */
+  const course = (): PublicCourse => {
+    const stage = polls < 2 ? 'parsing' : polls < 3 ? 'outline' : polls < 6 ? 'concepts' : 'ready';
+    const ready = (id: string) => (id === 'r1' ? polls >= 3 : polls >= 6);
+    return {
+      id: 'mock-course', title: 'Seasons (mock)', status: { stage, conceptsReady: [] }, files: [],
+      units: [{ id: 'u1', title: 'Unit 1: The sky', concepts: ROOMS.flatMap((r) => r.concepts.map((c) => ({ ...c, ready: ready(r.id) }))) }],
+      rooms: ROOMS.map((r) => ({ id: r.id, title: r.title, description: r.description, ...(r.learningObjectives ? { learningObjectives: r.learningObjectives } : {}), conceptIds: r.concepts.map((c) => c.id), ready: ready(r.id) })),
+      styleSummary: { voice: 'friendly', notation: 'plain', topFormats: ['mcq'] },
+    };
+  };
+
   const results = (): Results => ({...RESULTS, target: run!.targetGrade,
     metTarget: ['C+', 'C', 'C-', 'D'].includes(run!.targetGrade)});
   const api: ApiClient = {
-    listArchive: async () => ({courses: [],runs:run?[{id:run.id,courseId:run.courseId,phase:run.phase,roomIndex:run.roomIndex,updatedAt:run.updatedAt}]:[]}),
-    pauseRun: async () => { if (!run) throw new ApiError(404,'not_found','No practice run'); run.pausedAt ??= new Date().toISOString(); return view(); },
+    // The practice course shows in My archive once a practice run exists, so its expedition can be resumed, ended or removed.
+    listArchive: async () => ({courses: run ? [course()] : [],runs:run?[{id:run.id,courseId:run.courseId,phase:run.phase,roomIndex:run.roomIndex,rooms:run.rooms.length,updatedAt:run.updatedAt,
+      ...(run.pausedAt ? {pausedAt:run.pausedAt} : {}), ...(run.endedAt ? {endedAt:run.endedAt} : {})}]:[]}),
+    pauseRun: async () => { if (!run) throw new ApiError(404,'not_found','No practice run'); if (!run.endedAt) run.pausedAt ??= new Date().toISOString(); return view(); },
     resumeRun: async () => {
       if (!run) throw new ApiError(404,'not_found','No practice run');
+      if (run.endedAt) throw new ApiError(409, 'run_ended', 'This expedition was ended.');
       if (run.pausedAt && pending?.ev.deadline) pending.ev.deadline = new Date(Date.parse(pending.ev.deadline) + Math.max(0,new Date().getTime()-Date.parse(run.pausedAt))).toISOString();
       delete run.pausedAt; return view();
+    },
+    endRun: async (id) => {
+      if (!run || run.id !== id) throw new ApiError(404, 'not_found', 'No practice run');
+      if (!run.endedAt) {
+        if (run.phase === 'results') throw new ApiError(409, 'wrong_phase', 'This expedition is already finished.');
+        run.endedAt = new Date().toISOString(); run.updatedAt = run.endedAt; delete run.pausedAt; pending = null;
+      }
+      return view();
+    },
+    deleteRun: async (id) => {
+      if (!run || run.id !== id) throw new ApiError(404, 'not_found', 'No practice run');
+      run = null; pending = null;
+      return { deleted: true as const, id };
     },
     health: async () => ({ ok: true, llmProvider: 'mock', storage: 'browser', debug: true }),
     listSamples: async () => (await wait(), { samples: [{ id: 'seasons', title: 'Seasons (mock sample)' }] }),
@@ -150,14 +212,7 @@ export function createMockApi(): ApiClient {
 
     getCourse: async (): Promise<PublicCourse> => {
       polls += 1; // the course "ingests" over a few polls; room 2 is ready last
-      const stage = polls < 2 ? 'parsing' : polls < 3 ? 'outline' : polls < 6 ? 'concepts' : 'ready';
-      const ready = (id: string) => (id === 'r1' ? polls >= 3 : polls >= 6);
-      return {
-        id: 'mock-course', title: 'Seasons (mock)', status: { stage, conceptsReady: [] }, files: [],
-        units: [{ id: 'u1', title: 'Unit 1: The sky', concepts: ROOMS.flatMap((r) => r.concepts.map((c) => ({ ...c, ready: ready(r.id) }))) }],
-        rooms: ROOMS.map((r) => ({ id: r.id, title: r.title, conceptIds: r.concepts.map((c) => c.id), ready: ready(r.id) })),
-        styleSummary: { voice: 'friendly', notation: 'plain', topFormats: ['mcq'] },
-      };
+      return course();
     },
 
     createRun: async (body) => {
@@ -166,6 +221,7 @@ export function createMockApi(): ApiClient {
       const ids = body.scope?.roomIds ?? ROOMS.map((r) => r.id);
       const rooms = ROOMS.filter((r) => ids.includes(r.id)).map((r) => ({ ...r, ready: true, state: 'upcoming' as const }));
       attempt = 1; helpCount = 0; pending = null; over = false; failed = []; questions = []; notebook = '# Notebook\n';
+      notes = {}; learned = { asked: 0, answered: 0, skipped: 0 };
       run = {
         id: 'mock-run', courseId: body.courseId, courseTitle: 'Seasons (mock)', targetGrade: body.targetGrade,
         studentEmoji: body.studentEmoji ?? '🤖', phase: 'learning', roomIndex: 0, rooms, currentRoom: rooms[0], notebookMd: notebook,
@@ -181,14 +237,17 @@ export function createMockApi(): ApiClient {
       return view();
     },
 
-    teach: async (_id, explanation) => {
-      await wait();
+    teach: async (_id, explanation, conceptId) => {
+      await wait(700);
       need('learning');
+      const room = run!.rooms[run!.roomIndex]!;
+      if (conceptId && !room.concepts.some((c) => c.id === conceptId)) throw new ApiError(400, 'validation_error', 'That topic is not in this room.');
       run!.learning.teachCount += 1;
-      const title = run!.currentRoom!.concepts[0].title;
-      notebook = `# Notebook\n## ${title}\n- ${explanation.slice(0, 60)}\n- Summer happens because Earth is closer to the sun.\n`;
-      if (!questions.length) {
-        questions = [{ id: 'sq1', text: 'Wait, is it hotter in summer because we are closer to the sun?', status: 'open' }, { id: 'sq2', text: 'What is a solstice?', status: 'open' }];
+      const topics = conceptId ? room.concepts.filter((c) => c.id === conceptId) : room.concepts;
+      for (const c of topics) {
+        note(c.title, explanation.split(/(?<=[.!?])\s+/)[0]!.slice(0, 90));
+        const id = `sq_${room.id}_${attempt}_${c.id}`;
+        if (PIP_ASKS[c.id] && !questions.some((x) => x.id === id)) { questions.push({ id, text: PIP_ASKS[c.id]!, status: 'open', conceptId: c.id }); learned.asked += 1; }
       }
       return { notebookMd: notebook, questions: structuredClone(questions) };
     },
@@ -196,20 +255,25 @@ export function createMockApi(): ApiClient {
       await wait();
       need('learning');
       const resolved = answer.trim().length > 15; // a long answer "resolves" it
-      questions.find((x) => x.id === qid)!.status = 'answered';
-      if (resolved) notebook += '- Seasons come from the 23.5 degree axial tilt.\n';
+      const asked = questions.find((x) => x.id === qid)!;
+      asked.status = 'answered'; learned.answered += 1;
+      const topic = run!.currentRoom!.concepts.find((c) => c.id === asked.conceptId) ?? run!.currentRoom!.concepts[0]!;
+      note(topic.title, resolved ? answer.trim().slice(0, 90) : 'Summer happens because Earth is closer to the sun.');
       return { resolved, notebookMd: notebook };
     },
     skipQuestion: async (_id, qid) => {
       await wait();
       need('learning');
-      questions.find((x) => x.id === qid)!.status = 'skipped';
+      const asked = questions.find((x) => x.id === qid)!;
+      asked.status = 'skipped'; learned.skipped += 1;
+      const topic = run!.currentRoom!.concepts.find((c) => c.id === asked.conceptId) ?? run!.currentRoom!.concepts[0]!;
+      note(topic.title, 'Summer happens because Earth is closer to the sun.');
       return { notebookMd: notebook };
     },
     ready: async () => {
       await wait();
       need('learning');
-      questions.forEach((x) => (x.status = x.status === 'open' ? 'skipped' : x.status));
+      questions.forEach((x) => { if (x.status === 'open') { x.status = 'skipped'; learned.skipped += 1; } });
       run!.phase = 'room';
       startFight(false);
       return view();
@@ -252,6 +316,7 @@ export function createMockApi(): ApiClient {
       };
       if (lose) failed.push({ question: s.q, reasoning: res.reasoning, citedNotes: res.citedNotes });
       fightLog().push(res);
+      if (over && !boss) record();
       return res;
     },
     help: async (_id, eventId, answer) => {
@@ -267,8 +332,9 @@ export function createMockApi(): ApiClient {
         kind: 'help_result', eventId, question: item.q, correct, late, correctAnswer: { answer: item.key, text: item.text },
         explanation: 'See the course notes.', solveTimeSec: 7, noteAdded: !correct ? undefined : `Remember: ${item.text}`, ...d,
       };
-      if (res.noteAdded) notebook += '- ' + res.noteAdded + '\n';
+      if (res.noteAdded) note(run!.rooms[Math.min(run!.roomIndex, run!.rooms.length - 1)]!.concepts[0]!.title, res.noteAdded);
       fightLog().push(res);
+      if (over && run!.phase === 'room_result') record();
       return res;
     },
     retry: async () => {
@@ -277,7 +343,8 @@ export function createMockApi(): ApiClient {
       if (run!.room!.hearts > 0) throw new ApiError(409, 'wrong_phase', 'The room was passed; use continue.');
       attempt += 1;
       run!.phase = 'learning';
-      questions = [];
+      run!.learning.teachCount = 0;
+      questions = []; learned = { asked: 0, answered: 0, skipped: 0 };
       return view();
     },
     continueRun: async () => {
@@ -285,7 +352,8 @@ export function createMockApi(): ApiClient {
       need('room_result');
       if (run!.room!.hearts <= 0) throw new ApiError(409, 'wrong_phase', 'The room was failed; use retry.');
       attempt = 1;
-      questions = [];
+      questions = []; learned = { asked: 0, answered: 0, skipped: 0 };
+      run!.learning.teachCount = 0;
       if (run!.roomIndex + 1 < run!.rooms.length) {
         run!.roomIndex += 1;
         run!.phase = 'learning';
@@ -312,7 +380,8 @@ export function createMockApi(): ApiClient {
     save();
     return result;
   };
-  return {...api, pauseRun: remember(api.pauseRun), resumeRun: remember(api.resumeRun), createRun: remember(api.createRun), teach: remember(api.teach),
+  return {...api, pauseRun: remember(api.pauseRun), resumeRun: remember(api.resumeRun), endRun: remember(api.endRun), deleteRun: remember(api.deleteRun),
+    createRun: remember(api.createRun), teach: remember(api.teach),
     answerQuestion: remember(api.answerQuestion), skipQuestion: remember(api.skipQuestion),
     ready: remember(api.ready), turn: remember(api.turn), help: remember(api.help),
     retry: remember(api.retry), continueRun: remember(api.continueRun)};

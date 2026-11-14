@@ -28,6 +28,8 @@ The client is [shared/src/api-client.ts](../shared/src/api-client.ts), and the c
 | GET | `/api/runs/:id` | 200 |
 | POST | `/api/runs/:id/pause` | 200 |
 | POST | `/api/runs/:id/resume` | 200 |
+| POST | `/api/runs/:id/end` | 200 |
+| DELETE | `/api/runs/:id` | 200 |
 | POST | `/api/runs/:id/teach` | 200 |
 | POST | `/api/runs/:id/questions/:qid/answer` | 200 |
 | POST | `/api/runs/:id/questions/:qid/skip` | 200 |
@@ -330,7 +332,7 @@ Response: HTTP 202.
 
 ```json
 {
-  "courseId": "crs_c55a66703f"
+  "courseId": "crs_95e81f0adb"
 }
 ```
 
@@ -359,7 +361,7 @@ Response: HTTP 202.
 
 ```json
 {
-  "courseId": "crs_597154dc6c"
+  "courseId": "crs_c5d2b87476"
 }
 ```
 
@@ -481,7 +483,7 @@ Response: HTTP 201 (excerpt).
 
 ```json
 {
-  "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
+  "id": "run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -514,17 +516,17 @@ Response: HTTP 201 (excerpt).
 
 ## GET /api/runs/:id
 
-Returns the current public run, notebook, completed turn logs and pending help event. Store the run id to resume after a reload. Question keys and targeting data are excluded.
+Returns the current public run, notebook, completed turn logs and pending help event. Store the run id to resume after a reload. Optional `history` contains completed room attempts, including retries: room title, hearts, answer accuracy/help counts, teaching/question counts and missed prompts with topic titles. Only already-seen outcomes are projected; hidden beliefs, question pools and answer keys remain excluded. Runs saved before this feature may have no history.
 
 ### Example
 
-Request: `GET /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b` (no body).
+Request: `GET /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
+  "id": "run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -552,6 +554,55 @@ Response: HTTP 200 (excerpt).
     "maxStudentQuestions": 3,
     "helpMeTimed": true
   },
+  "history": [
+    {
+      "roomId": "r1",
+      "title": "Axial tilt and sunlight angle",
+      "attempt": 1,
+      "passed": false,
+      "hearts": 0,
+      "maxHearts": 3,
+      "correct": 1,
+      "total": 4,
+      "helped": 1,
+      "teachCount": 1,
+      "questionsAsked": 3,
+      "questionsAnswered": 0,
+      "questionsSkipped": 3,
+      "missed": [
+        {
+          "prompt": "Find the noon Sun altitude in Boston (latitude 42) on the June solstice.",
+          "by": "student",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle"
+            }
+          ]
+        },
+        {
+          "prompt": "True or false?",
+          "by": "student",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle"
+            }
+          ]
+        },
+        {
+          "prompt": "What is the main cause of Earth's seasons?",
+          "by": "student",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle"
+            }
+          ]
+        }
+      ]
+    }
+  ],
   "room": {
     "attempt": 1,
     "turn": 4,
@@ -568,13 +619,13 @@ Idempotently pauses an unfinished run and persists `pausedAt`. Gameplay mutation
 
 ### Example
 
-Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/pause` (no body).
+Request: `POST /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b/pause` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
+  "id": "run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -602,7 +653,7 @@ Response: HTTP 200 (excerpt).
     "maxStudentQuestions": 3,
     "helpMeTimed": true
   },
-  "pausedAt": "2026-11-14T08:11:20.494Z"
+  "pausedAt": "2026-11-14T13:13:33.619Z"
 }
 ```
 
@@ -612,13 +663,13 @@ Idempotently resumes the run. Shifts a pending help deadline and its started tim
 
 ### Example
 
-Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/resume` (no body).
+Request: `POST /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b/resume` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
+  "id": "run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -649,13 +700,73 @@ Response: HTTP 200 (excerpt).
 }
 ```
 
-## POST /api/runs/:id/teach
+## POST /api/runs/:id/end
 
-Allowed in `learning`. `explanation` is trimmed, nonempty, at most 8,000 characters. Adds notebook notes and up to the configured number of open questions. Existing open questions remain. Clear correction can resolve active beliefs; explicitly stating a wrong belief activates it again.
+Ends the expedition early and persists `endedAt` (idempotent). The run stays in the archive as a read-only record: every gameplay mutation and resume then return 409 `run_ended`; pause is a no-op; a pending "Help me!" closes with it. A finished (`results`) run returns 409 `wrong_phase`.
 
 ### Example
 
-Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/teach` (`application/json`).
+Request: `POST /api/runs/run_9dc7042b-436b-4d82-890d-ff7f03777aea/end` (no body).
+
+Response: HTTP 200 (excerpt).
+
+```json
+{
+  "id": "run_9dc7042b-436b-4d82-890d-ff7f03777aea",
+  "courseId": "sample-seasons",
+  "phase": "learning",
+  "roomIndex": 0,
+  "currentRoom": {
+    "id": "r1",
+    "title": "Axial tilt and sunlight angle",
+    "concepts": [
+      {
+        "id": "c1",
+        "title": "Axial tilt and sunlight angle",
+        "summary": "Earth's tilted axis, not its distance from the Sun, causes the seasons by changing the angle of sunlight; the noon Sun altitude rule quantifies it."
+      }
+    ],
+    "ready": true,
+    "state": "current"
+  },
+  "learning": {
+    "pendingQuestions": [],
+    "teachCount": 0
+  },
+  "rules": {
+    "roomQuestions": 5,
+    "roomHearts": 3,
+    "bossQuestions": 10,
+    "maxStudentQuestions": 3,
+    "helpMeTimed": true
+  }
+}
+```
+
+## DELETE /api/runs/:id
+
+Permanently removes the run (progress, notebook, history). Its course, questions and stats stay. Returns `{ deleted: true, id }`; an unknown or already removed run is 404.
+
+### Example
+
+Request: `DELETE /api/runs/run_9dc7042b-436b-4d82-890d-ff7f03777aea` (no body).
+
+Response: HTTP 200.
+
+```json
+{
+  "deleted": true,
+  "id": "run_9dc7042b-436b-4d82-890d-ff7f03777aea"
+}
+```
+
+## POST /api/runs/:id/teach
+
+Allowed in `learning`. `explanation` is trimmed, nonempty, at most 8,000 characters. Optional `conceptId` focuses review, notes and new questions on one concept of the current room; another room's concept returns 400 `validation_error` without mutation. Omitting it retains whole-room teaching. Public learning questions include optional `conceptId` so the UI places them on the right topic. Adds notebook notes and up to the configured number of open questions. Existing open questions remain. Clear correction can resolve active beliefs; explicitly stating a wrong belief activates it again.
+
+### Example
+
+Request: `POST /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b/teach` (`application/json`).
 
 ```json
 {
@@ -672,17 +783,59 @@ Response: HTTP 200.
     {
       "id": "sq_0_0_1",
       "text": "Quick question: is it right that it is summer when Earth is closer to the Sun, and winter when it is farther away?",
-      "status": "open"
+      "status": "open",
+      "conceptId": "c1"
     },
     {
       "id": "sq_0_0_2",
       "text": "Quick question: is it right that earth's axis tips toward the Sun in summer and tips away in winter?",
-      "status": "open"
+      "status": "open",
+      "conceptId": "c1"
     },
     {
       "id": "sq_0_0_3",
       "text": "Quick question: is it right that for a southern city I can use its latitude as a positive number in the noon altitude rule?",
-      "status": "open"
+      "status": "open",
+      "conceptId": "c1"
+    }
+  ]
+}
+```
+
+### Example
+
+Request: `POST /api/runs/run_8d5cb40e-91f3-4f8c-a5ae-be581ce4dfdf/teach` (`application/json`).
+
+```json
+{
+  "explanation": "This topic is something we study.",
+  "conceptId": "c1"
+}
+```
+
+Response: HTTP 200.
+
+```json
+{
+  "notebookMd": "# Notebook\n\n## Axial tilt and sunlight angle\n- This topic is something we study\n",
+  "questions": [
+    {
+      "id": "sq_0_0_1",
+      "text": "Quick question: is it right that it is summer when Earth is closer to the Sun, and winter when it is farther away?",
+      "status": "open",
+      "conceptId": "c1"
+    },
+    {
+      "id": "sq_0_0_2",
+      "text": "Quick question: is it right that earth's axis tips toward the Sun in summer and tips away in winter?",
+      "status": "open",
+      "conceptId": "c1"
+    },
+    {
+      "id": "sq_0_0_3",
+      "text": "Quick question: is it right that for a southern city I can use its latitude as a positive number in the noon altitude rule?",
+      "status": "open",
+      "conceptId": "c1"
     }
   ]
 }
@@ -694,7 +847,7 @@ Allowed in `learning` for an open student question. `answer` is nonempty text, a
 
 ### Example
 
-Request: `POST /api/runs/run_b52020a7-2b80-443e-b76b-9fb53b118c4f/questions/sq_0_0_1/answer` (`application/json`).
+Request: `POST /api/runs/run_8d5cb40e-91f3-4f8c-a5ae-be581ce4dfdf/questions/sq_0_0_1/answer` (`application/json`).
 
 ```json
 {
@@ -717,7 +870,7 @@ Allowed in `learning` for an open student question. No body. Adds its belief as 
 
 ### Example
 
-Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/questions/sq_0_0_1/skip` (no body).
+Request: `POST /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b/questions/sq_0_0_1/skip` (no body).
 
 Response: HTTP 200.
 
@@ -733,13 +886,13 @@ Allowed in `learning`. No body. Auto-skips open questions, draws fresh questions
 
 ### Example
 
-Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/ready` (no body).
+Request: `POST /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b/ready` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
+  "id": "run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b",
   "courseId": "sample-seasons",
   "phase": "room",
   "roomIndex": 0,
@@ -761,17 +914,20 @@ Response: HTTP 200 (excerpt).
       {
         "id": "sq_0_0_1",
         "text": "Quick question: is it right that it is summer when Earth is closer to the Sun, and winter when it is farther away?",
-        "status": "skipped"
+        "status": "skipped",
+        "conceptId": "c1"
       },
       {
         "id": "sq_0_0_2",
         "text": "Quick question: is it right that earth's axis tips toward the Sun in summer and tips away in winter?",
-        "status": "skipped"
+        "status": "skipped",
+        "conceptId": "c1"
       },
       {
         "id": "sq_0_0_3",
         "text": "Quick question: is it right that for a southern city I can use its latitude as a positive number in the noon altitude rule?",
-        "status": "skipped"
+        "status": "skipped",
+        "conceptId": "c1"
       }
     ],
     "teachCount": 1
@@ -798,7 +954,7 @@ Allowed in `room`, `room_result`, `boss`, `results`. No body. Returns a discrimi
 
 ### student_answer
 
-Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/turn` (no body).
+Request: `POST /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b/turn` (no body).
 
 Response: HTTP 200.
 
@@ -838,7 +994,7 @@ Response: HTTP 200.
 
 ### help_me
 
-Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/turn` (no body).
+Request: `POST /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b/turn` (no body).
 
 Response: HTTP 200.
 
@@ -857,13 +1013,13 @@ Response: HTTP 200.
     }
   },
   "timeBudgetSec": 80,
-  "deadline": "2026-11-14T08:12:40.529Z"
+  "deadline": "2026-11-14T13:14:53.663Z"
 }
 ```
 
 ### room_end
 
-Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/turn` (no body).
+Request: `POST /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b/turn` (no body).
 
 Response: HTTP 200.
 
@@ -930,7 +1086,7 @@ Response: HTTP 200.
 
 ### boss_end
 
-Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/turn` (no body).
+Request: `POST /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b/turn` (no body).
 
 Response: HTTP 200.
 
@@ -1005,7 +1161,7 @@ Allowed in `room` or `boss` for the pending event. Send `{ answer: ... }` using 
 
 ### help_result
 
-Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/help/help_r0_a1_t1` (`application/json`).
+Request: `POST /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b/help/help_r0_a1_t1` (`application/json`).
 
 ```json
 {
@@ -1054,13 +1210,13 @@ Allowed after a failed `room_result`. No body. Returns to `learning` for the sam
 
 ### Example
 
-Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/retry` (no body).
+Request: `POST /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b/retry` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
+  "id": "run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -1088,6 +1244,55 @@ Response: HTTP 200 (excerpt).
     "maxStudentQuestions": 3,
     "helpMeTimed": true
   },
+  "history": [
+    {
+      "roomId": "r1",
+      "title": "Axial tilt and sunlight angle",
+      "attempt": 1,
+      "passed": false,
+      "hearts": 0,
+      "maxHearts": 3,
+      "correct": 1,
+      "total": 4,
+      "helped": 1,
+      "teachCount": 1,
+      "questionsAsked": 3,
+      "questionsAnswered": 0,
+      "questionsSkipped": 3,
+      "missed": [
+        {
+          "prompt": "Find the noon Sun altitude in Boston (latitude 42) on the June solstice.",
+          "by": "student",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle"
+            }
+          ]
+        },
+        {
+          "prompt": "True or false?",
+          "by": "student",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle"
+            }
+          ]
+        },
+        {
+          "prompt": "What is the main cause of Earth's seasons?",
+          "by": "student",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle"
+            }
+          ]
+        }
+      ]
+    }
+  ],
   "room": {
     "attempt": 1,
     "turn": 4,
@@ -1104,13 +1309,13 @@ Allowed after a passed `room_result`. No body. Moves to the next room in `learni
 
 ### Example
 
-Request: `POST /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/continue` (no body).
+Request: `POST /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b/continue` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
+  "id": "run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 1,
@@ -1137,7 +1342,83 @@ Response: HTTP 200 (excerpt).
     "bossQuestions": 10,
     "maxStudentQuestions": 3,
     "helpMeTimed": true
-  }
+  },
+  "history": [
+    {
+      "roomId": "r1",
+      "title": "Axial tilt and sunlight angle",
+      "attempt": 1,
+      "passed": false,
+      "hearts": 0,
+      "maxHearts": 3,
+      "correct": 1,
+      "total": 4,
+      "helped": 1,
+      "teachCount": 1,
+      "questionsAsked": 3,
+      "questionsAnswered": 0,
+      "questionsSkipped": 3,
+      "missed": [
+        {
+          "prompt": "Find the noon Sun altitude in Boston (latitude 42) on the June solstice.",
+          "by": "student",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle"
+            }
+          ]
+        },
+        {
+          "prompt": "True or false?",
+          "by": "student",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle"
+            }
+          ]
+        },
+        {
+          "prompt": "What is the main cause of Earth's seasons?",
+          "by": "student",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "roomId": "r1",
+      "title": "Axial tilt and sunlight angle",
+      "attempt": 2,
+      "passed": true,
+      "hearts": 2,
+      "maxHearts": 3,
+      "correct": 4,
+      "total": 5,
+      "helped": 1,
+      "teachCount": 1,
+      "questionsAsked": 0,
+      "questionsAnswered": 0,
+      "questionsSkipped": 0,
+      "missed": [
+        {
+          "prompt": "True or false?",
+          "by": "student",
+          "concepts": [
+            {
+              "id": "c1",
+              "title": "Axial tilt and sunlight angle"
+            }
+          ]
+        }
+      ]
+    }
+  ]
 }
 ```
 
@@ -1147,7 +1428,7 @@ Allowed in `results`. Returns boss health rounded to a percentage, letter grade,
 
 ### Example
 
-Request: `GET /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/results` (no body).
+Request: `GET /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b/results` (no body).
 
 Response: HTTP 200.
 
@@ -1219,14 +1500,14 @@ Development only: 404 unless `DEBUG=true`. Returns `{ run, pack, questions, stat
 
 ### Example
 
-Request: `GET /api/runs/run_580bae54-0dc5-4408-8ba2-e0eea9ed242b/debug` (no body).
+Request: `GET /api/runs/run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b/debug` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
   "run": {
-    "id": "run_580bae54-0dc5-4408-8ba2-e0eea9ed242b",
+    "id": "run_183d7b9e-ab9d-4d5e-9699-5f67f71f7a0b",
     "phase": "learning",
     "hidden": {
       "misconceptions": []

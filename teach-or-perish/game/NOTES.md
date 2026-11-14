@@ -2,66 +2,57 @@
 
 ## How to test
 
-Play opens My archive / Your saved dungeons: Library / Files / Notes switch sources
-without losing drafts. Choose a sample and rooms, then Start run. In Learning,
-Talk to Pip opens the lesson book; Notebook opens the notebook. Close/Escape
-puts the book away without discarding an unsent answer. Teach updates Pip's pose
-and question cue; Answer/Skip and Ready advance the lesson. Combat keeps health
-and Next turn outside the books; Battle log opens labeled feedback/damage cards.
-The persistent outcome card above Next turn opens that exact feedback entry.
-Rooms/Pause opens Menu: inspect all lessons/goals and progress, Resume expedition
-or return to My archive. Pause & rooms also works during help; deadlines freeze
-on the backend and survive restarts. Settings alone does not pause a deadline.
-New uploads get grouped lessons with descriptions and teaching objectives.
-The ready ArrayLists course has 5 rooms; View lessons shows goals before starting.
+`?mock=1` plays the canned practice API (room 1 is lost once on purpose, then everything passes);
+`?api=<origin>` picks a backend (default 8787). Play opens My archive / Your saved dungeons.
+Start run shows a title card (curtain), then Pip walks into the library.
 
-The `Settings` scene opens from the header's Settings button. Choose OpenAI,
-Google Gemini or Offline; edit the password key, model fields and remove-key
-checkbox. Expand Connection details for the backend origin and timeout.
-Test connection validates unsaved settings; Save & apply persists and activates
-them. Back to game returns to the existing run phase/previous page. A changed
-backend origin clears the local client run/results; stored runs remain saved.
-Connection details has a separate preparation timeout (180 seconds by default,
-up to 600) for new uploads. Preparation errors offer Retry preparation using
-the submitted file/text while Upload remains open. Reloading/leaving Upload
-requires selecting the file again; Start stays disabled after a failure.
-Thinking below Stage shows `course.status.activity.message` and the latest
-available public OpenAI analysis summary. Other providers show task progress.
-Active streamed analysis extends the idle deadline (ten-minute request cap).
+Learning (library): Talk to Pip opens the lesson book: Overview, one page per topic (its own
+explanation box, Dictate, Pip's reply thread and Pip's questions for that topic), then Review.
+Teach sends `conceptId`, so Pip only notes/asks about that topic. The Expedition log card (top right)
+shows rooms cleared, battle accuracy and weak points from `PublicRun.history` and the notebook;
+Report opens the full report (also in the Rooms/Pause menu). Ready shows a battle title card.
 
-The panel sits at (72,86), width 1136 on the native 1280×720 stage, with scrolling
-for expanded connection details. Standard labeled DOM controls and provider
-radio roles identify every field. The standalone `/api-settings.html` preview
-on port 5174 uses the same view and supports narrower screens.
+Battle: arena and monster scale with the room's position (danger tier, `art.ts` `tiers`/`tierFor`):
+first room = sunset meadow + Misconception slime, middle = deep forest + Muddle beast, last = moonlit
+ruins + Fallacy drake (5 rooms: 1,2,2,3,3). Nameplate and battle title card show "Danger n of 3".
+The final exam uses the boss room and dragon.
+Nameplates show Pip's hearts (or exam grade) and questions left; the outcome card is top right.
+Hits float a label over whoever took them. Sprites never cross: attacks tween from a stored home
+spot and never come within 140 units. Room end shows a victory card (stars, stats, door to the next
+room: Pip walks off, title card, walks in) or a defeat card (Pip's wrong reasoning, retry).
+
+Dictation is on-device only: `SpeechRecognition.available({langs, processLocally:true})`, then
+`install()` for the language pack, then `processLocally = true`. No cloud fallback; when local
+recognition is unavailable (the Claude built-in browser reports `unavailable`) it says so and
+records nothing. It only edits the text box; navigation aborts it.
+
+Zoom: the HUD is laid out in CSS px on a stage exactly over the canvas, so browser zoom resizes
+the HUD while the scene fills the window (HUD shrinks with the window below 0.8 CSS px/unit).
+
+Expeditions: My archive lists every expedition per course (In progress / Ended / Finished) with
+Resume (or View record / View results), End and Remove; the Rooms/Pause menu has End expedition and
+Remove expedition. Both ask first (in-game dialog, Cancel focused, Escape cancels). End keeps the run
+as a read-only record (opens in the menu as "Expedition ended"); Remove deletes it, the course stays.
+
+Settings: OpenAI / Gemini / Offline, write-only keys, Test/Save, connection and preparation
+timeouts (see root docs/API_SETTINGS.md).
 
 ## Map
 
-- `course/Settings.ts`: scene lifecycle and view cleanup.
-- `course/settings-view.ts`: provider form, Test/Save, feedback and cancellation.
-- `course/app.ts`: origin preference, provider-independent client and navigation.
-- `course/page.ts`: header Settings button and shared page frame.
-- `course/Learning.ts`, `page.ts`: conversation/inventory books and draft retention.
-- `course/Upload.ts`: tabbed archive, expedition setup and Thinking/retry.
-- `course/Menu.ts`, `lesson-guide.ts`: room map/progress and source-based teaching scope.
-- `course/battle.ts`, `battle-feedback.ts`: battle chronicle, result cues, canonical run refresh and explicit damage labels.
-- `art.ts`, `manifest.json`, `media/*idle.png` and pose sheets: animated actors.
-- `main.ts`: registers the eight scenes including Settings and Menu.
-- `course/api-client.ts`: dependency-free copy of the shared backend client.
-- `media/game.css`: existing theme plus scoped setup/preview styles.
+- `art.ts`: positions (`POS`), danger tiers, sheets, walk/strike/defeat animations, `drawStage`.
+- `course/page.ts`: stage fit (zoom), header, `atWorld`, `RoomView` books.
+- `course/Learning.ts`: topic steps, teaching, Pip's questions, expedition card.
+- `course/battle.ts`: nameplates, outcome card, hit labels, victory/defeat, room changes, help modal.
+- `course/report.ts`: expedition log card and full report (public data only).
+- `course/transition.ts`: title-card curtain; `app.ts` goTo walks only when no curtain is up.
+- `course/dictation.ts`: on-device speech recognition button.
+- `course/expedition.ts`: end/remove actions, confirm dialog, archive run lines.
+- `course/Upload.ts`, `Menu.ts`, `Results.ts`, `Settings.ts`, `settings-view.ts`, `help.ts`.
+- `course/api-client.ts`: identical copy of `shared/src/api-client.ts`. `course/mock.ts`: practice API.
+- `media/game.css`, `media/font.css` (Silkscreen, OFL in `OFL-Silkscreen.txt`).
 
 ## Missing or simplified
 
-The local Phaser AE runtime/packs were restored after user authorization.
-Native build passes and the real game is served on localhost:4173. Title,
-Settings/OpenAI/Back and the backend sample list were browser-checked.
-Browser checks also cover archive tabs/drafts, teaching/answer/skip, notebook,
-combat log and help submission in practice mode. No complete walkthrough is claimed.
-Native smoke was attempted: its headless simulator fails at course/ui.ts:2
-with document undefined; the existing frontend requires a real DOM browser.
-A small live GPT-6 Luna request verified summary streaming and structured output.
-Full live ingestion/gameplay/PDF/Atlas checks and publish were not performed.
-The backend persists prepared courses, chunks, question banks and runs in
-ignored .local/archive by default. Legacy rooms/runs were removed at user request.
-See the root `docs/API_SETTINGS.md` for storage, provider-switching behavior,
-verification and complete source map. Existing gameplay/debug behavior is
-described by the root integration/handoff docs; no new cheats were added.
+Native `smoke` fails at course/ui.ts:2 (`document` undefined): the headless simulator has no DOM.
+Live microphone dictation has not passed anywhere yet: the built-in browser has no local en-US
+model. Animation timing was only seen in a hidden (throttled) preview pane. No new debug cheats.

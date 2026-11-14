@@ -768,6 +768,31 @@ export const RunHelpMeTallySchema = z.object({
   solveTimesSec: z.array(z.number().min(0)),
 });
 
+/** One finished room attempt, kept for the between-room report. Every field restates turns the player already saw. */
+export const RoomAttemptRecordSchema = z.object({
+  roomId: z.string(),
+  roomIndex: z.number().int().min(0),
+  attempt: z.number().int().min(1),
+  passed: z.boolean(),
+  hearts: z.number().int().min(0),
+  maxHearts: z.number().int().min(1),
+  turns: z.array(
+    z.object({
+      questionId: z.string(),
+      prompt: z.string(),
+      conceptIds: z.array(z.string()),
+      correct: z.boolean(),
+      /** 'help' = the player answered a "Help me!" event. */
+      by: z.enum(['student', 'help']),
+    }),
+  ),
+  teachCount: z.number().int().min(0),
+  questionsAsked: z.number().int().min(0),
+  questionsAnswered: z.number().int().min(0),
+  questionsSkipped: z.number().int().min(0),
+});
+export type RoomAttemptRecord = z.infer<typeof RoomAttemptRecordSchema>;
+
 export const RunSchema = z.object({
   id: z.string().min(1),
   courseId: z.string().min(1),
@@ -790,6 +815,8 @@ export const RunSchema = z.object({
   boss: BossStateSchema.optional(),
   pendingHelpMe: PendingHelpMeSchema.optional(),
   helpMeTally: RunHelpMeTallySchema,
+  /** Finished room attempts in play order. Optional so runs saved before it existed still load. */
+  history: z.array(RoomAttemptRecordSchema).optional(),
   results: ResultsSchema.optional(),
   rngSeed: z.number().int(),
   /** Current state of the seedable RNG; advanced by the service after every engine call. */
@@ -797,6 +824,8 @@ export const RunSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   pausedAt: z.string().optional(),
+  /** Set when the player ends the expedition early: kept as a record, never resumed or played again. */
+  endedAt: z.string().optional(),
 });
 export type Run = z.infer<typeof RunSchema>;
 
@@ -809,6 +838,8 @@ export const PublicStudentQuestionSchema = z.object({
   id: z.string(),
   text: z.string(),
   status: StudentQuestionStatusSchema,
+  /** The concept Pip is asking about, so a per-concept lesson can show it in the right place. */
+  conceptId: z.string().optional(),
 });
 export type PublicStudentQuestion = z.infer<typeof PublicStudentQuestionSchema>;
 
@@ -825,6 +856,32 @@ export const PublicRunRoomSchema = z.object({
   state: z.enum(['upcoming', 'current', 'passed']),
 });
 export type PublicRunRoom = z.infer<typeof PublicRunRoomSchema>;
+
+/** A finished room attempt as the player may see it: only turns and learning counts they already saw. */
+export const PublicRoomReportSchema = z.object({
+  roomId: z.string(),
+  title: z.string(),
+  attempt: z.number().int().min(1),
+  passed: z.boolean(),
+  hearts: z.number().int().min(0),
+  maxHearts: z.number().int().min(1),
+  correct: z.number().int().min(0),
+  total: z.number().int().min(0),
+  /** Turns the player answered through "Help me!". */
+  helped: z.number().int().min(0),
+  teachCount: z.number().int().min(0),
+  questionsAsked: z.number().int().min(0),
+  questionsAnswered: z.number().int().min(0),
+  questionsSkipped: z.number().int().min(0),
+  missed: z.array(
+    z.object({
+      prompt: z.string(),
+      by: z.enum(['student', 'help']),
+      concepts: z.array(z.object({ id: z.string(), title: z.string() })),
+    }),
+  ),
+});
+export type PublicRoomReport = z.infer<typeof PublicRoomReportSchema>;
 
 export const PublicRunSchema = z.object({
   id: z.string(),
@@ -868,6 +925,8 @@ export const PublicRunSchema = z.object({
   /** A "Help me!" event waiting for POST /help/:eventId. Same shape as the help_me TurnResult. */
   pendingHelpMe: HelpMeTurnSchema.optional(),
   results: ResultsSchema.optional(),
+  /** Finished room attempts, oldest first. Absent until the first room fight ends. */
+  history: z.array(PublicRoomReportSchema).optional(),
   /** The gameplay settings a client needs to draw the UI. */
   rules: z.object({
     roomQuestions: z.number().int(),
@@ -879,6 +938,8 @@ export const PublicRunSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   pausedAt: z.string().optional(),
+  /** The player ended this expedition early; it is a read-only record. */
+  endedAt: z.string().optional(),
 });
 export type PublicRun = z.infer<typeof PublicRunSchema>;
 
@@ -935,7 +996,11 @@ export const CreateRunBodySchema = z.object({
 });
 export type CreateRunBody = z.infer<typeof CreateRunBodySchema>;
 
-export const TeachBodySchema = z.object({ explanation: z.string().trim().min(1).max(8000) });
+export const TeachBodySchema = z.object({
+  explanation: z.string().trim().min(1).max(8000),
+  /** Teach one concept of the current room; Pip then only takes notes and asks questions about it. */
+  conceptId: z.string().min(1).max(200).optional(),
+});
 export type TeachBody = z.infer<typeof TeachBodySchema>;
 
 export const TeachResponseSchema = z.object({

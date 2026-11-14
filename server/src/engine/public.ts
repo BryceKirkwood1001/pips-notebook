@@ -2,14 +2,49 @@ import type {
   CoursePack,
   HelpMeTurn,
   PublicQuestion,
+  PublicRoomReport,
   PublicRun,
   PublicRunRoom,
+  PublicStudentQuestion,
   Question,
   Run,
+  StudentQuestion,
 } from '@top/shared';
 import type { Config } from '../config';
 import type { EngineContext } from './types';
-import { conceptTitle, roomReady } from './scope';
+import { conceptTitle, misconceptionById, roomReady } from './scope';
+
+/** A learning-phase question without its misconception id; the concept it is about is public. */
+export function toPublicStudentQuestion(q: StudentQuestion, pack: CoursePack): PublicStudentQuestion {
+  const conceptId = misconceptionById(pack, q.misconceptionId)?.conceptId;
+  return { id: q.id, text: q.text, status: q.status, ...(conceptId ? { conceptId } : {}) };
+}
+
+/** Finished room attempts, restating only turns and learning counts the player already saw. */
+export function toPublicHistory(run: Run, pack: CoursePack): PublicRoomReport[] {
+  return (run.history ?? []).map((h) => ({
+    roomId: h.roomId,
+    title: pack.rooms.find((r) => r.id === h.roomId)?.title ?? h.roomId,
+    attempt: h.attempt,
+    passed: h.passed,
+    hearts: h.hearts,
+    maxHearts: h.maxHearts,
+    correct: h.turns.filter((t) => t.correct).length,
+    total: h.turns.length,
+    helped: h.turns.filter((t) => t.by === 'help').length,
+    teachCount: h.teachCount,
+    questionsAsked: h.questionsAsked,
+    questionsAnswered: h.questionsAnswered,
+    questionsSkipped: h.questionsSkipped,
+    missed: h.turns
+      .filter((t) => !t.correct)
+      .map((t) => ({
+        prompt: t.prompt,
+        by: t.by,
+        concepts: t.conceptIds.map((id) => ({ id, title: conceptTitle(pack, id) })),
+      })),
+  }));
+}
 
 /** The ONLY way an unanswered question leaves the server. Built field by field. */
 export function toPublicQuestion(q: Question): PublicQuestion {
@@ -77,7 +112,7 @@ export function toPublicRun(run: Run, ctx: EngineContext, config: Config): Publi
     currentRoom: rooms[run.roomIndex] ?? null,
     notebookMd: run.notebookMd,
     learning: {
-      pendingQuestions: run.learning.pendingQuestions.map((q) => ({ id: q.id, text: q.text, status: q.status })),
+      pendingQuestions: run.learning.pendingQuestions.map((q) => toPublicStudentQuestion(q, ctx.pack)),
       teachCount: run.learning.teachCount,
     },
     rules: {
@@ -112,7 +147,9 @@ export function toPublicRun(run: Run, ctx: EngineContext, config: Config): Publi
     };
   }
   if (pendingHelpMe) out.pendingHelpMe = pendingHelpMe;
+  if (run.history?.length) out.history = toPublicHistory(run, ctx.pack);
   if (run.results) out.results = structuredClone(run.results);
   if (run.pausedAt) out.pausedAt = run.pausedAt;
+  if (run.endedAt) out.endedAt = run.endedAt;
   return out;
 }

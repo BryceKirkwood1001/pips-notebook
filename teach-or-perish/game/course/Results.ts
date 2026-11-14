@@ -11,7 +11,7 @@ export class ResultsScene extends Page {
   async create() {
     const run = state.run;
     if (!run) return goTo('Upload');
-    title(this, `${run.studentEmoji}  Results`);
+    title(this, 'Results');
     let results: Results | null | undefined = state.results ?? run.results ?? null;
     if (!results) results = await call(() => api.getResults(run.id));
     if (!results) { panel(this, btn('Reload results', () => goTo('Results'))); return; }

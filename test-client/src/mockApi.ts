@@ -79,6 +79,7 @@ export function createMockApi(): ApiClient {
   let notebook = '# Notebook\n';
 
   const need = (...phases: RunPhase[]) => {
+    if (run?.endedAt) throw new ApiError(409, 'run_ended', 'This expedition was ended.');
     if (run?.pausedAt) throw new ApiError(409, 'run_paused', 'Resume the expedition first.');
     if (!run || !phases.includes(run.phase)) throw new ApiError(409, 'wrong_phase', `Not allowed in phase ${run?.phase}`);
     return run;
@@ -118,7 +119,21 @@ export function createMockApi(): ApiClient {
   };
 
   const api: ApiClient = {
-    listArchive: async () => ({courses: [],runs:run?[{id:run.id,courseId:run.courseId,phase:run.phase,roomIndex:run.roomIndex,updatedAt:run.updatedAt}]:[]}),
+    listArchive: async () => ({courses: [],runs:run?[{id:run.id,courseId:run.courseId,phase:run.phase,roomIndex:run.roomIndex,rooms:run.rooms.length,updatedAt:run.updatedAt,
+      ...(run.endedAt ? {endedAt:run.endedAt} : {})}]:[]}),
+    endRun: async (id) => {
+      if (!run || run.id !== id) throw new ApiError(404, 'not_found', 'No practice run');
+      if (!run.endedAt) {
+        if (run.phase === 'results') throw new ApiError(409, 'wrong_phase', 'This expedition is already finished.');
+        run.endedAt = new Date().toISOString(); delete run.pausedAt; pending = null;
+      }
+      return view();
+    },
+    deleteRun: async (id) => {
+      if (!run || run.id !== id) throw new ApiError(404, 'not_found', 'No practice run');
+      run = null; pending = null;
+      return { deleted: true as const, id };
+    },
     pauseRun: async () => { if (!run) throw new ApiError(404,'not_found','No practice run'); run.pausedAt ??= new Date().toISOString(); return view(); },
     resumeRun: async () => {
       if (!run) throw new ApiError(404,'not_found','No practice run');

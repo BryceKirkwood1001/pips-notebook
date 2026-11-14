@@ -66,6 +66,28 @@ test('concurrent stat writes are serialized and corrupted archives fail visibly'
   expect(await readFile(join(d,'repository.json'),'utf8')).toBe('broken');
 });
 
+test('completed room-attempt history survives a new container without exposing hidden state',async()=>{
+  const dataDir=await directory();
+  const options={env:{...env,HELP_ME_PROB:'0'},dataDir,seed:42};
+  const first=await createContainer(options);
+  const {courseId}=await first.services.seedCourse('seasons');
+  const created=await first.services.createRun({courseId,targetGrade:'B'});
+  await first.services.ready(created.id);
+  let before=await first.services.getRun(created.id);
+  for(let turn=0;before.phase==='room' && turn<10;turn++){
+    await first.services.turn(created.id);
+    before=await first.services.getRun(created.id);
+  }
+  expect(before.phase).toBe('room_result');
+  expect(before.history).toHaveLength(1);
+  expect(before.history![0]).toMatchObject({roomId:created.currentRoom!.id,attempt:1,passed:false,total:3,correct:0});
+  await first.close();
+  const second=await createContainer(options);containers.push(second);
+  const restored=await second.services.getRun(created.id);
+  expect(restored.history).toEqual(before.history);
+  expect(JSON.stringify(restored.history)).not.toMatch(/misconceptionId|beliefStatement|questionIds|targetedMap/);
+});
+
 test('archive and pause/resume endpoints validate ids and avoid hidden fields',async()=>{
   const c=await createContainer({env});const app=await buildApp(c);
   try {

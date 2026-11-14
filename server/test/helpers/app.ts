@@ -15,6 +15,8 @@ export interface TestApp {
   clock: TestClock;
   get(path: string): Promise<Reply>;
   post(path: string, body?: unknown): Promise<Reply>;
+  /** Any method, e.g. DELETE. */
+  send(method: 'GET' | 'POST' | 'DELETE', path: string, body?: unknown): Promise<Reply>;
   close(): Promise<void>;
 }
 
@@ -30,7 +32,7 @@ export async function startTestApp(
     samplesDir: options.samplesDir,
   });
   const app = await buildApp(container);
-  const send = async (method: 'GET' | 'POST', path: string, body?: unknown): Promise<Reply> => {
+  const send = async (method: 'GET' | 'POST' | 'DELETE', path: string, body?: unknown): Promise<Reply> => {
     const res = await app.inject({ method, url: path, ...(body !== undefined ? { payload: body as object } : {}) });
     let parsed: unknown = null;
     try {
@@ -44,6 +46,7 @@ export async function startTestApp(
     app, container, clock,
     get: (p) => send('GET', p),
     post: (p, b) => send('POST', p, b),
+    send,
     close: () => app.close(),
   };
 }

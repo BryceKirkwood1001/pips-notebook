@@ -3,6 +3,7 @@ import { createMockApi } from './mock.js';
 import { btn, el, host, clock } from './ui.js';
 import { game } from '../engine.js';
 import { walkToScene } from '../art.js';
+import { curtainUp } from './transition.js';
 
 const params = new URLSearchParams(location.search);
 export const mock = params.get('mock') === '1';
@@ -28,7 +29,8 @@ export function goTo(screen: Screen) {
     };
     const leavesRoom = ['Upload', 'Learning', 'Fight', 'Boss'].includes(currentScreen);
     const entersRoom = ['Learning', 'Fight', 'Boss', 'Results'].includes(screen);
-    if (currentScreen === screen || !leavesRoom || !entersRoom ||
+    // Behind a room-change title card (transition.ts) Pip already walks out and in, so the scene changes at once.
+    if (currentScreen === screen || !leavesRoom || !entersRoom || curtainUp() ||
         state.run?.pendingHelpMe || clock.matchMedia('(prefers-reduced-motion: reduce)').matches) return arrive();
     walking = true;
     if (stage) {
@@ -46,6 +48,7 @@ export async function openMenu() {
 }
 export async function continuePlaying() {
     if (!state.run) return goTo('Upload');
+    if (state.run.endedAt) return goTo('Menu'); // an ended expedition is a record: it opens in the menu
     const run=await call(()=>api.resumeRun(state.run!.id));
     if(run){setRun(run);goTo(sceneForPhase(run.phase));}
 }
@@ -86,7 +89,7 @@ async function reconcile() {
     if (!state.run) return;
     const snapshot=await api.getRun(state.run.id);
     setRun(snapshot); needsSync=false;
-    goTo(snapshot.pausedAt ? 'Menu' : sceneForPhase(snapshot.phase));
+    goTo(snapshot.pausedAt || snapshot.endedAt ? 'Menu' : sceneForPhase(snapshot.phase));
 }
 export async function call<T>(action:()=>Promise<T>):Promise<T|undefined> {
     if(inflight) return;
@@ -106,5 +109,5 @@ export async function call<T>(action:()=>Promise<T>):Promise<T|undefined> {
 }
 export async function resume(id:string) {
     const run=await call(()=>api.getRun(id));
-    if(run) {setRun(run);goTo(run.pausedAt ? 'Menu' : sceneForPhase(run.phase));}
+    if(run) {setRun(run);goTo(run.pausedAt || run.endedAt ? 'Menu' : sceneForPhase(run.phase));}
 }

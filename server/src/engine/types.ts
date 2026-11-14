@@ -44,7 +44,8 @@
  *   belief line is not there). Never add a duplicate line to a section.
  *
  * ── Learning phase (SPEC 2.3) ───────────────────────────────────────────────
- *   teach: one `tasks.studentReview` call for the room's concepts.
+ *   teach: one `tasks.studentReview` call for the room's concepts, or only `conceptId`'s when given
+ *     (its notes, misconceptions and questions only).
  *     - notesToAdd -> notebook (only for concepts of the current room; ignore others)
  *     - statedMisconceptionIds -> active, origin 'stated', belief line written
  *     - resolvedMisconceptionIds (must currently be active, and belong to the room) -> resolved,
@@ -173,6 +174,8 @@ export interface Engine {
     ctx: EngineContext,
     run: Run,
     explanation: string,
+    /** Focus on one concept of the current room; anything else is validation_error. */
+    conceptId?: string,
   ): Promise<{ run: Run; questions: PublicStudentQuestion[] }>;
 
   answerQuestion(

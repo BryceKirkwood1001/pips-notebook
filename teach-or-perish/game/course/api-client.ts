@@ -174,6 +174,27 @@ export interface PublicStudentQuestion {
   id: string;
   text: string;
   status: 'open' | 'answered' | 'skipped';
+  /** The concept Pip is asking about. */
+  conceptId?: string;
+}
+
+/** A finished room attempt: only turns and learning counts the player already saw. */
+export interface PublicRoomReport {
+  roomId: string;
+  title: string;
+  attempt: number;
+  passed: boolean;
+  hearts: number;
+  maxHearts: number;
+  correct: number;
+  total: number;
+  /** Turns the player answered through "Help me!". */
+  helped: number;
+  teachCount: number;
+  questionsAsked: number;
+  questionsAnswered: number;
+  questionsSkipped: number;
+  missed: { prompt: string; by: 'student' | 'help'; concepts: { id: string; title: string }[] }[];
 }
 
 export interface PublicRunRoom {
@@ -188,6 +209,8 @@ export interface PublicRunRoom {
 
 export interface PublicRun {
   pausedAt?: string;
+  /** The player ended this expedition early; it is a read-only record. */
+  endedAt?: string;
   id: string;
   courseId: string;
   courseTitle: string;
@@ -214,6 +237,8 @@ export interface PublicRun {
   boss?: { turn: number; totalTurns: number; health: number; helpMeUsed: number; log: TurnResult[] };
   pendingHelpMe?: HelpMeTurn;
   results?: Results;
+  /** Finished room attempts, oldest first. Absent until the first room fight ends. */
+  history?: PublicRoomReport[];
   rules: {
     roomQuestions: number;
     roomHearts: number;
@@ -258,7 +283,8 @@ export interface CreateRunBody {
 
 export interface ArchiveResponse {
   courses: PublicCourse[];
-  runs: {id: string; courseId: string; phase: RunPhase; roomIndex: number; updatedAt: string; pausedAt?: string}[];
+  /** Most recently updated first. `rooms` is how many rooms the expedition covers. */
+  runs: {id: string; courseId: string; phase: RunPhase; roomIndex: number; rooms: number; updatedAt: string; pausedAt?: string; endedAt?: string}[];
 }
 
 export interface TeachResponse {
@@ -385,10 +411,14 @@ export function createApiClient(options: ApiClientOptions = {}) {
     getRun: (runId: string) => request<PublicRun>('GET', `/runs/${enc(runId)}`),
     pauseRun: (runId: string) => request<PublicRun>('POST', `/runs/${enc(runId)}/pause`),
     resumeRun: (runId: string) => request<PublicRun>('POST', `/runs/${enc(runId)}/resume`),
+    /** POST /runs/:id/end: end the expedition early; it stays in the archive as a read-only record. */
+    endRun: (runId: string) => request<PublicRun>('POST', `/runs/${enc(runId)}/end`),
+    /** DELETE /runs/:id: permanently remove the expedition (its course stays). */
+    deleteRun: (runId: string) => request<{ deleted: true; id: string }>('DELETE', `/runs/${enc(runId)}`),
 
     /** POST /runs/:id/teach (phase: learning). The student takes notes and may ask questions. */
-    teach: (runId: string, explanation: string) =>
-      request<TeachResponse>('POST', `/runs/${enc(runId)}/teach`, { explanation }),
+    teach: (runId: string, explanation: string, conceptId?: string) =>
+      request<TeachResponse>('POST', `/runs/${enc(runId)}/teach`, conceptId ? { explanation, conceptId } : { explanation }),
 
     /** POST /runs/:id/questions/:qid/answer (phase: learning). */
     answerQuestion: (runId: string, questionId: string, answer: string) =>

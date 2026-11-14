@@ -168,7 +168,40 @@ async function resolveHelp(
 function logTurn(run: Run, turn: TurnResult, ctx: EngineContext, deps: EngineDeps): void {
   const log = (run.phase === 'room' || run.phase === 'room_result' ? run.room! : run.boss!).log;
   log.push(turn);
+  if (run.phase === 'room_result') recordRoomAttempt(run, ctx, deps);
   if (run.phase === 'results') run.results = computeResults(run, ctx, deps.config);
+}
+
+/** Saves the finished room attempt for the between-room report: the turns the player saw and the lesson's counts. */
+function recordRoomAttempt(run: Run, ctx: EngineContext, deps: EngineDeps): void {
+  const room = run.room!;
+  const asked = run.learning.pendingQuestions;
+  run.history = [
+    ...(run.history ?? []),
+    {
+      roomId: run.scope.roomIds[run.roomIndex],
+      roomIndex: run.roomIndex,
+      attempt: room.attempt,
+      passed: room.passed === true,
+      hearts: room.hearts,
+      maxHearts: deps.config.roomHearts,
+      turns: room.log.flatMap((t) =>
+        t.kind === 'student_answer' || t.kind === 'help_result'
+          ? [{
+              questionId: t.question.id,
+              prompt: t.question.prompt,
+              conceptIds: [...(ctx.questions.find((q) => q.id === t.question.id)?.conceptIds ?? [])],
+              correct: t.correct,
+              by: t.kind === 'help_result' ? ('help' as const) : ('student' as const),
+            }]
+          : [],
+      ),
+      teachCount: run.learning.teachCount,
+      questionsAsked: asked.length,
+      questionsAnswered: asked.filter((q) => q.status === 'answered').length,
+      questionsSkipped: asked.filter((q) => q.status === 'skipped').length,
+    },
+  ];
 }
 
 export async function takeTurn(deps: EngineDeps, ctx: EngineContext, input: Run): Promise<TurnOutcome> {

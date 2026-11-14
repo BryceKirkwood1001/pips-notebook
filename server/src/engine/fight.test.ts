@@ -227,3 +227,44 @@ describe('determinism', () => {
 
 // keep a reference so unused-import lint stays quiet if tests are trimmed
 void correctAnswerOf;
+
+describe('room history for the between-room report', () => {
+  it('records each finished attempt with the turns the player saw and the lesson counts', async () => {
+    const deps = createDeps();
+    let n = 0;
+    deps.tasks.handlers.answer = (i, o) => (n++ === 0 ? wrongDontKnow() : answerCorrectly(i, o));
+    const run = await teachAndReady(deps, ctx, newRun(deps));
+    expect(run.history).toBeUndefined();
+    const { run: passed } = await playFight(deps, ctx, run);
+    expect(passed.history).toHaveLength(1);
+    const record = passed.history![0]!;
+    expect(record).toMatchObject({ roomId: 'r1', roomIndex: 0, attempt: 1, passed: true, hearts: 2, maxHearts: 3, teachCount: 1 });
+    expect(record.turns).toHaveLength(5);
+    expect(record.turns[0]).toMatchObject({ correct: false, by: 'student' });
+    expect(record.turns.every((t) => t.conceptIds.every((c) => ['c1', 'c2'].includes(c)))).toBe(true);
+    expect(() => RunSchema.parse(passed)).not.toThrow();
+
+    // Idempotent room_end turns and continuing keep exactly one record.
+    const again = await engine.takeTurn(deps, ctx, passed);
+    expect(again.run.history).toHaveLength(1);
+    const { run: next } = engine.continueRun(deps, ctx, again.run);
+    expect(next.history).toEqual(passed.history);
+
+    const pub = engine.toPublicRun(next, ctx, deps.config);
+    expect(pub.history).toEqual([
+      expect.objectContaining({ roomId: 'r1', title: 'Room 1', passed: true, correct: 4, total: 5, helped: 0, hearts: 2 }),
+    ]);
+    expect(pub.history![0]!.missed).toHaveLength(1);
+    expect(pub.history![0]!.missed[0]!.concepts[0]).toMatchObject({ title: expect.stringMatching(/^Concept [12]$/) });
+  });
+
+  it('a failed attempt and its retry are both recorded', async () => {
+    const deps = createDeps();
+    deps.tasks.handlers.answer = wrongDontKnow;
+    const { run: failed } = await playFight(deps, ctx, await teachAndReady(deps, ctx, newRun(deps)));
+    const { run: back } = engine.retryRoom(deps, ctx, failed);
+    deps.tasks.handlers.answer = answerCorrectly;
+    const { run: passed } = await playFight(deps, ctx, await teachAndReady(deps, ctx, back));
+    expect(passed.history!.map((h) => [h.attempt, h.passed])).toEqual([[1, false], [2, true]]);
+  });
+});

@@ -13,6 +13,7 @@ import {
 } from './scope';
 import type { EngineContext, EngineDeps } from './types';
 import { scopeTitles } from './scope';
+import { toPublicStudentQuestion } from './public';
 
 export function assertPhase(run: Run, ...phases: Run['phase'][]): void {
   if (!phases.includes(run.phase)) {
@@ -32,8 +33,8 @@ function roomMisconceptions(run: Run, pack: CoursePack): Misconception[] {
   return currentRoom(run, pack).conceptIds.flatMap((id) => pack.concepts.find((c) => c.id === id)?.misconceptions ?? []);
 }
 
-const publicQuestions = (run: Run): PublicStudentQuestion[] =>
-  run.learning.pendingQuestions.map((q) => ({ id: q.id, text: q.text, status: q.status }));
+const publicQuestions = (run: Run, pack: CoursePack): PublicStudentQuestion[] =>
+  run.learning.pendingQuestions.map((q) => toPublicStudentQuestion(q, pack));
 
 /** Writes the belief line as an ordinary note and activates even a previously corrected misconception. */
 function activate(run: Run, pack: CoursePack, m: Misconception, origin: 'stated' | 'skipped'): void {
@@ -65,19 +66,25 @@ export async function teach(
   ctx: EngineContext,
   input: Run,
   explanation: string,
+  conceptId?: string,
 ): Promise<{ run: Run; questions: PublicStudentQuestion[] }> {
   assertPhase(input, 'learning');
   const run = structuredClone(input);
   const pack = ctx.pack;
   const room = currentRoom(run, pack);
-  const mis = roomMisconceptions(run, pack);
+  if (conceptId !== undefined && !room.conceptIds.includes(conceptId)) {
+    throw new AppError('validation_error', `concept ${conceptId} is not taught in this room`);
+  }
+  // A focused lesson: Pip only reviews, notes and asks about the one concept the player is teaching.
+  const focus = conceptId ? [conceptId] : room.conceptIds;
+  const mis = roomMisconceptions(run, pack).filter((m) => focus.includes(m.conceptId));
   const misById = new Map(mis.map((m) => [m.id, m]));
   const stateOf = (id: string) => run.hidden.misconceptions.find((s) => s.id === id);
   const asked = (id: string) => run.learning.pendingQuestions.some((q) => q.misconceptionId === id);
   const probeable = (id: string) => misById.has(id) && !stateOf(id) && !asked(id);
 
   const openCount = run.learning.pendingQuestions.filter((q) => q.status === 'open').length;
-  const roomConcepts = room.conceptIds.flatMap((id) => {
+  const roomConcepts = focus.flatMap((id) => {
     const c = pack.concepts.find((x) => x.id === id);
     return c ? [{ id: c.id, title: c.title, summary: c.summary }] : [];
   });
@@ -101,7 +108,7 @@ export async function teach(
 
   // Notes: only for concepts of this room.
   for (const n of out.notesToAdd) {
-    if (!room.conceptIds.includes(n.conceptId) || !n.text.trim()) continue;
+    if (!focus.includes(n.conceptId) || !n.text.trim()) continue;
     run.notebookMd = addNote(run.notebookMd, scopeTitles(run, pack), conceptTitle(pack, n.conceptId), n.text);
   }
   // Re-teaching: active misconceptions the explanation corrects.
@@ -133,7 +140,7 @@ export async function teach(
 
   run.learning.teachCount += 1;
   touch(run, deps);
-  return { run, questions: publicQuestions(run) };
+  return { run, questions: publicQuestions(run, pack) };
 }
 
 function openQuestion(run: Run, id: string) {

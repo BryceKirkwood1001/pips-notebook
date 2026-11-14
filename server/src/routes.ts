@@ -108,10 +108,12 @@ export function registerRoutes(app: FastifyInstance, services: Services, setting
   app.get('/api/runs/:id', async (req) => services.getRun(param(req, 'id')));
   app.post('/api/runs/:id/pause', async req => services.pauseRun(param(req, 'id')));
   app.post('/api/runs/:id/resume', async req => services.resumeRun(param(req, 'id')));
+  app.post('/api/runs/:id/end', async req => services.endRun(param(req, 'id')));
+  app.delete('/api/runs/:id', async req => services.deleteRun(param(req, 'id')));
 
   app.post('/api/runs/:id/teach', async (req) => {
     const body = parse(TeachBodySchema, req.body, 'body');
-    return services.teach(param(req, 'id'), body.explanation);
+    return services.teach(param(req, 'id'), body.explanation, body.conceptId);
   });
 
   app.post('/api/runs/:id/questions/:qid/answer', async (req) => {

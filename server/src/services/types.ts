@@ -40,14 +40,19 @@ export interface Services {
   /** Saves an empty pack, starts progressive ingest in the background and returns at once. */
   createCourse(input: { title?: string; files: UploadInput[] }): Promise<CreateCourseResponse>;
   getCourse(courseId: string): Promise<PublicCourse>;
-  listArchive(): Promise<{ courses: PublicCourse[]; runs: { id: string; courseId: string; phase: PublicRun['phase']; roomIndex: number; updatedAt: string; pausedAt?: string }[] }>;
+  listArchive(): Promise<{ courses: PublicCourse[]; runs: { id: string; courseId: string; phase: PublicRun['phase']; roomIndex: number; rooms: number; updatedAt: string; pausedAt?: string; endedAt?: string }[] }>;
 
   // Runs
   createRun(body: CreateRunBody): Promise<PublicRun>;
   getRun(runId: string): Promise<PublicRun>;
   pauseRun(runId: string): Promise<PublicRun>;
   resumeRun(runId: string): Promise<PublicRun>;
-  teach(runId: string, explanation: string): Promise<TeachResponse>;
+  /** Ends the expedition early: kept as a read-only record (idempotent). A finished run is wrong_phase. */
+  endRun(runId: string): Promise<PublicRun>;
+  /** Permanently removes the run. Its course, questions and stats stay. */
+  deleteRun(runId: string): Promise<{ deleted: true; id: string }>;
+  /** `conceptId` focuses the lesson on one concept of the current room. */
+  teach(runId: string, explanation: string, conceptId?: string): Promise<TeachResponse>;
   answerQuestion(runId: string, studentQuestionId: string, answer: string): Promise<AnswerQuestionResponse>;
   skipQuestion(runId: string, studentQuestionId: string): Promise<SkipQuestionResponse>;
   ready(runId: string): Promise<PublicRun>;

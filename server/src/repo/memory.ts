@@ -64,5 +64,8 @@ export function createMemoryRepository(): Repository {
       const r = runs.get(runId);
       return r ? structuredClone(r) : null;
     },
+    async deleteRun(runId) {
+      return runs.delete(runId);
+    },
   };
 }

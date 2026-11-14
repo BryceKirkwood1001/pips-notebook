@@ -99,5 +99,8 @@ export function createMongoRepository(db: Db): Repository {
     async getRun(runId) {
       return strip<Run>(await runs.findOne({ _id: runId }));
     },
+    async deleteRun(runId) {
+      return (await runs.deleteOne({ _id: runId })).deletedCount > 0;
+    },
   };
 }

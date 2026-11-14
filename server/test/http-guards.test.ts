@@ -107,6 +107,12 @@ describe('other error codes', () => {
     expect((await t.post('/api/runs', { courseId: run.courseId, targetGrade: 'B', studentEmoji: '😀' })).status).toBe(400);
     expect((await t.post(`/api/runs/${bot.runId}/teach`, { explanation: '   ' })).status).toBe(400);
     expect((await t.post(`/api/runs/${bot.runId}/teach`, {})).status).toBe(400);
+    const otherRoomConcept = run.rooms[1]!.concepts[0]!.id;
+    const foreign = await t.post(`/api/runs/${bot.runId}/teach`, { explanation: 'Words about it.', conceptId: otherRoomConcept });
+    expect(foreign.status).toBe(400);
+    expect(foreign.body).toMatchObject({ error: { code: 'validation_error' } });
+    const focused = await t.post(`/api/runs/${bot.runId}/teach`, { explanation: 'Words about it.', conceptId: run.rooms[0]!.concepts[0]!.id });
+    expect(focused.status).toBe(200);
     expect((await t.post(`/api/runs/${bot.runId}/questions/q/answer`, {})).status).toBe(400);
     expect((await t.post('/api/courses', {})).status).toBe(400);
     expect((await t.post('/api/runs', {})).body).toMatchObject({ error: { code: 'validation_error' } });

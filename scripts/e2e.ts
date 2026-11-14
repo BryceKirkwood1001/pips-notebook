@@ -74,7 +74,7 @@ async function main() {
     const multipart = init?.body instanceof FormData;
     const request = typeof init?.body === 'string' ? JSON.parse(init.body) : multipart
       ? [...(init!.body as FormData).entries()].map(([field, value]) => ({ field, value: typeof value === 'string' ? value : { name: value.name, type: value.type, size: value.size } })) : undefined;
-    const key = `${init?.method ?? 'GET'} ${route}${multipart ? ' multipart' : ''}${response.kind ? ` ${response.kind}` : ''}`;
+    const key = `${init?.method ?? 'GET'} ${route}${multipart ? ' multipart' : ''}${response.kind ? ` ${response.kind}` : ''}${request?.conceptId ? ' focused' : ''}${route === '/api/runs/:id' && response.history?.length ? ' history' : ''}`;
     if (!captures.has(key)) captures.set(key, { method: init?.method ?? 'GET', route, path: pathname, status: res.status, request,
       ...(multipart ? { multipart: true } : {}), ...(debug ? { responseIsExcerpt: true } : {}), response });
     return res;
@@ -108,6 +108,11 @@ async function main() {
     check(!!paused.pausedAt, 'pause saves a paused run');
     run = seen(await api.resumeRun(run.id));
     check(!run.pausedAt, 'resume clears the paused flag');
+    // A spare expedition is ended early (kept as a record) and then removed for good; the course stays.
+    const spare = seen(await api.createRun({ courseId, targetGrade: 'B' }));
+    const ended = seen(await api.endRun(spare.id));
+    check(!!ended.endedAt, 'end keeps an ended, read-only record');
+    check(seen(await api.deleteRun(spare.id)).deleted === true, 'remove deletes the expedition');
     const runId = run.id;
     log(`course ${courseId}, run ${runId}, ${run.rooms.length} rooms`);
 
@@ -241,7 +246,7 @@ async function main() {
     if (flag('capture-file')) {
       // The good lessons can cover every probe already. Use a separate run to capture an explicit answer.
       const extra = await api.createRun({ courseId, targetGrade: 'B' });
-      const lesson = await api.teach(extra.id, 'This topic is something we study.');
+      const lesson = await api.teach(extra.id, 'This topic is something we study.', extra.currentRoom!.concepts[0]!.id);
       const debug = await api.getDebug(extra.id) as any;
       const open = lesson.questions.find((q) => q.status === 'open');
       if (!open) throw new Error('API capture needs an open student question');

@@ -102,9 +102,6 @@ export function toPublicCourse(pack: CoursePack): PublicCourse {
   };
 }
 
-const publicStudentQuestions = (run: Run): PublicStudentQuestion[] =>
-  run.learning.pendingQuestions.map((q) => ({ id: q.id, text: q.text, status: q.status }));
-
 export function createServices(deps: ServiceDeps): Services {
   const { config, clock, repo, engine } = deps;
 
@@ -165,6 +162,7 @@ export function createServices(deps: ServiceDeps): Services {
   ): Promise<{ out: T; ctx: EngineContext }> {
     return withRunLock(runId, async () => {
       const run = await loadRun(runId);
+      if (run.endedAt) throw new AppError('run_ended', 'This expedition was ended. Start a new one from My archive.');
       if (run.pausedAt) throw new AppError('run_paused', 'This run is paused. Resume it from the menu first.');
       const ctx = await loadContext(run.courseId);
       const rng = createRng(run.rngState);
@@ -204,18 +202,20 @@ export function createServices(deps: ServiceDeps): Services {
 
     async listArchive() {
       const courses = (await repo.listCoursePacks()).sort((a,b) => b.createdAt.localeCompare(a.createdAt)).map(toPublicCourse);
-      const runs = (await repo.listRuns()).map(r => ({ id:r.id, courseId:r.courseId, phase:r.phase, roomIndex:r.roomIndex, updatedAt:r.updatedAt, ...(r.pausedAt ? {pausedAt:r.pausedAt}: {}) }));
+      const runs = (await repo.listRuns()).map(r => ({ id:r.id, courseId:r.courseId, phase:r.phase, roomIndex:r.roomIndex, rooms:r.scope.roomIds.length, updatedAt:r.updatedAt,
+        ...(r.pausedAt ? {pausedAt:r.pausedAt}: {}), ...(r.endedAt ? {endedAt:r.endedAt}: {}) }));
       return { courses, runs };
     },
 
     pauseRun: runId => withRunLock(runId, async () => {
       const run = await loadRun(runId);
-      if (!run.pausedAt && run.phase !== 'results') { run.pausedAt = clock.now().toISOString(); run.updatedAt = run.pausedAt; await repo.saveRun(run); }
+      if (!run.pausedAt && !run.endedAt && run.phase !== 'results') { run.pausedAt = clock.now().toISOString(); run.updatedAt = run.pausedAt; await repo.saveRun(run); }
       return publicRun(run, await loadContext(run.courseId));
     }),
 
     resumeRun: runId => withRunLock(runId, async () => {
       const run = await loadRun(runId);
+      if (run.endedAt) throw new AppError('run_ended', 'This expedition was ended. Start a new one from My archive.');
       if (run.pausedAt) {
         const elapsed = Math.max(0, clock.now().getTime() - Date.parse(run.pausedAt));
         if (run.pendingHelpMe) {
@@ -229,6 +229,24 @@ export function createServices(deps: ServiceDeps): Services {
         delete run.pausedAt; run.updatedAt = clock.now().toISOString(); await repo.saveRun(run);
       }
       return publicRun(run, await loadContext(run.courseId));
+    }),
+
+    endRun: runId => withRunLock(runId, async () => {
+      const run = await loadRun(runId);
+      if (!run.endedAt) {
+        if (run.phase === 'results') throw new AppError('wrong_phase', 'This expedition is already finished.');
+        const now = clock.now().toISOString();
+        run.endedAt = now; run.updatedAt = now;
+        delete run.pausedAt;
+        delete run.pendingHelpMe; // an unanswered "Help me!" closes with the expedition; its log entry stays
+        await repo.saveRun(run);
+      }
+      return publicRun(run, await loadContext(run.courseId));
+    }),
+
+    deleteRun: runId => withRunLock(runId, async () => {
+      if (!(await repo.deleteRun(runId))) throw new AppError('not_found', `Run "${runId}" not found`);
+      return { deleted: true as const, id: runId };
     }),
 
     async listSamples() {
@@ -332,9 +350,9 @@ export function createServices(deps: ServiceDeps): Services {
       return publicRun(run, await loadContext(run.courseId));
     },
 
-    async teach(runId, explanation) {
-      const { out } = await mutate(runId, (d, ctx, run) => engine.teach(d, ctx, run, explanation));
-      return { notebookMd: out.run.notebookMd, questions: publicStudentQuestions(out.run) };
+    async teach(runId, explanation, conceptId) {
+      const { out } = await mutate(runId, (d, ctx, run) => engine.teach(d, ctx, run, explanation, conceptId));
+      return { notebookMd: out.run.notebookMd, questions: out.questions };
     },
 
     async answerQuestion(runId, studentQuestionId, answer) {

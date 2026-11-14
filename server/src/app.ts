@@ -33,7 +33,7 @@ export async function buildApp(container: Container): Promise<FastifyInstance> {
 
   await app.register(cors, {
     origin: config.corsOrigins,
-    methods: ['GET', 'POST', 'OPTIONS'],
+    methods: ['GET', 'POST', 'DELETE', 'OPTIONS'],
   });
   await app.register(multipart, {
     limits: { fileSize: maxBytes, files: 20, fields: 10 },

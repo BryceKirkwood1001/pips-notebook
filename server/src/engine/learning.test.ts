@@ -192,3 +192,42 @@ describe('answer and skip', () => {
     expect(after.room?.questionIds).toHaveLength(5);
   });
 });
+
+describe('teach one concept at a time', () => {
+  it('reviews, notes and asks only about the chosen concept, and tells the client which concept asked', async () => {
+    const deps = createDeps();
+    deps.tasks.handlers.review = () => ({
+      notesToAdd: [
+        { conceptId: 'c1', text: 'one note' },
+        { conceptId: 'c2', text: 'two note' },
+      ],
+      statedMisconceptionIds: ['m2a'],
+      questions: [
+        { misconceptionId: 'm1a', text: 'About one?' },
+        { misconceptionId: 'm2b', text: 'About two?' },
+      ],
+      resolvedMisconceptionIds: [],
+    });
+    const { run, questions } = await engine.teach(deps, ctx, newRun(deps), 'explanation', 'c1');
+    const input = deps.tasks.calls.review[0]!;
+    expect(input.concepts.map((c) => c.id)).toEqual(['c1']);
+    expect(input.misconceptions.map((m) => m.id).sort()).toEqual(['m1a', 'm1b']);
+    expect(input.probeableMisconceptionIds.sort()).toEqual(['m1a', 'm1b']);
+    expect(parseNotebook(run.notebookMd)).toEqual([{ title: 'Concept 1', notes: ['one note'] }]);
+    expect(run.hidden.misconceptions).toEqual([]); // m2a belongs to another concept: dropped
+    expect(questions).toEqual([{ id: 'sq_0_0_1', text: 'About one?', status: 'open', conceptId: 'c1' }]);
+    expect(JSON.stringify(questions)).not.toContain('misconceptionId');
+  });
+
+  it('rejects a concept that is not taught in the current room', async () => {
+    const deps = createDeps();
+    await expect(engine.teach(deps, ctx, newRun(deps), 'x', 'c3')).rejects.toMatchObject({ code: 'validation_error' });
+    expect(deps.tasks.calls.review).toHaveLength(0);
+  });
+
+  it('whole-room teaching still reviews every concept of the room', async () => {
+    const deps = createDeps();
+    await engine.teach(deps, ctx, newRun(deps), 'x');
+    expect(deps.tasks.calls.review[0]!.concepts.map((c) => c.id)).toEqual(['c1', 'c2']);
+  });
+});

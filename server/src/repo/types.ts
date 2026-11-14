@@ -49,4 +49,6 @@ export interface Repository {
   saveRun(run: Run): Promise<void>;
   getRun(runId: string): Promise<Run | null>;
   listRuns(): Promise<Run[]>;
+  /** Permanently removes the run. Returns false when there was no such run. */
+  deleteRun(runId: string): Promise<boolean>;
 }
