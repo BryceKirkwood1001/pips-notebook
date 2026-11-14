@@ -115,7 +115,7 @@ To refresh the examples first, run `npm run e2e -- --capture-file docs/api-examp
 6. **Boss.** The exam mixes every concept and aims questions at the wrong beliefs still in the notebook.
 7. **Results.** The predicted grade, whether you met your target, and the misconceptions that cost you, each with the page and section of the material that covers it.
 
-For backend development, `DEBUG=true` enables the protected debug endpoint. Hidden answer keys and misconception state must stay out of normal gameplay screens.
+For backend development, `DEBUG=true` enables the protected debug endpoint. Hidden answer keys and misconception state must stay out of normal gameplay screen.
 
 For a shorter demo, set `DEMO_MODE=true`: rooms have 3 questions and the boss has 6.
 
