@@ -1,6 +1,13 @@
-# API Settings addition
+# Integrated dungeon frontend
 
 ## How to test
+
+Play opens The lesson archive: Library / Files / Notes switch source methods
+without losing drafts. Choose a sample and rooms, then Start run. In Learning,
+Talk to Pip opens the lesson book; Notebook opens the notebook. Close/Escape
+puts the book away without discarding an unsent answer. Teach updates Pip's pose
+and question cue; Answer/Skip and Ready advance the lesson. Combat keeps health
+and Next turn outside the books; Battle log opens labeled feedback/damage cards.
 
 The `Settings` scene opens from the header's Settings button. Choose OpenAI,
 Google Gemini or Offline; edit the password key, model fields and remove-key
@@ -27,7 +34,10 @@ on port 5174 uses the same view and supports narrower screens.
 - `course/settings-view.ts`: provider form, Test/Save, feedback and cancellation.
 - `course/app.ts`: origin preference, provider-independent client and navigation.
 - `course/page.ts`: header Settings button and shared page frame.
-- `course/battle.ts`, `battle-feedback.ts`: pinned battle controls, scrollable answer cards, canonical run refresh and explicit damage labels.
+- `course/Learning.ts`, `page.ts`: conversation/inventory books and draft retention.
+- `course/Upload.ts`: tabbed archive, expedition setup and Thinking/retry.
+- `course/battle.ts`, `battle-feedback.ts`: battle chronicle, result cues, canonical run refresh and explicit damage labels.
+- `art.ts`, `manifest.json`, `media/*idle.png` and pose sheets: animated actors.
 - `main.ts`: registers Settings alongside the existing six scenes.
 - `course/api-client.ts`: dependency-free copy of the shared backend client.
 - `media/game.css`: existing theme plus scoped setup/preview styles.
@@ -37,7 +47,10 @@ on port 5174 uses the same view and supports narrower screens.
 The local Phaser AE runtime/packs were restored after user authorization.
 Native build passes and the real game is served on localhost:4173. Title,
 Settings/OpenAI/Back and the backend sample list were browser-checked.
-A complete gameplay walkthrough and native smoke were not run here.
+Browser checks also cover archive tabs/drafts, teaching/answer/skip, notebook,
+combat log and help submission in practice mode. No complete walkthrough is claimed.
+Native smoke was attempted: its headless simulator fails at course/ui.ts:2
+with document undefined; the existing frontend requires a real DOM browser.
 A small live GPT-6 Luna request verified summary streaming and structured output.
 Full live ingestion/gameplay/PDF/Atlas checks and publish were not performed.
 See the root `docs/API_SETTINGS.md` for storage, provider-switching behavior,

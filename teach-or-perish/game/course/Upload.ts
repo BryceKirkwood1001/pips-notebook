@@ -67,6 +67,11 @@ export class UploadScene extends Page {
     files.multiple = true;
     files.accept = '.pdf,.txt,.md,.markdown';
     files.setAttribute('aria-label','Course files');
+    const selection = el('span', 'file-selection', 'PDF, text, or Markdown');
+    const picker = el('label', 'archive-picker', files, el('strong', '', 'Choose course files'), selection);
+    files.onchange = () => {
+      selection.textContent = Array.from(files.files ?? [], f => f.name).join(' · ') || 'PDF, text, or Markdown';
+    };
     const fileTitle = el('input');
     fileTitle.type = 'text';
     fileTitle.placeholder = 'Course title (optional)';
@@ -92,15 +97,24 @@ export class UploadScene extends Page {
       await this.retryUpload();
     });
 
-    this.sourceEl.append(
-      el('h2', '', 'Pick a course'),
-      el('h3', '', '1. Sample course (instant)'),
-      samples,
-      el('h3', '', '2. Upload files'),
-      el('div', 'box', files, fileTitle, upload),
-      el('h3', '', '3. Paste text'),
-      el('div', 'box', text, textTitle, create),
-    );
+    const methods = [
+      { name: 'Library', body: el('div', '', el('h3', '', 'Choose a volume'), samples) },
+      { name: 'Files', body: el('div', '', el('h3', '', 'Bring your own pages'), picker, fileTitle, upload) },
+      { name: 'Notes', body: el('div', '', el('h3', '', 'Transcribe your notes'), text, textTitle, create) },
+    ];
+    const bookmarks = el('div', 'bookmarks');
+    bookmarks.setAttribute('role', 'group');
+    bookmarks.setAttribute('aria-label', 'Course source');
+    const buttons = methods.map(({ name }, i) => btn(name, () => select(i), 'bookmark'));
+    const select = (current: number) => {
+      methods.forEach(({ body }, i) => {
+        body.hidden = i !== current;
+        buttons[i]!.setAttribute('aria-pressed', String(i === current));
+      });
+    };
+    bookmarks.append(...buttons);
+    this.sourceEl.append(el('h2', '', 'The lesson archive'), bookmarks, ...methods.map(m => m.body));
+    select(0);
   }
 
   private begin(res: { courseId: string } | undefined) {
@@ -144,7 +158,7 @@ export class UploadScene extends Page {
       el('div', '', this.startBtn), this.hintEl,
     );
     this.courseEl.append(btn('Change course', () => goTo('Upload'), 'alt'),
-      el('h2', '', 'Ingest and setup'),
+      el('h2', '', 'Plan your expedition'),
       el('div', 'cols', el('div', 'box', this.progressEl), el('div', 'box', setup)),
     );
   }

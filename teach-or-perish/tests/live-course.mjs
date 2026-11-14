@@ -14,8 +14,12 @@ try {
     const notes='Earth has seasons because its axis is tilted. The angle of sunlight and the length of daylight vary throughout the year.';
     for (const method of ['Upload files','Create from text']) {
         if(method==='Upload files') {
+            await button('Files').click();
             await page.locator('input[type=file]').setInputFiles({name:'lesson.md',mimeType:'text/markdown',buffer:Buffer.from(notes)});
-        } else await page.getByPlaceholder('Paste course notes here').fill(notes);
+        } else {
+            await button('Notes').click();
+            await page.getByPlaceholder('Paste course notes here').fill(notes);
+        }
         const accepted=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/courses' && r.request().method()==='POST');
         await button(method).click();
         assert((await accepted).ok());
@@ -26,17 +30,22 @@ try {
     await button('Start run').click();
     await page.waitForURL(url=>url.searchParams.has('run'));
     const explain=page.getByPlaceholder('Explain this room to your student...');
+    const talk=page.getByRole('button',{name:/Talk to Pip|Pip has a question/});
+    await talk.click();
     await explain.fill('Earth has an axial tilt of 23.5 degrees. The tilt changes day length and sunlight angle. Direct sunlight concentrates energy over a smaller area.');
     await button('Teach').click();
+    await page.locator('.room-folio').waitFor({state:'hidden'});
+    await talk.click();
     await page.getByText(/Taught 1 time/).waitFor();
     await page.reload();
+    await talk.click();
     await page.getByText(/Taught 1 time/).waitFor();
     await button('Ready: go fight').click();
     await button('Next turn').click();
-    await page.locator('.turns details,[role=dialog]').first().waitFor();
+    await button('Battle log').or(page.getByRole('dialog')).first().waitFor();
     const pending=await page.getByRole('dialog').count();
     await page.reload();
-    await (pending?page.getByRole('dialog'):page.locator('.turns details').first()).waitFor();
+    await (pending?page.getByRole('dialog'):button('Battle log')).waitFor();
     assert.deepEqual(errors,[]);
     console.log('PASS: live sample, run creation, notebook persistence, combat and reload.');
 } finally { await browser.close(); }

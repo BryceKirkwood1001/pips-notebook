@@ -83,4 +83,23 @@ The subsequent Thinking-panel request is also implemented: optional public cours
 
 The user subsequently supplied the actual slide deck and asked to refine question prompts. [QUESTION_QUALITY.md](QUESTION_QUALITY.md) covers the new source-alignment policy, independent usefulness gate, rubric fix and live source-backed evaluation. Three relevant generated questions passed evidence/quality/key checks; the rhetorical machine-model question was rejected. The native battle now separates its title/status, fixes scrolling controls and renders distinct feedback/damage cards. Canonical post-help notebook refresh resolves the second frontend follow-up noted above; the timed empty short-text help timeout follow-up remains.
 
-Current checks: 360 tests / 32 files, type check, native/harness builds and isolated offline HTTP workflow pass. The active run was inspected read-only and kept intact. New frontend is built; backend activation is pending the user's restart choice because a restart clears in-memory courses/runs. Existing banks need fresh preparation to reflect new prompts. No commit/push/publish was made for this refinement.
+Current checks at the refinement checkpoint: 360 tests / 32 files, type check, native/harness builds and isolated offline HTTP workflow pass. The user subsequently requested a restart; the refined prompts are now active on 8787. Saved provider settings were retained and in-memory courses/runs cleared. Existing material needs fresh preparation to reflect new prompts.
+
+## New teaching-dungeon design integrated (November 14)
+
+Merged `origin/codex/teaching-dungeon-e964f8d` through `5991240`, including `10d97b3`, into `integration`. The previous tested integration work is preserved in local checkpoint `96f6b7b`.
+
+| Files | Integrated behavior |
+| --- | --- |
+| `game/art.ts`, `manifest.json`, seven new sprite sheets | Idle, writing, hand-raising, understanding and attack animations; full room background |
+| `game/course/Upload.ts` | Library / Files / Notes archive tabs, file picker and expedition setup; retains retry and Thinking progress |
+| `game/course/page.ts`, `Learning.ts` | Reusable parchment books, Talk to Pip cue, notebook inventory, draft preservation and Escape/Close |
+| `game/course/battle.ts`, `battle-feedback.ts` | Notebook and battle chronicle books, animated result cues; retains clear feedback, separate status/title, explicit damage and canonical run refresh |
+| `game/media/game.css`, `test-client/src/settings-preview.ts` | New parchment/wine/brass styling; API setup and preview adapted to the same folio frame |
+| `tests/playthrough.mjs`, `tests/live-course.mjs` | Upstream scenarios updated for the new archive/conversation controls |
+
+Resolved conflicts in `battle.ts` and `game.css`. Moved animation/result cues after both canonical refresh and fallback paths, so successful refreshes do not bypass the new cue. No backend contract or credentials were changed by this merge.
+
+Verification after merge: all 360 tests / 32 files, root type check, native game build and harness/settings build pass (existing harness bundle-size warning remains). Real-browser checks cover title, archive tabs/file picker/draft preservation, live saved OpenAI settings/Back, offline preparation/Thinking, teaching/answer/skip, notebook/draft preservation, battle status/log and help submission; browser errors were empty. Evidence: [lesson](verification/dungeon-lesson-integrated.png), [battle](verification/dungeon-battle-integrated.png), [settings](verification/dungeon-settings-integrated.png). Backend health remains healthy/OpenAI.
+
+The native headless `smoke --seconds 15` was attempted and fails before scenes with `ReferenceError: document is not defined` at `course/ui.ts:2`: its simulator lacks the DOM used by the existing frontend. Real-browser checks pass; a complete revised-game walkthrough is not claimed. The imported browser scripts were not run through a separate browser driver. No full PDF re-ingestion, push or Phaser publish was performed.

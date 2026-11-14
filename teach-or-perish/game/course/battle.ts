@@ -1,10 +1,10 @@
 import { api, call, goTo, sceneForPhase, setRun, state } from './app.js';
 import type { Answer, HelpMeTurn, PublicRun, TurnResult } from './api-client.js';
 import { buildHelp } from './help.js';
-import { Page, panel, stage, title } from './page.js';
+import { Page, panel, RoomView, stage, title } from './page.js';
 import { btn, el, mdToEl } from './ui.js';
 import { turnCard } from './battle-feedback.js';
-import { drawStage } from '../art.js';
+import { drawStage, playAttack } from '../art.js';
 import { game } from '../engine.js';
 
 export class Battle extends Page {
@@ -17,7 +17,8 @@ export class Battle extends Page {
         if(!fight) {goTo(sceneForPhase(run.phase));return;}
         const stats=this.boss?'Health '+Number(run.boss!.health.toFixed(1))+'/100':'Hearts '+run.room!.hearts+'/'+run.room!.maxHearts+' · Attempt '+run.room!.attempt;
         title(this,this.boss?'Final examination':run.currentRoom?.title ?? 'Room battle');
-        const journal=el('details','battle-notebook',el('summary','','Student notebook'),el('div','notebook-body',mdToEl(run.notebookMd)));
+        const view = new RoomView();
+        view.root.append(el('div','battle-status',stats));
         const log=el('div','turns');
         for(const event of fight.log) {
             if(event.kind==='student_answer' || event.kind==='help_result') {
@@ -26,7 +27,8 @@ export class Battle extends Page {
         }
         log.querySelector('details')?.setAttribute('open','');
         const step=btn(run.phase==='room_result'||run.phase==='results'?'Show result':'Next turn',()=>void this.step());
-        const actions=el('div','actions',step);
+        const actions=view.actions;
+        actions.append(step);
         const summary=this.summary;
         if(summary) {
             actions.replaceChildren(el('b','',summary.passed?'Room cleared!':'Room failed'),btn(summary.passed?'Continue':'Retry room',async()=>{
@@ -34,8 +36,10 @@ export class Battle extends Page {
                 if(next) {setRun(next);goTo(sceneForPhase(next.phase));}
             }));
         }
-        const toolbar=el('div','battle-toolbar',el('div','battle-status',el('span','',stats),el('span','dim','Answered '+fight.turn+' of '+fight.totalTurns)),actions,journal);
-        panel(this,el('div','battle-panel',toolbar,log));
+        view.inventory.append(view.entry('Notebook', 'Pip’s notebook', mdToEl(run.notebookMd)));
+        if (log.childElementCount) view.inventory.append(view.entry('Battle log', 'Battle chronicle', log));
+        if (!summary) actions.prepend(el('span', 'turn-count', 'Answered ' + Math.min(fight.turn, fight.totalTurns) + ' of ' + fight.totalTurns));
+        panel(this, view.root);
         if(run.pendingHelpMe) this.helpModal(run.pendingHelpMe);
     }
     private helpModal(event:HelpMeTurn) {
@@ -48,7 +52,7 @@ export class Battle extends Page {
         };
         const content=stage.querySelector<HTMLElement>('section')!;
         const built=buildHelp(event,a=>void submit(a));
-        const modal=el('div','veil',el('section','sheet journal',built.el));
+        const modal=el('div','veil',el('section','folio help-folio',built.el));
         modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-label','Help your student');
         content.inert=true;stage.append(modal);
         const header=stage.querySelector('header')!;
@@ -79,15 +83,22 @@ export class Battle extends Page {
             case 'help_result': {
                 const snapshot=await call(()=>api.getRun(run.id));
                 if(!this.active)return;
-                if(snapshot){setRun(snapshot);this.create();animateAnswer(event.correct);return;}
-                delete run.pendingHelpMe;
-                const fight=this.boss?run.boss!:run.room!;
-                fight.log.push(event);fight.turn++;
-                if(event.hearts!==undefined && run.room) run.room.hearts=event.hearts;
-                if(event.health!==undefined && run.boss) run.boss.health=event.health;
-                run.phase=event.phaseAfter;
+                if(snapshot) setRun(snapshot);
+                else {
+                    delete run.pendingHelpMe;
+                    const fight=this.boss?run.boss!:run.room!;
+                    fight.log.push(event);fight.turn++;
+                    if(event.hearts!==undefined && run.room) run.room.hearts=event.hearts;
+                    if(event.health!==undefined && run.boss) run.boss.health=event.health;
+                    run.phase=event.phaseAfter;
+                }
                 this.create();
                 animateAnswer(event.correct);
+                const cue = el('div', 'battle-cue ' + (event.correct ? 'hit' : 'miss'),
+                    event.correct ? 'Pip answered correctly!' : 'The slime lands a hit!');
+                cue.setAttribute('role','status');
+                stage.querySelector('.room-view')?.append(cue);
+                game.after(2.6, () => cue.remove());
             }
         }
     }
@@ -97,6 +108,7 @@ export function arena(run:PublicRun|null,screen:string) {
         phase:run?.phase==='learning'?'teach':run?.room?.passed && screen==='room'?'won':'intro'});
 }
 function animateAnswer(correct:boolean) {
+    playAttack(correct);
     const attacker=game.roster.tagged(correct?'student':'monster')[Symbol.iterator]().next().value;
     const victim=game.roster.tagged(correct?'monster':'student')[Symbol.iterator]().next().value;
     if(attacker)game.tween.to(attacker,{x:attacker.x+(correct?100:-100)},{duration:.14,yoyo:true});

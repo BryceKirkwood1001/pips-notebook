@@ -33,6 +33,13 @@
     "media/student_fighting.png",
     "media/student_finished.png",
     "media/student_learning.png",
+    "media/student_idle.png",
+    "media/student_writing_notes.png",
+    "media/student_raising_hand.png",
+    "media/student_understanding_moment.png",
+    "media/student_attack.png",
+    "media/monster_idle.png",
+    "media/monster_attack.png",
     "media/font.css",
     "media/OFL-PixelifySans.txt"
   ]
