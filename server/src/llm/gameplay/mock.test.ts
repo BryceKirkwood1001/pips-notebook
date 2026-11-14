@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Question } from '@top/shared';
+import type { Question } from '@pips-notebook/shared';
 import { coverage, keywords } from '../mock-text';
 import { createMockGameplayTasks, MOCK_KNOWS_COVERAGE, MOCK_MIN_SHARED_KEYWORDS, splitSentences } from './mock';
 import { MCQ, MISC_DIST, MISC_MOON, NOTEBOOK_TILT, NOTEBOOK_WRONG, PUBLIC_MCQ } from './fixtures';

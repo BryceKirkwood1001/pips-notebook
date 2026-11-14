@@ -1,4 +1,4 @@
-import type { Chunk } from '@top/shared';
+import type { Chunk } from '@pips-notebook/shared';
 import type { ScoredChunk, VectorStore } from './types';
 import { compareChunks, cosine } from './util';
 

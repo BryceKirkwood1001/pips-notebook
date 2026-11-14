@@ -1,6 +1,6 @@
 # Frontend variables by screen
 
-This is the game-data handoff for the frontend teammate, checked against `shared/src/api-client.ts` and the working test client. For the literal source-level list (including temporary locals, DOM handles and parameters), see [FRONTEND_SOURCE_VARIABLES.md](FRONTEND_SOURCE_VARIABLES.md).
+This is the public game-data handoff for the main Phaser AE site on port 4173. Source paths below are relative to `pips-notebook/game/` unless stated otherwise. See [the game source map](../pips-notebook/game/README.md) for implementation details.
 
 Use [api-client.ts](../shared/src/api-client.ts) for the exact TypeScript types and API methods. It has zero imports and can be copied into the Phaser AE game. [API.md](API.md) supplies real requests/responses; [PHASER_INTEGRATION.md](PHASER_INTEGRATION.md) explains scene wiring.
 
@@ -8,21 +8,21 @@ Use [api-client.ts](../shared/src/api-client.ts) for the exact TypeScript types 
 
 ## Screen map
 
-| Screen/page | Working test-client scene | Integrated Phaser game | Main variables | API methods |
-|---|---|---|---|---|
-| Boot/resume | `BootScene` | `Title` (`game/main.ts`) | `runId`, `run.phase`, `run.results`, `run.pendingHelpMe` | `getRun` |
-| Course picker/upload | `UploadScene` | `Upload` (`course/Upload.ts`) | `samples`, uploaded `files`, pasted `text`, optional `title`, `courseId` | `listSamples`, `seedCourse`, `uploadCourse`, `createCourseFromText` |
-| Ingest progress/run setup | `UploadScene` | Same `Upload` page | `course`, `status`, units, rooms, selected room ids, `targetGrade`, `studentEmoji` | `getCourse`, `createRun` |
-| Learning/notebook | `LearningScene` | `Learning` (`course/Learning.ts`) | `run`, `currentRoom`, `notebookMd`, `explanation`, student questions, answer text, `resolved` | `teach`, `answerQuestion`, `skipQuestion`, `ready` |
-| Room fight/failure/retry | `FightScene` via `BattleScene` | `Fight` (`course/battle.ts`) | `run.room`, `TurnResult`, hearts, reasoning, cited notes, `passed`, `failedTurns` | `turn`, `help`, `retry`, `continueRun` |
-| Help modal | `buildHelp` in `helpModal.ts` | `course/help.ts` overlay on Fight/Boss | `eventId`, public `question`, typed `answer`, `timeBudgetSec`, `deadline`, derived time left | `help` |
-| Boss/exam | `BossScene` via `BattleScene` | `Boss` (`course/battle.ts`) | `run.boss`, health, `TurnResult`, final `results` | `turn`, `help` |
-| Results/study guide | `ResultsScene` | `Results` (`course/Results.ts`) | `Results`, accuracy, help stats, costly misconceptions, material references | `getResults` |
-| Pause | No separate test scene | Dialog (`course/page.ts`) | Existing `runId` and current phase | No API needed; timed deadlines keep running |
-| API setup | `api-settings.html` / `settings-preview.ts` | `Settings` (`course/Settings.ts`, `course/settings-view.ts`) | Provider, model fields, write-only key inputs, backend origin, timeout, saved-key flags, connection status | `getApiSettings`, `testApiSettings`, `updateApiSettings` |
-| Development overlay | `debug.ts` | Optional dev-only overlay | `run`, `pack`, `questions`, `stats`, `timeBudgets` from debug | `getDebug` |
+| Screen/page | Main game source | Main variables | API methods |
+|---|---|---|---|
+| Title/resume | `main.ts` | URL run id, `run.phase`, `run.results`, `run.pendingHelpMe` | `getRun` |
+| Course picker/upload | `course/Upload.ts` | `samples`, uploaded `files`, pasted `text`, optional `title`, `courseId` | `listSamples`, `seedCourse`, `uploadCourse`, `createCourseFromText` |
+| Saved dungeons | `course/Upload.ts` | Saved courses and expeditions, selected course/run | `listArchive`, `deleteCourse`, `endRun`, `deleteRun`, `resumeRun` |
+| Ingest progress/run setup | `course/Upload.ts` | `course`, `status`, units, rooms, selected room ids, `targetGrade`, `studentEmoji` | `getCourse`, `createRun` |
+| Learning/notebook | `course/Learning.ts` | `run`, `currentRoom`, `notebookMd`, explanation, student questions, answer text, feedback | `teach`, `answerQuestion`, `skipQuestion`, `ready` |
+| Room fight/failure/retry | `course/battle.ts` | `run.room`, `TurnResult`, hearts, reasoning, cited notes, `passed`, `failedTurns` | `turn`, `help`, `retry`, `continueRun` |
+| Help modal | `course/help.ts` | `eventId`, public `question`, typed `answer`, `timeBudgetSec`, `deadline`, derived time left | `help`, `turn` for expiry |
+| Boss/exam | `course/battle.ts` | `run.boss`, health, `TurnResult`, final `results` | `turn`, `help` |
+| Results/study guide | `course/Results.ts` | `Results`, accuracy, help stats, costly misconceptions, material references | `getResults` |
+| Rooms/pause/report | `course/Menu.ts`, `course/report.ts` | `run.rooms`, `pausedAt`, room history, accuracy, weak points | `pauseRun`, `resumeRun`, `endRun`, `deleteRun` |
+| API setup | `course/Settings.ts`, `course/settings-view.ts` | Provider, model fields, write-only key inputs, backend origin, timeout, saved-key flags, connection status | `getApiSettings`, `testApiSettings`, `updateApiSettings` |
 
-The integrated game registers `Title`, `Upload`, `Learning`, `Fight`, `Boss`, `Results`, `Settings`. Both its source and the backend are present on `integration`. State names and rendering-local inventories elsewhere in this document refer to the reference test client unless explicitly marked as integrated-game paths; the public API fields are shared by both implementations.
+The game registers `Title`, `Upload`, `Learning`, `Fight`, `Boss`, `Results`, `Settings` and `Menu`. The backend owns run state; the frontend owns navigation, drafts and presentation. Hidden debug payloads are not inputs to normal game screens.
 
 ## Shared frontend state and configuration
 
@@ -31,24 +31,20 @@ The integrated game registers `Title`, `Upload`, `Learning`, `Fight`, `Boss`, `R
 | `api` | `ApiClient` | Every screen | Shared HTTP client |
 | `state.run` | `PublicRun \| null`, initially `null` | All run screens | Current public server state |
 | `state.results` | `Results \| null`, initially `null` | Boss, Results | Cache the final results |
-| `state.game` | `Phaser.Game \| null` | Startup/navigation | Test-client game instance |
 | `inflight` | `boolean`, initially `false` | `app.ts` call wrapper | Prevent concurrent UI submissions |
 | `params` | `URLSearchParams` | Startup | Read the query parameters below |
 | `params.get('api')` | `string \| null`; default `http://localhost:8787` | API initialization | Server origin, without `/api` |
 | `params.get('run')` / `runId` | `string \| null` | Boot/resume and URL persistence | Reload an existing run |
-| `params.get('mock')` / `isMock` | `mock=1` → `true` | API initialization | Use the browser's canned mock API; omit this to test the real backend, even when that backend uses mock LLM tasks |
+| `params.get('mock')` / `mock` | `mock=1` → `true` | API initialization | Use the browser's canned mock API; omit this to test the real backend, even when that backend uses mock LLM tasks |
 | `TARGET_GRADES` | `A, A-, B+, B, B-, C+, C, C-, D` | Setup | Target selector options |
 | `STUDENT_EMOJIS` | Exported `readonly` list from client | Setup, all run headers | Allowed non-human student choices |
-| `GAME_W`, `GAME_H` | `1100`, `720` | Test-client layout | Harness dimensions; real UI can choose its own |
-| `EMOJI_FONT` | System emoji font stack | Harness text/sprites | Presentation only |
-| `SCENE_STARTED`, `SCENE_SLEEPING` | `2`, `7` | Harness navigation | Phaser 3 lifecycle bounds; not needed in Phaser AE |
 | `ApiError.status`, `.code`, `.message` | `number`, `string`, `string` | Error banner on every screen | Show/handle failed requests; status `0` denotes a network error |
 
 No API key, MongoDB URI, hidden misconception state or answer key belongs in browser configuration or local storage. Settings accepts keys only as temporary password inputs sent to the local backend; the read API exposes only `hasApiKey`. Gameplay settings come from `run.rules`; set server environment variables on the backend.
 
 ## API Settings fields and source variables
 
-The real game and the standalone setup page render the same `teach-or-perish/game/course/settings-view.ts` component. `Settings.ts` mounts it in the game's frame. `test-client/src/settings-preview.ts` mounts it independently. See [API_SETTINGS.md](API_SETTINGS.md) for setup and storage rules.
+`course/settings-view.ts` implements the setup form, mounted by `course/Settings.ts` in the main game's frame. See [API_SETTINGS.md](API_SETTINGS.md) for setup and storage rules.
 
 | Name/field | Type | Use |
 |---|---|---|
@@ -132,7 +128,6 @@ Run-creation inputs:
 
 Enable Start once the first selected room is ready. Later rooms can still be ingesting. A 425 response means the requested room needs more time.
 
-Harness setup state: `courseId`, `course`, `chosen: Set<string>` (selected rooms), `known: Set<string>` (rooms already discovered), `grade`, `emoji`, `polling: boolean`, `timer: number` (one-second ingest poll interval, **not a gameplay countdown**). DOM handles: `sourceEl`, `courseEl`, `progressEl`, `roomsEl`, `startBtn`, `hintEl`.
 
 ## Shared run fields: every `PublicRun` field
 
@@ -195,7 +190,6 @@ New native-game navigation: `pausedAt` opens `Menu`; Rooms/Pause calls `pauseRun
 
 Render the notebook's `##` headings and `-` bullets as text. Wrong beliefs are ordinary notes. Refresh the notebook after a correct help event, too: use `noteAdded` immediately or reload the run.
 
-Harness state: `notebookEl`, `questionsEl`, `teachInfo` are DOM handles. `blocks: Map<string, QBlock>` tracks each question's `status: HTMLElement` and `controls: HTMLElement`. `explain` is the explanation textarea; each question has an `input` textarea.
 
 ## Room and boss state
 
@@ -218,7 +212,6 @@ Harness state: `notebookEl`, `questionsEl`, `teachInfo` are DOM handles. `blocks
 | `run.boss.helpMeUsed` | `number` | Help events used in the boss |
 | `run.boss.log[]` | `TurnResult[]` | Restore exam UI on reload |
 
-Harness presentation state shared by Fight/Boss: `kind: 'room' | 'boss'`, `hearts`, `maxHearts`, `health`, `answered`, `total`; sprite handles `student`, `monster`, `fx`, `statText`, optional `bar`; DOM handles `logEl`, `detailEl`, `endEl`, `nextBtn`; optional `modal` and cleanup callback `stopHelp`. `MONSTERS` is a harness-only sprite list.
 
 ## Every `TurnResult` field, by variant
 
@@ -290,7 +283,7 @@ Every `CostlyMisconception` field:
 
 There is currently no file-download URL in `materialRef`. Show file/page/section; opening the original PDF requires the frontend to retain the upload or add a document-serving feature.
 
-Harness Results locals: `results` is chosen from `state.results`, then `run.results`, then `getResults`. Rendering uses `r` for Results, `c` for each accuracy entry, `h` for help stats, `m` for each costly misconception and `ref` for its material reference. Start over clears `state.run` and `state.results`.
+`course/Results.ts` reads the saved or fetched results. The player can replay the course, expand the expedition report or return to My archive.
 
 ## Debug-only data
 

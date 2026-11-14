@@ -9,7 +9,7 @@ import type {
   Question,
   Run,
   StudentQuestion,
-} from '@top/shared';
+} from '@pips-notebook/shared';
 import type { Config } from '../config';
 import type { EngineContext } from './types';
 import { conceptTitle, misconceptionById, roomReady } from './scope';

@@ -1,5 +1,5 @@
 /** Small drivers for engine tests: get a run into a given phase. */
-import type { Run, TurnResult } from '@top/shared';
+import type { Run, TurnResult } from '@pips-notebook/shared';
 import { engine } from '../index';
 import type { EngineContext } from '../types';
 import { buildCtx, createDeps, type TestDeps } from './fixtures';

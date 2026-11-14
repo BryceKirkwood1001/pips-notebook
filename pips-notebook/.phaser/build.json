@@ -1,0 +1,11 @@
+{
+  "site": "https://phaser.io",
+  "slug": "pips-notebook",
+  "title": "Pip's Notebook",
+  "kind": "blank",
+  "core": "2d",
+  "screen": "1280x720",
+  "cli": "0.8.0",
+  "made": "2026-11-14T00:21:33.224Z",
+  "engine": "v3-82bf126"
+}

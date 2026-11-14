@@ -1,28 +1,27 @@
 {
-  "name": "teach-or-perish-backend",
+  "name": "pips-notebook-backend",
   "private": true,
   "type": "module",
-  "description": "Teach or Perish: backend, game logic, ingest/RAG pipeline and test client",
+  "description": "Pip's Notebook: Phaser AE game, backend and ingest/RAG pipeline",
   "engines": {
     "node": ">=22"
   },
   "workspaces": [
     "shared",
-    "server",
-    "test-client"
+    "server"
   ],
   "scripts": {
     "dev:server": "tsx watch server/src/index.ts",
     "start": "tsx server/src/index.ts",
-    "dev:client": "npm run dev -w test-client",
+    "dev:game": "npm --prefix pips-notebook run serve",
+    "build:game": "npm --prefix pips-notebook run build",
     "test": "vitest run",
     "test:watch": "vitest",
-    "typecheck": "tsc -p shared --noEmit && tsc -p server --noEmit && tsc -p test-client --noEmit",
+    "typecheck": "tsc -p shared --noEmit && tsc -p server --noEmit",
     "e2e": "tsx scripts/e2e.ts",
     "ingest": "tsx server/src/ingest/cli.ts",
     "llm:smoke": "tsx server/src/llm/smoke.ts",
-    "docs:api": "tsx scripts/generate-api-docs.ts",
-    "docs:frontend": "tsx scripts/generate-frontend-inventory.ts"
+    "docs:api": "tsx scripts/generate-api-docs.ts"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

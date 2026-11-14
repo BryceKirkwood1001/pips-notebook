@@ -1,4 +1,4 @@
-import type { Concept, CoursePack, Misconception, Question, Room, Run } from '@top/shared';
+import type { Concept, CoursePack, Misconception, Question, Room, Run } from '@pips-notebook/shared';
 import { AppError } from '../errors';
 
 export const nowIso = (d: Date): string => d.toISOString();

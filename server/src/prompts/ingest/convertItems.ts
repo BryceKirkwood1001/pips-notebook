@@ -1,4 +1,4 @@
-import type { Concept, MaterialItem, StyleProfile } from '@top/shared';
+import type { Concept, MaterialItem, StyleProfile } from '@pips-notebook/shared';
 import { conceptsBlock, itemsBlock, styleBlock, system } from './common';
 import { FLAT_QUESTION_SPEC, QUESTION_QUALITY_RULES } from './questionSpec';
 

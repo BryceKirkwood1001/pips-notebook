@@ -2,10 +2,10 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "test-client",
+      "name": "game",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:client"],
-      "port": 5174
+      "runtimeArgs": ["run", "dev:game"],
+      "port": 4173
     },
     {
       "name": "api",

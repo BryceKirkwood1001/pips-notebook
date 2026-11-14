@@ -16,7 +16,7 @@ import {
   type Misconception,
   type ProvenanceOrigin,
   type Question,
-} from '@top/shared';
+} from '@pips-notebook/shared';
 import { computeTimeBudget, materialTimeHintFor } from '../core/timeBudget';
 import { gradeDeterministic, mappedMisconceptionIds } from '../core/grading';
 import type { CoverageGap, QuestionDraft } from '../llm/types';

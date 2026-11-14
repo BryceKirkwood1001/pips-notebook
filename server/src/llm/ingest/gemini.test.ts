@@ -12,7 +12,7 @@ import {
   type PublicQuestion,
   type Question,
   type StyleProfile,
-} from '@top/shared';
+} from '@pips-notebook/shared';
 import { testConfig } from '../../config';
 import { DATA_RULE } from '../../prompts/gameplay/safety';
 import type { ParsedFile, RetrievedChunk } from '../../rag/types';

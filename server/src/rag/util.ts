@@ -1,4 +1,4 @@
-import type { Chunk } from '@top/shared';
+import type { Chunk } from '@pips-notebook/shared';
 
 /** Position of a chunk inside its page: the trailing `_n` of `${course}_${file}_p${page}_${n}`. */
 const posOf = (id: string) => Number(id.slice(id.lastIndexOf('_') + 1)) || 0;

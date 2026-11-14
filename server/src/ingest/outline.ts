@@ -2,7 +2,7 @@
  * Stage "outline": turns the OutlineDraft into units, concepts, key points, material items and rooms.
  * Every QuoteRef is located in a chunk; whatever cannot be located is dropped.
  */
-import type { Chunk, Concept, CoursePack, MaterialItem, Room, Unit } from '@top/shared';
+import type { Chunk, Concept, CoursePack, MaterialItem, Room, Unit } from '@pips-notebook/shared';
 import { locateQuote } from '../rag';
 import type { OutlineDraft } from '../llm/types';
 

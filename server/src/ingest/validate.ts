@@ -1,4 +1,4 @@
-import { QuestionSchema, type CoursePack, type Question } from '@top/shared';
+import { QuestionSchema, type CoursePack, type Question } from '@pips-notebook/shared';
 import { mappedMisconceptionIds } from '../core/grading';
 
 /**

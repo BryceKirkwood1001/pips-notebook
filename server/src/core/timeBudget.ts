@@ -18,7 +18,7 @@ import type {
   QuestionType,
   TimeBudgetBreakdown,
   WorkedStep,
-} from '@top/shared';
+} from '@pips-notebook/shared';
 
 export const TIME_BASE: Record<QuestionType, number> = {
   true_false: 5,

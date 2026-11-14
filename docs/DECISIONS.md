@@ -4,9 +4,9 @@ Choices made where the build brief left a detail open. Newest sections are added
 
 ## The teammate's game (original backend-only scope)
 
-`teach-or-perish/` is the front-end teammate's Phaser AE game (`@phaser-ae/cli`, preview on port 4173). During the original backend-only work it was read-only. The user's subsequent request to combine frontend/backend is handled on `integration`; see [INTEGRATION.md](INTEGRATION.md). The scene snapshot below records the original checkout, before that merge.
+`pips-notebook/` is the front-end teammate's Phaser AE game (`@phaser-ae/cli`, preview on port 4173). During the original backend-only work it was read-only. The user's subsequent request to combine frontend/backend is handled on `integration`; see [INTEGRATION.md](INTEGRATION.md). The scene snapshot below records the original checkout, before that merge.
 
-Scenes registered in `teach-or-perish/game/main.ts` as of the first read (Nov 13):
+Scenes registered in `pips-notebook/game/main.ts` as of the first read (Nov 13):
 
 | Scene name | File | What it does today |
 |---|---|---|
@@ -24,7 +24,7 @@ The remote branch `origin/codex/playable-prototype` only adds a standalone `prot
 - **Node 22 or later**, not 20. `@google/genai` 3.x requires Node 22.
 - **Zod 3.25**, not Zod 4. The brief asks for `zod-to-json-schema`, which targets Zod 3 schemas.
 - **TypeScript 5.9** (the tried and tested line) rather than 7.0.
-- **Phaser 3.90** for the test client, as the brief says Phaser 3. Phaser 4 is the npm `latest`.
+- **Phaser AE** for the main game on port 4173, with its runtime restored separately from the backend workspace.
 - No build step. The server and scripts run through `tsx`; `shared` exports its TypeScript source directly.
 - One Vitest run from the repo root covers `server/`, `shared/` and `scripts/`.
 - `pdf-lib` is a dev dependency, used only to generate small PDFs inside tests.
@@ -74,5 +74,5 @@ The remote branch `origin/codex/playable-prototype` only adds a standalone `prot
 - A course reaches `ready` only when verified coverage passes. Generic mock uploads may fail honestly rather than advertise incomplete content as ready. Preserve any independently ready concepts in a partial course.
 - Bound Files API upload and status requests by `LLM_TIMEOUT_MS`, with the existing overall processing wait. Return generic provider/invalid-output errors to clients, without raw provider diagnostics or rejected model output.
 - Delimit course-derived prompt fields as well as player text. Remove fixed concept/key-point/misconception quotas from the outline and misconception prompts.
-- In the untimed harness, label the budget as an estimated solve time with no deadline. Timed help remains an optional rule from the original design.
+- In untimed mode, label the budget as an estimated solve time with no deadline. Timed help remains an optional rule from the original design.
 - Record real endpoint examples through `npm run e2e -- --capture-file docs/api-examples.json`; regenerate `docs/API.md` with `npm run docs:api`. Debug examples are explicit excerpts. See `CONTINUATION_LOG.md` and `REVIEW.md` for evidence and remaining limitations.

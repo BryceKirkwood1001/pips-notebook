@@ -1,5 +1,5 @@
 /** Test fixtures shared by the gameplay tests. */
-import type { Misconception, PublicQuestion, Question } from '@top/shared';
+import type { Misconception, PublicQuestion, Question } from '@pips-notebook/shared';
 
 const ev = { fileId: 'f', page: 1, chunkId: 'ch1', quote: 'q' };
 

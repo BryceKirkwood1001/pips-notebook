@@ -15,7 +15,7 @@
  *
  * What does NOT use RAG: the student. It only ever sees its notebook.
  */
-import type { Chunk, Evidence, FileType } from '@top/shared';
+import type { Chunk, Evidence, FileType } from '@pips-notebook/shared';
 import type { UploadedFile } from '../llm/types';
 
 /** One uploaded file, in memory (uploads are capped by MAX_UPLOAD_MB). */

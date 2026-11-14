@@ -1,4 +1,4 @@
-import { QuestionSchema } from '@top/shared';
+import { QuestionSchema } from '@pips-notebook/shared';
 import { describe, expect, it, vi } from 'vitest';
 import type { IngestTasks } from '../llm/types';
 import { computeTimeBudget } from '../core/timeBudget';

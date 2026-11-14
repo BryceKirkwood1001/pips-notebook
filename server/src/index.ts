@@ -14,7 +14,7 @@ try {
 }
 
 const health = container.services.health();
-console.log(`[server] Teach or Perish API on http://localhost:${config.port}/api`);
+console.log(`[server] Pip's Notebook API on http://localhost:${config.port}/api`);
 console.log(
   `[server] llm=${health.llmProvider} storage=${health.storage} debug=${health.debug}` +
     (config.demoMode ? ' demo=true' : ''),

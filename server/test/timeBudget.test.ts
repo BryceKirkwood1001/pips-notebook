@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { QuestionType } from '@top/shared';
+import type { QuestionType } from '@pips-notebook/shared';
 import { STEP_SECONDS, TIME_BASE, calibratedTimeBudget, computeTimeBudget, effectiveTimeBudget } from '../src/core/timeBudget';
 
 const wide = { helpMeMinSec: 1, helpMeMaxSec: 10000 };

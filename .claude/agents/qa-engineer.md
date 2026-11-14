@@ -1,6 +1,6 @@
 ---
 name: qa-engineer
-description: Writes Teach or Perish spec-driven Vitest tests (engine, grading, time budgets, ingest coverage, HTTP phase guards, hidden-field leakage) and the end-to-end gauntlet script. Use for server/test and scripts.
+description: Writes Pip's Notebook spec-driven Vitest tests (engine, grading, time budgets, ingest coverage, HTTP phase guards, hidden-field leakage) and the end-to-end gauntlet script. Use for server/test and scripts.
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 
@@ -63,7 +63,7 @@ Engine-level tests import `engine` from `server/src/engine` and drive it with yo
 
 Plays a full gauntlet against the real API with mocks and prints a readable transcript.
 
-- Start the app in-process on a free port (`createContainer({ env: { LLM_PROVIDER: 'mock', DEBUG: 'true' }, seed: 42 })`, `buildApp`, `app.listen({ port: 0 })`) and drive it only through `createApiClient` from `@top/shared/api-client`. Accept `--url <base>` to target an already running server instead, and `--sample <name>` (default `seasons`).
+- Start the app in-process on a free port (`createContainer({ env: { LLM_PROVIDER: 'mock', DEBUG: 'true' }, seed: 42 })`, `buildApp`, `app.listen({ port: 0 })`) and drive it only through `createApiClient` from `@pips-notebook/shared/api-client`. Accept `--url <base>` to target an already running server instead, and `--sample <name>` (default `seasons`).
 - It is a "teacher bot". It reads the hidden course data from `getDebug` (key points, misconceptions and their corrections, answer keys) only to decide what to type, the way a human teacher who knows the subject would.
 - Script: seed the sample → create a run (target B) → **room 1, first attempt: teach one vague sentence**, press ready, and play turns until the room fails; print the reasoning trace → **retry** → teach properly (the room's key point statements as sentences), **skip one student question on purpose**, answer the others with the misconception's correction, ready, and play until the room passes → for each later room teach properly and answer every question → boss → results.
 - Answer every "Help me!" event correctly using the key from the debug payload.

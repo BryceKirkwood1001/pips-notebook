@@ -37,7 +37,7 @@ import type {
   QuestionType,
   StyleProfile,
   WorkedStep,
-} from '@top/shared';
+} from '@pips-notebook/shared';
 import type { ParsedFile, RetrievedChunk } from '../rag/types';
 
 // ─────────────────────────────────────────────────────────────────────────────

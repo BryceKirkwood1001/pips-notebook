@@ -1,5 +1,5 @@
 /** Engine-level test environment and play helpers. */
-import type { Run, TurnResult } from '@top/shared';
+import type { Run, TurnResult } from '@pips-notebook/shared';
 import { testConfig, type Config } from '../../src/config';
 import { correctAnswerOf } from '../../src/core/grading';
 import { createRng, type Rng } from '../../src/core/rng';

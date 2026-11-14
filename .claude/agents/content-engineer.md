@@ -1,6 +1,6 @@
 ---
 name: content-engineer
-description: Builds the Teach or Perish progressive ingest pipeline (outline, style profile, misconceptions, question bank with provenance priority, verification, time budgets, coverage invariants) and the ingest LLM tasks (Gemini-backed and mock). Use for server/src/ingest, server/src/llm/ingest and server/src/prompts/ingest.
+description: Builds the Pip's Notebook progressive ingest pipeline (outline, style profile, misconceptions, question bank with provenance priority, verification, time budgets, coverage invariants) and the ingest LLM tasks (Gemini-backed and mock). Use for server/src/ingest, server/src/llm/ingest and server/src/prompts/ingest.
 tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch
 ---
 

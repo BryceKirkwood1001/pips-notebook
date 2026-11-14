@@ -1,4 +1,4 @@
-import type { Chunk, Evidence } from '@top/shared';
+import type { Chunk, Evidence } from '@pips-notebook/shared';
 import type { EvidenceHelpers } from './types';
 
 /**

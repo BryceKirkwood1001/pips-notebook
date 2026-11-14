@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { QuestionSchema, type Question } from '@top/shared';
+import { QuestionSchema, type Question } from '@pips-notebook/shared';
 import { loadConfig } from '../config';
 import {
   correctAnswerOf,

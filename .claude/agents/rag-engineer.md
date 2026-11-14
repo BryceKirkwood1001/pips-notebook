@@ -1,6 +1,6 @@
 ---
 name: rag-engineer
-description: Builds Teach or Perish material parsing, chunking, embeddings, vector stores (Atlas Vector Search and in-memory), hybrid retrieval and exact-match evidence checking. Use for anything under server/src/rag.
+description: Builds Pip's Notebook material parsing, chunking, embeddings, vector stores (Atlas Vector Search and in-memory), hybrid retrieval and exact-match evidence checking. Use for anything under server/src/rag.
 tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch
 ---
 

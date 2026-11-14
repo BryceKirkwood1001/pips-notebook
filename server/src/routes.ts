@@ -11,7 +11,7 @@ import {
   HelpBodySchema,
   TeachBodySchema,
   UpdateApiSettingsBodySchema,
-} from '@top/shared';
+} from '@pips-notebook/shared';
 import type { ApiSettingsManager } from './settings';
 import type { Config } from './config';
 import { AppError } from './errors';

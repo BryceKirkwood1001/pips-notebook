@@ -1,4 +1,4 @@
-# Teach or Perish: backend spec
+# Pip's Notebook: backend spec
 
 Sections 1-7 of the build brief, copied verbatim. Where the brief left a detail open, the choice we made is in [DECISIONS.md](DECISIONS.md); the contracts in `shared/src/schemas.ts` and the `server/src/**/types.ts` files are the source of truth for shapes.
 
@@ -6,7 +6,7 @@ Sections 1-7 of the build brief, copied verbatim. Where the brief left a detail 
 
 ## 1. Product summary
 
-**Teach or Perish** is a turn-based dungeon game. An AI **student**, a non-human avatar, has to beat a **Gauntlet** of rooms, but the **player can't fight. The player can only teach.**
+**Pip's Notebook** is a turn-based dungeon game. An AI **student**, a non-human avatar, has to beat a **Gauntlet** of rooms, but the **player can't fight. The player can only teach.**
 
 - The player uploads their course material. The game builds a **course pack**: an outline of units, concepts and key points, a **style profile** of how the material teaches, misconceptions, and a question bank pulled from the material wherever possible.
 - The Gauntlet is **one mini room per concept** (small concepts can share a room), plus a final **boss/exam room** that mixes every concept in scope.
@@ -130,26 +130,25 @@ No model can reliably guess "seconds" directly, so build the budget from **obser
 ## 3. Architecture, stack, and RAG
 
 ### 3.1 Repo layout and stack
-npm workspaces: `shared`, `server`, `test-client` only.
+npm workspaces: `shared` and `server`. The Phaser AE game has a separate toolchain.
 ```
 /                         repo root
-  teach-or-perish/        TEAMMATE'S PHASER GAME — READ-ONLY
+  pips-notebook/        main Phaser AE game (port 4173)
   shared/                 Zod schemas, TS types, dependency-free API client
-  server/                 Node 20 + TypeScript backend
-  test-client/            our throwaway Phaser test harness (emoji sprites)
+  server/                 Node 22+ TypeScript backend
   samples/                sample course materials + cached course-pack fixtures
   docs/                   SPEC, API, STATE_MACHINE, PHASER_INTEGRATION, DECISIONS
   .claude/agents/         saved subagent briefs for reuse
 ```
 
 **Stack:**
-- Node 20+ and TypeScript
+- Node 22+ and TypeScript
 - **Fastify** with `@fastify/multipart` and `@fastify/cors`
 - **Zod** for every schema, with `zod-to-json-schema` for LLM structured output
 - **Vitest** for tests
 - **Generation:** Google Gemini through the official **`@google/genai`** SDK. Use the model from env `GEMINI_MODEL`, a current fast Flash model (check the SDK docs for the right name). Use JSON structured output (`responseMimeType: application/json` plus a response schema), validate everything with Zod, retry once on a parse or validation failure, and give every call a timeout.
-- **Storage:** MongoDB Atlas through the official `mongodb` driver, behind a `Repository` interface. If `MONGODB_URI` isn't set, use an in-memory repo so tests and offline work need no database.
-- **Ports:** server on **8787** and test client on **5174**. Allow CORS from `http://localhost:4173` (teammate) and `http://localhost:5174`.
+- **Storage:** MongoDB Atlas through the official `mongodb` driver, behind a `Repository` interface. If `MONGODB_URI` isn't set, the server persists to `.local/archive`; isolated tests use memory storage.
+- **Ports:** main game on **4173**, backend API on **8787**. Allow CORS from `http://localhost:4173` by default.
 
 ### 3.2 Material ingestion and RAG
 - **Uploads:** one or more `.pdf`, `.txt` or `.md` files per course, or JSON `{ text }`.

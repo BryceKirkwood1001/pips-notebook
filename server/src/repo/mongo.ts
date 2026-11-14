@@ -1,5 +1,5 @@
 import type { Db } from 'mongodb';
-import type { CoursePack, Question, QuestionStats, Run } from '@top/shared';
+import type { CoursePack, Question, QuestionStats, Run } from '@pips-notebook/shared';
 import type { Repository } from './types';
 
 /** A stored document: the entity plus `_id` (the entity id). */

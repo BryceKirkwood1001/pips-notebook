@@ -7,7 +7,7 @@
  * The bot reads the hidden course data from /debug ONLY to decide what to type, the way a teacher who
  * knows the subject would. Exits non-zero if any final assertion fails.
  */
-import { ApiError, createApiClient, type PublicRun, type TurnResult } from '@top/shared/api-client';
+import { ApiError, createApiClient, type PublicRun, type TurnResult } from '@pips-notebook/shared/api-client';
 import { buildApp } from '../server/src/app';
 import { createContainer } from '../server/src/container';
 import { correctAnswerOf, wrongAnswerFor } from '../server/src/core/grading';

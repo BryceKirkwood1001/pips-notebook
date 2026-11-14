@@ -2,7 +2,7 @@ import { mkdir, readFile, rename, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { ChunkSchema, CoursePackSchema, QuestionSchema, QuestionStatsSchema, RunSchema } from '@top/shared';
+import { ChunkSchema, CoursePackSchema, QuestionSchema, QuestionStatsSchema, RunSchema } from '@pips-notebook/shared';
 import type { Repository } from './types';
 import type { VectorStore } from '../rag/types';
 import { applyStatsEvent } from './memory';

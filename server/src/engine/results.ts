@@ -1,4 +1,4 @@
-import { TARGET_GRADES, type CostlyMisconception, type LetterGrade, type Results, type Run, type TargetGrade } from '@top/shared';
+import { TARGET_GRADES, type CostlyMisconception, type LetterGrade, type Results, type Run, type TargetGrade } from '@pips-notebook/shared';
 import type { Config } from '../config';
 import { conceptTitle, misconceptionById, scopeConceptIds } from './scope';
 import type { EngineContext } from './types';

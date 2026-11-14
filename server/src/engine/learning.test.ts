@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Run } from '@top/shared';
+import type { Run } from '@pips-notebook/shared';
 import { engine, notebookLines, parseNotebook } from './index';
 import { buildCtx, createDeps } from './testing/fixtures';
 

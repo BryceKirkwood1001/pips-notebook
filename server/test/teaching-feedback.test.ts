@@ -2,7 +2,7 @@ import { expect, test } from 'vitest';
 import { createContainer } from '../src/container';
 import { buildApp } from '../src/app';
 import { createFakeLlmClient } from '../src/llm/fake-client';
-import { TeachResponseSchema } from '@top/shared';
+import { TeachResponseSchema } from '@pips-notebook/shared';
 
 test('teaching exposes the student reply and notes over HTTP, including a specific empty-note reply',async()=>{
   let offTopic=false;

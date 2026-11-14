@@ -1,4 +1,4 @@
-import type { CoursePack, Question, QuestionStats, Run } from '@top/shared';
+import type { CoursePack, Question, QuestionStats, Run } from '@pips-notebook/shared';
 import type { Repository, StatsEvent } from './types';
 
 /** Applies one event to a stats record (shared by the memory and Mongo implementations' tests). */

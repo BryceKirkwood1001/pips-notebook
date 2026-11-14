@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { CoursePackSchema, QuestionSchema } from '@top/shared';
+import { CoursePackSchema, QuestionSchema } from '@pips-notebook/shared';
 import { targetsMisconception } from '../src/core/grading';
 import { fixtureCoursePack, fixtureQuestions, fixtureMisconceptions } from './helpers/fixtures';
 import { findHiddenKeys } from './helpers/leaks';

@@ -1,4 +1,4 @@
-import type { Concept, MaterialItem, StyleProfile } from '@top/shared';
+import type { Concept, MaterialItem, StyleProfile } from '@pips-notebook/shared';
 import type { CoverageGap } from '../../llm/types';
 import type { RetrievedChunk } from '../../rag/types';
 import { conceptsBlock, itemsBlock, labelledEvidenceBlock, styleBlock, system, wrap } from './common';

@@ -1,7 +1,7 @@
 /** SPEC 4.4 and 2.9 checked independently of the ingest module, on both cached sample packs. */
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CourseFixtureSchema } from '@top/shared';
+import { CourseFixtureSchema } from '@pips-notebook/shared';
 import { testConfig } from '../src/config';
 import { targetsMisconception } from '../src/core/grading';
 

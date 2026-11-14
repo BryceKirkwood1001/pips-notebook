@@ -1,6 +1,6 @@
 # HTTP API reference
 
-Base URL: `http://localhost:8787/api`. All responses are JSON. Browser origins `http://localhost:4173` and `http://localhost:5174` are allowed by default; configure `CORS_ORIGINS` for others.
+Base URL: `http://localhost:8787/api`. All responses are JSON. The game origin `http://localhost:4173` is allowed by default; configure `CORS_ORIGINS` for others.
 
 These examples were captured from the integrated mock API by `scripts/e2e.ts`, using seed 42 and the seasons fixture. Ids and timestamps are real per-run values and will differ on your machine. An auxiliary run supplies the explicit learning-answer and wrong-phase examples. Full captured bodies are in [api-examples.json](api-examples.json); excerpts below omit fields, without altering the retained values. The `/debug` capture itself is also an excerpt.
 

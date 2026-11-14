@@ -1,4 +1,4 @@
-import type { Question } from '@top/shared';
+import type { Question } from '@pips-notebook/shared';
 import { targetsMisconception, wrongAnswerFor } from '../core/grading';
 import type { Rng } from '../core/rng';
 

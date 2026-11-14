@@ -1,7 +1,7 @@
 import { expect, test } from 'vitest';
 import { applyLessonPlan, lessonPlanPrompt, LessonPlanSchema, lessonPlanSchemaFor, LessonPlanCoverageError, PLAN_LESSONS_SYSTEM } from './lesson-plan';
 import type { OutlineResult } from './outline';
-import type { Concept } from '@top/shared';
+import type { Concept } from '@pips-notebook/shared';
 
 const evidence={fileId:'f1',page:4,chunkId:'chunk1',sectionPath:[],quote:'An array is fixed-size.'};
 const concept=(id:string):Concept=>({id,unitId:'u1',title:`Arrays ${id}`,summary:'Explain how arrays store values.',order:Number(id.slice(1)),prerequisites:[],misconceptions:[],

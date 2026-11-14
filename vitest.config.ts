@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     include: ['server/**/*.test.ts', 'shared/**/*.test.ts', 'scripts/**/*.test.ts'],
-    exclude: ['**/node_modules/**', 'teach-or-perish/**', 'test-client/**'],
+    exclude: ['**/node_modules/**', 'pips-notebook/**'],
     environment: 'node',
     testTimeout: 15000,
   },

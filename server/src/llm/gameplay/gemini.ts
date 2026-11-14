@@ -1,6 +1,6 @@
 /** Gemini-backed gameplay tasks: one LLM call per task. */
 import { z } from 'zod';
-import type { Answer, PublicQuestion } from '@top/shared';
+import type { Answer, PublicQuestion } from '@pips-notebook/shared';
 import type { Config } from '../../config';
 import { answerFitsQuestion } from '../../core/grading';
 import {

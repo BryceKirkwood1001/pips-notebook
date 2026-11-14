@@ -1,6 +1,6 @@
 ---
 name: llm-engineer
-description: Builds the Teach or Perish LLM transport (Gemini client and test fake) and the gameplay LLM tasks (Gemini-backed and deterministic mock). Use for anything under server/src/llm (except llm/ingest) and server/src/prompts/gameplay.
+description: Builds the Pip's Notebook LLM transport (Gemini client and test fake) and the gameplay LLM tasks (Gemini-backed and deterministic mock). Use for anything under server/src/llm (except llm/ingest) and server/src/prompts/gameplay.
 tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch, WebSearch
 ---
 

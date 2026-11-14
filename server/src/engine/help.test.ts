@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RunSchema, type HelpMeTurn, type HelpResultTurn, type Question } from '@top/shared';
+import { RunSchema, type HelpMeTurn, type HelpResultTurn, type Question } from '@pips-notebook/shared';
 import { correctAnswerOf } from '../core/grading';
 import { engine, notebookLines } from './index';
 import { buildCtx, createDeps } from './testing/fixtures';

@@ -117,7 +117,7 @@ import type {
   Results,
   Run,
   TurnResult,
-} from '@top/shared';
+} from '@pips-notebook/shared';
 import type { Config } from '../config';
 import type { Rng } from '../core/rng';
 import type { GameplayTasks } from '../llm/types';

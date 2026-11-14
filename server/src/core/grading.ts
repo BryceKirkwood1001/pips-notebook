@@ -8,7 +8,7 @@
  *   - the grounding rule ("correct only with a valid notebook citation"), which the engine applies
  *     on top of the outcome.
  */
-import type { Answer, PublicQuestion, Question, QuestionType, RevealedAnswer } from '@top/shared';
+import type { Answer, PublicQuestion, Question, QuestionType, RevealedAnswer } from '@pips-notebook/shared';
 
 export type GradeStatus =
   /** Right by the type's rule. */

@@ -7,7 +7,7 @@
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import { z } from 'zod';
-import { TARGET_GRADES, type TargetGrade } from '@top/shared';
+import { TARGET_GRADES, type TargetGrade } from '@pips-notebook/shared';
 
 export type GradeThresholds = Record<TargetGrade, number>;
 
@@ -131,11 +131,11 @@ const EnvSchema = z.object({
   LLM_TIMEOUT_MS: int(30000, 1),
   INGEST_LLM_TIMEOUT_MS: num(180000, n => Number.isInteger(n) && n >= 1000 && n <= 600000),
   MONGODB_URI: str(''),
-  MONGODB_DB: str('teach_or_perish'),
+  MONGODB_DB: str('pips_notebook'),
   ATLAS_VECTOR_INDEX: str('chunks_vector'),
   DEBUG: bool(false),
   PORT: int(8787, 1),
-  CORS_ORIGINS: str('http://localhost:4173,http://localhost:5174'),
+  CORS_ORIGINS: str('http://localhost:4173'),
   CHUNK_TOKENS: int(400, 50),
   CHUNK_OVERLAP: num(0.15, (n) => n >= 0 && n < 1),
   RETRIEVAL_TOP_K: int(6, 1),

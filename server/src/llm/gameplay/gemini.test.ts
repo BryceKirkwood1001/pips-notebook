@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { testConfig } from '../../config';
 import { buildCheckResolutionPrompt, buildStudentReviewPrompt, neutralize, wrap } from '../../prompts/gameplay';
 import { buildGradeOpenPrompt } from '../../prompts/gameplay/gradeOpen';
-import type { Question } from '@top/shared';
+import type { Question } from '@pips-notebook/shared';
 import { createFakeLlmClient } from '../fake-client';
 import { createGameplayTasks } from './gemini';
 import { MCQ, MISC_DIST, MISC_MOON, NOTEBOOK_TILT, PUBLIC_MCQ } from './fixtures';

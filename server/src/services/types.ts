@@ -16,7 +16,7 @@ import type {
   SkipQuestionResponse,
   TeachResponse,
   TurnResult,
-} from '@top/shared';
+} from '@pips-notebook/shared';
 
 export interface HealthInfo {
   ok: boolean;

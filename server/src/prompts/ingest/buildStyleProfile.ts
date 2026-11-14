@@ -1,4 +1,4 @@
-import type { MaterialItem } from '@top/shared';
+import type { MaterialItem } from '@pips-notebook/shared';
 import { itemsBlock, system, wrap } from './common';
 
 export const BUILD_STYLE_PROFILE_SYSTEM = system(

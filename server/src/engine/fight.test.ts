@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { RunSchema, TurnResultSchema, type StudentAnswerTurn } from '@top/shared';
+import { RunSchema, TurnResultSchema, type StudentAnswerTurn } from '@pips-notebook/shared';
 import { citationMatches } from './notebook';
 import { correctAnswerOf, wrongAnswerFor } from '../core/grading';
 import { engine } from './index';

@@ -148,6 +148,7 @@ describe('local settings HTTP API', () => {
     { remoteAddress: '192.0.2.1' },
     { headers: { host: 'attacker.example' } },
     { headers: { origin: 'https://attacker.example' } },
+    { headers: { origin: 'http://localhost:4999' } },
   ])('rejects nonlocal or untrusted access: %j', async options => {
     const { app } = await start();
     for (const [method, url] of [['GET', '/api/settings/api'], ['POST', '/api/settings/api'], ['POST', '/api/settings/api/test']] as const) {
@@ -159,8 +160,10 @@ describe('local settings HTTP API', () => {
 
   it('accepts the local frontend, validates requests, and tests without saving', async () => {
     const { app, container, used } = await start();
-    const headers = { origin: 'http://localhost:5174' };
-    expect((await app.inject({ url: '/api/settings/api', headers })).statusCode).toBe(200);
+    const headers = { origin: 'http://localhost:4173' };
+    const settings = await app.inject({ url: '/api/settings/api', headers });
+    expect(settings.statusCode).toBe(200);
+    expect(settings.headers['access-control-allow-origin']).toBe(headers.origin);
     for (const payload of [{ provider: 'bad' }, { provider: 'openai' }, { provider: 'mock', timeoutMs: 1 }, { provider: 'mock', ingestTimeoutMs: 600001 }, { provider: 'mock', unknown: secret }]) {
       const bad = await app.inject({ method: 'POST', url: '/api/settings/api', payload });
       expect(bad.statusCode).toBe(400);

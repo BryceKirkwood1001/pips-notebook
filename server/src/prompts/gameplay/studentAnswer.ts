@@ -1,4 +1,4 @@
-import type { PublicQuestion } from '@top/shared';
+import type { PublicQuestion } from '@pips-notebook/shared';
 import { DATA_RULE, wrap } from './safety';
 
 export const STUDENT_ANSWER_SYSTEM = [

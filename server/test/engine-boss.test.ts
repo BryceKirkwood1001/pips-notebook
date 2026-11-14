@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ResultsSchema, type Run } from '@top/shared';
+import { ResultsSchema, type Run } from '@pips-notebook/shared';
 import { targetsMisconception } from '../src/core/grading';
 import { engine } from '../src/engine';
 import { makeEnv, newRun, passRoom, playFight, teach, toBoss, skipAll, type Env } from './helpers/play';

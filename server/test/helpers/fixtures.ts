@@ -3,7 +3,7 @@
  * questions for room draws (10 single-concept per room) and a 10-question boss (6 multi-concept).
  * Ids: course `crs`, concepts c1..c3, rooms r1..r3, misconceptions m1a m1b m2a ...
  */
-import { CoursePackSchema, QuestionSchema, emptyStyleProfile, type CoursePack, type Question } from '@top/shared';
+import { CoursePackSchema, QuestionSchema, emptyStyleProfile, type CoursePack, type Question } from '@pips-notebook/shared';
 
 export const COURSE_ID = 'crs';
 export const NOW_ISO = '2025-01-01T00:00:00.000Z';

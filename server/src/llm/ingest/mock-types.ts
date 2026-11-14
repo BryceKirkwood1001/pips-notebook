@@ -1,5 +1,5 @@
 import type { MisconceptionDraft, OutlineDraft } from '../types';
-import type { QuestionType, StyleProfile } from '@top/shared';
+import type { QuestionType, StyleProfile } from '@pips-notebook/shared';
 
 /**
  * Compact format of one canned question in mock-data/*.json. Concept and key point ids (c1, c1_k2) and

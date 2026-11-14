@@ -1,5 +1,5 @@
 /** Shared pieces of the ingest prompts: system preamble and text blocks. All material text goes through `wrap`. */
-import type { Concept, MaterialItem, StyleProfile } from '@top/shared';
+import type { Concept, MaterialItem, StyleProfile } from '@pips-notebook/shared';
 import type { RetrievedChunk } from '../../rag/types';
 import { DATA_RULE, wrap } from '../gameplay/safety';
 

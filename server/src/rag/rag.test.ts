@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { PDFDocument, StandardFonts } from 'pdf-lib';
 import { describe, expect, it, vi } from 'vitest';
-import type { Chunk } from '@top/shared';
+import type { Chunk } from '@pips-notebook/shared';
 import { testConfig } from '../config';
 import { isAppError } from '../errors';
 import {

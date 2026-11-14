@@ -6,7 +6,7 @@ Added on `integration` at the user's request: an OpenAI option and an API setup 
 
 Start the backend with root `npm run dev:server`. In the actual game, use **Settings** in the header; **Back to game** returns to the current run phase or previous page. The new scene is named `Settings`.
 
-The same DOM component is available independently at [localhost:5174/api-settings.html](http://localhost:5174/api-settings.html) after root `npm run dev:client`. The test harness course picker links to it. This preview uses the real backend and the game's CSS, font and background; it can run while the separate Phaser AE engine is missing. Its narrow-screen layout stacks the form for readability.
+The setup form is part of the main game at [localhost:4173](http://localhost:4173), using the game's CSS, font and background. Start it with root `npm run dev:game` after restoring the Phaser AE runtime. Its narrow-screen layout stacks the form for readability.
 
 1. Choose **OpenAI**, **Google Gemini**, or **Offline**.
 2. Enter a key for a live provider. Change the generation/embedding model names if needed; the account must have access to the selected models and support the requested API features.
@@ -61,22 +61,19 @@ See [API.md](API.md) for captured requests/responses for `GET /api/settings/api`
 | `server/src/ingest/cli.ts`, `llm/smoke.ts` | Reuse saved/provider settings from command-line tools |
 | `server/src/llm/ingest/outline-batches.ts`, `ingest/gemini.ts`, `rag/parser.ts` | Bounded outline requests/merging and large-PDF text handling |
 | `shared/src/schemas.ts`, `api-client.ts`, `type-sync.ts` | Setup contracts, client methods and mutual type checks |
-| `teach-or-perish/game/course/settings-view.ts`, `Settings.ts` | Shared styled form and actual game scene |
+| `pips-notebook/game/course/settings-view.ts`, `Settings.ts` | Shared styled form and actual game scene |
 | Game `course/app.ts`, `course/page.ts`, `main.ts`, `media/game.css` | Settings navigation, origin changes, layout and theme |
 | Game `course/api-client.ts`, `course/mock.ts` | Synchronized client; practice mock explicitly rejects local-setup calls |
-| `test-client/api-settings.html`, `src/settings-preview.ts`, `vite.config.ts` | Standalone preview and build entry (uses harness tsconfig to avoid the missing engine config) |
-| Harness `src/app.ts`, `scenes/UploadScene.ts`, `mockApi.ts` | Saved origin, setup link and explicit practice mock behavior |
 | `server/src/llm/openai-client.test.ts`, `server/test/api-settings.test.ts` | Transport, redaction, persistence, local guards and runtime switching regression tests |
-| `scripts/e2e.ts`, both docs generators, handoff docs | Offline endpoint captures and updated frontend inventory |
+| `scripts/e2e.ts`, `scripts/generate-api-docs.ts`, handoff docs | Offline endpoint captures and API documentation |
 
 ## Verification and limits
 
 - `npm test`: 356 tests passed across 32 files after the progress/summary addition. Includes 108-page outline coverage/merge, long-page text preservation, preparation budgets, summary-only streaming, pre-completion publication, idle extension, request cap, truncated streams and unsupported-summary fallback.
-- `npm run typecheck`: passed, including the shared Settings view imported by the test client.
-- `npm run build -w test-client`: passed for both the harness and the setup page; existing Phaser bundle-size warning remains.
-- Both seasons and binary-search HTTP gauntlets passed. Regenerated 25 captures covering all 20 endpoints and 379 declarations across 14 harness source files. The live smoke script explicitly skipped in Offline mode.
-- Browser: inspected provider cards, model/key fields, missing-key rejection, Offline Test and Save, connection controls, invalid-origin/timeout validation, and return navigation. No real key was entered or sent to a provider. See [Settings screenshot](verification/api-settings.png).
-- The native Phaser runtime was subsequently restored when the user asked to run the styled game: official CLI 0.8.0, engine `v3-82bf126`, and the manifest's expansion packs. `npm run build` now passes and `npm run serve` runs the actual game on port 4173. Browser-checked Title → Settings → OpenAI → Back → Play → the backend's sample course list, with no browser errors during that check. See [native Settings screenshot](verification/native-api-settings.png). A complete native gameplay walkthrough, native smoke suite and publication have not been performed here.
+- `npm run typecheck`: passed for backend/shared contracts; the native game build checks the Settings view.
+- Both seasons and binary-search HTTP gauntlets passed. At this checkpoint, regenerated 25 captures covering all 20 endpoints. The live smoke script explicitly skipped in Offline mode.
+- Browser: inspected provider cards, model/key fields, missing-key rejection, Offline Test and Save, connection controls, invalid-origin/timeout validation, and return navigation. No real key was entered or sent to a provider. See Settings screenshot (historical screenshot retired during rebranding).
+- The native Phaser runtime was subsequently restored when the user asked to run the styled game: official CLI 0.8.0, engine `v3-82bf126`, and the manifest's expansion packs. `npm run build` now passes and `npm run serve` runs the actual game on port 4173. Browser-checked Title → Settings → OpenAI → Back → Play → the backend's sample course list, with no browser errors during that check. See native Settings screenshot (historical screenshot retired during rebranding). A complete native gameplay walkthrough, native smoke suite and publication have not been performed here.
 - A later small synthetic-document request verified live GPT-6 Luna summary streaming and structured output (85 summary updates, about 3.8 seconds). Full live ingest/gameplay, embeddings, native PDF handling, Gemini and Atlas switching remain unverified. This probe does not establish quality or latency for the user's large PDF.
 
 Implementation followed the current official OpenAI [Structured Outputs guide](https://developers.openai.com/api/docs/guides/structured-outputs), [file-input guide](https://developers.openai.com/api/docs/guides/file-inputs), [embedding guide](https://developers.openai.com/api/docs/guides/embeddings), and [default model reference](https://developers.openai.com/api/docs/models/gpt-5.6-luna). Access to a model remains account-dependent.
@@ -87,7 +84,7 @@ This feature is left as working-tree changes on `integration`, without a new com
 
 The user subsequently configured `gpt-6-luna` and reported a 108-page Memory Hierarchy PDF failing at 30 seconds, before any units/rooms were saved. The prior configuration used the same short deadline for all calls and sent the entire PDF plus extracted text to outline generation. The exact failed operation was not recorded in the old error, so parsing/embedding versus outline cannot be conclusively separated from that report. The changes above address both the preparation deadline and the unbounded outline input; future OpenAI errors name the operation.
 
-Restarted the backend with the saved OpenAI model/key retained and saved the new 180-second preparation budget. No real provider call was made by the agent during this fix. The original PDF was not re-ingested by the agent and needs re-uploading after the restart. Browser-checked failure/retry and timeout validation/Save through an isolated offline backend on 8799, then stopped it and restored the browser's API-origin preference to 8787. Actual game is left at its upload screen. The native and harness builds, shared/server/client type checks, 348 tests and offline HTTP gauntlet pass.
+Restarted the backend with the saved OpenAI model/key retained and saved the new 180-second preparation budget. No real provider call was made by the agent during this fix. The original PDF was not re-ingested by the agent and needs re-uploading after the restart. Browser-checked failure/retry and timeout validation/Save through an isolated offline backend on 8799, then stopped it and restored the browser's API-origin preference to 8787. At that checkpoint, the native build, type checks, 348 tests and offline HTTP gauntlet passed.
 
 The official [file-input guide](https://developers.openai.com/api/docs/guides/file-inputs) documents that native PDF input includes page images and text; the [GPT-6 Luna reference](https://developers.openai.com/api/docs/models/gpt-6-luna) confirms `none` reasoning support and its `medium` default. Those sources informed the batching and latency changes; they do not establish this PDF's live completion time.
 
@@ -103,6 +100,6 @@ Active stream events reset the configured preparation idle deadline; a silent re
 
 Files: shared schemas/client and the copied game client; `llm/types.ts`, `llm/ingest/gemini.ts`, `ingest/pipeline.ts` for activity callbacks/persistence; `llm/openai-client.ts` and new `llm/openai-stream.ts` for SSE and deadline handling; game `course/Upload.ts`, `media/game.css`, `course/settings-view.ts` for rendering and the idle-timeout hint. Tests are in `llm/openai-stream.test.ts` and `ingest/pipeline.test.ts`.
 
-Validated one real synthetic-document generation with the existing saved GPT-6 Luna key, with no key printed or changed. Separately browser-checked the layout through an isolated fake provider on port 8799; [the screenshot](verification/thinking-snippet-fixture.png) explicitly labels its summary as a UI test fixture. Stopped that API and closed its tab afterward. Native/harness builds, type checks, 356 tests and the offline HTTP gauntlet pass. Restarted the owned backend to activate the feature; the original large PDF still needs re-uploading and full live ingestion remains unverified. No commit, push or publish was made.
+Validated one real synthetic-document generation with the existing saved GPT-6 Luna key, with no key printed or changed. Separately browser-checked the layout through an isolated fake provider on port 8799; the screenshot (historical screenshot retired during rebranding) explicitly labels its summary as a UI test fixture. Stopped that API and closed its tab afterward. Native build, type checks, 356 tests and the offline HTTP gauntlet pass. Restarted the owned backend to activate the feature; the original large PDF still needs re-uploading and full live ingestion remains unverified. No commit, push or publish was made.
 
 The official [reasoning-summary guide](https://developers.openai.com/api/docs/guides/reasoning#reasoning-summaries) and [streaming guide](https://developers.openai.com/api/docs/guides/streaming-responses) describe the public summary parameter and event transport used here.

@@ -19,7 +19,7 @@ import {
   type Question,
   type Run,
   type TimeBudgetBreakdown,
-} from '@top/shared';
+} from '@pips-notebook/shared';
 import type { Config } from '../config';
 import { createRng } from '../core/rng';
 import { calibratedTimeBudget, computeTimeBudget, effectiveTimeBudget, materialTimeHintFor } from '../core/timeBudget';

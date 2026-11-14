@@ -1,4 +1,4 @@
-import type { Concept } from '@top/shared';
+import type { Concept } from '@pips-notebook/shared';
 import type { OutlineResult } from './outline';
 import { z } from 'zod';
 import { system, wrap } from '../prompts/ingest/common';

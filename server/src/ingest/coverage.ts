@@ -5,7 +5,7 @@ import {
   type ProvenanceOrigin,
   type Question,
   type QuestionType,
-} from '@top/shared';
+} from '@pips-notebook/shared';
 import type { Config } from '../config';
 import { targetsMisconception } from '../core/grading';
 import type { CoverageGap } from '../llm/types';

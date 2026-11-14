@@ -18,7 +18,7 @@ import {
   type ProvenanceOrigin,
   type QuestionType,
   type StyleProfile,
-} from '@top/shared';
+} from '@pips-notebook/shared';
 import type { Config } from '../../config';
 import { answerFitsQuestion } from '../../core/grading';
 import {

@@ -7,7 +7,7 @@ const env = vi.hoisted(() => {
     };
     return { audio, hidden: false, append: vi.fn(), listen: vi.fn() };
 });
-vi.mock('../teach-or-perish/game/course/ui.js', () => ({
+vi.mock('../pips-notebook/game/course/ui.js', () => ({
     el: () => env.audio,
     host: { get hidden() { return env.hidden; }, body: { append: env.append }, addEventListener: env.listen },
     clock: {
@@ -17,11 +17,11 @@ vi.mock('../teach-or-perish/game/course/ui.js', () => ({
         localStorage: { getItem: () => null, setItem: vi.fn() },
     },
 }));
-vi.mock('../teach-or-perish/game/course/app.js', () => ({ state: { run: null } }));
-vi.mock('../teach-or-perish/game/art.js', () => ({ tierFor: () => 0 }));
+vi.mock('../pips-notebook/game/course/app.js', () => ({ state: { run: null } }));
+vi.mock('../pips-notebook/game/art.js', () => ({ tierFor: () => 0 }));
 
 // Keep the DOM-dependent game outside the backend TypeScript project; Vitest loads it with the mocks above.
-const soundtrackModule = '../teach-or-perish/game/course/soundtrack.js';
+const soundtrackModule = '../pips-notebook/game/course/soundtrack.js';
 let music: { playSceneMusic(scene: string): void; toggleMusic(): boolean };
 function playing() { env.audio.addEventListener.mock.calls.find(([event]) => event === 'playing')![1](); }
 function visibility() { env.listen.mock.calls.find(([event]) => event === 'visibilitychange')![1](); }

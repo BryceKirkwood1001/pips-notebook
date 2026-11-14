@@ -1,4 +1,4 @@
-import type { Chunk } from '@top/shared';
+import type { Chunk } from '@pips-notebook/shared';
 import type { Config } from '../config';
 import type { Embedder, RetrievedChunk, Retriever, VectorStore } from './types';
 

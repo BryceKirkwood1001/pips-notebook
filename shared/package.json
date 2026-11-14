@@ -1,9 +1,9 @@
 {
-  "name": "@top/shared",
+  "name": "@pips-notebook/shared",
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Teach or Perish shared contracts: Zod schemas, types and a dependency-free API client",
+  "description": "Pip's Notebook shared contracts: Zod schemas, types and a dependency-free API client",
   "exports": {
     ".": "./src/index.ts",
     "./schemas": "./src/schemas.ts",

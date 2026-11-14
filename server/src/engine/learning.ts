@@ -1,4 +1,4 @@
-import type { CoursePack, Misconception, PublicStudentQuestion, Run } from '@top/shared';
+import type { CoursePack, Misconception, PublicStudentQuestion, Run } from '@pips-notebook/shared';
 import { AppError } from '../errors';
 import type { RetrievedChunk } from '../rag/types';
 import { addNote, replaceNote } from './notebook';

@@ -1,5 +1,5 @@
 /**
- * Teach or Perish API client.
+ * Pip's Notebook API client.
  *
  * ONE FILE, ZERO IMPORTS, on purpose: copy this file into any front end (the Phaser AE game, the test
  * client, a script) and it works. It only needs `fetch`. The types below are plain TypeScript mirrors

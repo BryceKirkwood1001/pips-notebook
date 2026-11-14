@@ -7,7 +7,7 @@
  * calls for the same gap move on to the next canned questions instead of repeating the first ones.
  */
 import { readFileSync } from 'node:fs';
-import type { Answer, Concept, WorkedStep } from '@top/shared';
+import type { Answer, Concept, WorkedStep } from '@pips-notebook/shared';
 import { normalizeText } from '../../core/grading';
 import { questionKey } from '../../ingest/util';
 import type { CoverageGap, IngestTasks, QuestionDraft, VerifyQuestionOutput } from '../types';

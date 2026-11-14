@@ -1,4 +1,4 @@
-import type { Question } from '@top/shared';
+import type { Question } from '@pips-notebook/shared';
 import { system, wrap } from './common';
 
 export const JUDGE_AGREEMENT_SYSTEM = system(

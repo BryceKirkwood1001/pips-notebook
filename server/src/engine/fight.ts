@@ -1,4 +1,4 @@
-import type { Answer, HelpMeTurn, HelpResultTurn, Question, Run, StudentAnswerTurn, TurnResult } from '@top/shared';
+import type { Answer, HelpMeTurn, HelpResultTurn, Question, Run, StudentAnswerTurn, TurnResult } from '@pips-notebook/shared';
 import { answerFitsQuestion, correctAnswerOf, formatAnswer, gradeDeterministic } from '../core/grading';
 import { AppError } from '../errors';
 import type { RetrievedChunk } from '../rag/types';

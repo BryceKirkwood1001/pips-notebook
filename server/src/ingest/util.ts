@@ -1,4 +1,4 @@
-import type { Question, PublicQuestion } from '@top/shared';
+import type { Question, PublicQuestion } from '@pips-notebook/shared';
 import { createRng, hashString } from '../core/rng';
 
 /** "Binary search: lo <= hi" -> "binary_search_lo_hi". Never empty. */

@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import type { CoursePack } from '@top/shared';
+import type { CoursePack } from '@pips-notebook/shared';
 import { testConfig, type Config } from '../config';
 import { systemClock } from '../engine/types';
 import { createFakeLlmClient } from '../llm';

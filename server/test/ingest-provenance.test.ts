@@ -1,7 +1,7 @@
 /** Drives the real ingest pipeline with the mock tasks: verbatim questions come before anything generated. */
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { emptyCoursePack } from '@top/shared';
+import { emptyCoursePack } from '@pips-notebook/shared';
 import { testConfig } from '../src/config';
 import { createTestClock } from './helpers/fakes';
 import { runIngest, checkCoverage } from '../src/ingest';

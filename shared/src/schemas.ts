@@ -1,5 +1,5 @@
 /**
- * Teach or Perish: every shared schema, as Zod. This file is the source of truth for data shapes.
+ * Pip's Notebook: every shared schema, as Zod. This file is the source of truth for data shapes.
  *
  * Layout:
  *   1. Primitives            (question types, grades, evidence)

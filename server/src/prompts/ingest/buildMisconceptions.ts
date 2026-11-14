@@ -1,4 +1,4 @@
-import type { Concept, MaterialItem } from '@top/shared';
+import type { Concept, MaterialItem } from '@pips-notebook/shared';
 import type { RetrievedChunk } from '../../rag/types';
 import { QUOTE_RULE, itemsBlock, labelledEvidenceBlock, system, wrap } from './common';
 

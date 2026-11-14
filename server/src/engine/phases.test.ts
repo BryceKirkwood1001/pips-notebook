@@ -1,6 +1,6 @@
 import { findHiddenKeys } from '../../test/helpers/leaks';
 import { describe, expect, it } from 'vitest';
-import { PublicRunSchema, RunSchema, type Run } from '@top/shared';
+import { PublicRunSchema, RunSchema, type Run } from '@pips-notebook/shared';
 import { engine } from './index';
 import { createDeps } from './testing/fixtures';
 import { defaultCtx as ctx, newRun, playFight, playGauntlet, teachAndReady } from './testing/play';

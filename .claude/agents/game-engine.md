@@ -1,6 +1,6 @@
 ---
 name: game-engine
-description: Builds the Teach or Perish game engine (a pure state machine for the learning phase, room fights, "Help me!" events, boss and results, plus public projections) and the in-memory and MongoDB repositories. Use for server/src/engine and server/src/repo.
+description: Builds the Pip's Notebook game engine (a pure state machine for the learning phase, room fights, "Help me!" events, boss and results, plus public projections) and the in-memory and MongoDB repositories. Use for server/src/engine and server/src/repo.
 tools: Read, Write, Edit, Bash, Glob, Grep
 ---
 

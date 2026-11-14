@@ -1,4 +1,4 @@
-import { DEFAULT_STUDENT_EMOJI, type Results, type Run } from '@top/shared';
+import { DEFAULT_STUDENT_EMOJI, type Results, type Run } from '@pips-notebook/shared';
 import { randomSeed } from '../core/rng';
 import { AppError } from '../errors';
 import { continueRun, submitHelp, takeTurn } from './fight';

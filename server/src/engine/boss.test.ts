@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ResultsSchema, type Run, type StudentAnswerTurn } from '@top/shared';
+import { ResultsSchema, type Run, type StudentAnswerTurn } from '@pips-notebook/shared';
 import { DEFAULT_GRADE_THRESHOLDS } from '../config';
 import { targetsMisconception } from '../core/grading';
 import { engine } from './index';

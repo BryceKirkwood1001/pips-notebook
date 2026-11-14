@@ -44,7 +44,7 @@ All three passed exact evidence lookup and independent quality/answer agreement 
 
 Read the active run without advancing it. Its correct numeric help response had damage 0; both incorrect student responses had damage 1. The apparent damage on the correct response was a display-boundary issue. “I don't know” was legitimately wrong because the notebook lacked the required idea; the rhetorical question was the quality issue.
 
-Browser-checked the new frontend against that same run: long title fits, controls remain within the pane while logs scroll, and correct feedback says “No damage”. No game actions were taken. [battle-feedback-fixed.png](verification/battle-feedback-fixed.png) records the check.
+Browser-checked the new frontend against that same run: long title fits, controls remain within the pane while logs scroll, and correct feedback says “No damage”. No game actions were taken. battle-feedback-fixed.png (historical screenshot retired during rebranding) records the check.
 
 ## Activation and limits
 

@@ -1,4 +1,4 @@
-import type { PublicQuestion } from '@top/shared';
+import type { PublicQuestion } from '@pips-notebook/shared';
 import type { RetrievedChunk } from '../../rag/types';
 import { labelledEvidenceBlock, system, wrap } from './common';
 import { QUESTION_QUALITY_RULES } from './questionSpec';

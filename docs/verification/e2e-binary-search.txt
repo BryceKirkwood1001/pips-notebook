@@ -1,6 +1,6 @@
 
 > e2e
-> tsx scripts/e2e.ts --sample binary-search --results-file /tmp/teach-or-perish-binary-search-results.json
+> tsx scripts/e2e.ts --sample binary-search --results-file /tmp/pips-notebook-binary-search-results.json
 
 Started an in-process server at http://127.0.0.1:54175
 

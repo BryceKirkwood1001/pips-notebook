@@ -3,7 +3,7 @@
  * headings become concepts, sentences become key points, key points become true/false questions.
  */
 import type { OutlineDraft, QuestionDraft } from '../types';
-import type { Concept, StyleProfile } from '@top/shared';
+import type { Concept, StyleProfile } from '@pips-notebook/shared';
 import type { ParsedFile } from '../../rag/types';
 
 const HEADING = /^ {0,3}#{1,6}\s+(.+?)\s*#*\s*$/;

@@ -11,7 +11,7 @@ import {
   type CoursePack,
   type Evidence,
   type Question,
-} from '@top/shared';
+} from '@pips-notebook/shared';
 import { testConfig, type Config } from '../../config';
 import { correctAnswerOf } from '../../core/grading';
 import { createRng } from '../../core/rng';

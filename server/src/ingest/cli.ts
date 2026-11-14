@@ -7,7 +7,7 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import type { FileType } from '@top/shared';
+import type { FileType } from '@pips-notebook/shared';
 import { loadConfigFromProcess } from '../config';
 import { systemClock } from '../engine/types';
 import { createLlmClient } from '../llm';

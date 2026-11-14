@@ -39,7 +39,7 @@
  *   The CLI ingests a sample under the fixed course id `sample-${name}` (e.g. `sample-seasons`),
  *   so `POST /courses/seed/:sample` can load the fixture as it is and seeding stays idempotent.
  */
-import type { CourseFixture, CoursePack, ProvenanceOrigin, Question, QuestionType } from '@top/shared';
+import type { CourseFixture, CoursePack, ProvenanceOrigin, Question, QuestionType } from '@pips-notebook/shared';
 import type { Config } from '../config';
 import type { Clock } from '../engine/types';
 import type { IngestTasks } from '../llm/types';

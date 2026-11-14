@@ -10,7 +10,7 @@
  *
  * Every method returns copies: callers may mutate what they get without touching stored state.
  */
-import type { CoursePack, Question, QuestionStats, Run } from '@top/shared';
+import type { CoursePack, Question, QuestionStats, Run } from '@pips-notebook/shared';
 
 /** What happened to a question in play. The service records these after each engine call. */
 export interface StatsEvent {

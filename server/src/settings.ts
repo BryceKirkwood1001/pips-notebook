@@ -3,7 +3,7 @@ import { chmod, mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promi
 import { dirname } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
-import { type ApiSettings, type CourseEmbedding, type TestApiSettingsResponse, type UpdateApiSettingsBody, UpdateApiSettingsBodySchema } from '@top/shared';
+import { type ApiSettings, type CourseEmbedding, type TestApiSettingsResponse, type UpdateApiSettingsBody, UpdateApiSettingsBodySchema } from '@pips-notebook/shared';
 import type { Config } from './config';
 import { AppError } from './errors';
 import { createLlmClient } from './llm/provider';

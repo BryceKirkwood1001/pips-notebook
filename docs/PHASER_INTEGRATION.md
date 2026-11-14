@@ -2,26 +2,25 @@
 
 For the front-end teammate. Everything the game needs from the backend goes through one file, `shared/src/api-client.ts`. The server keeps all game state, so the game only has to show what the server returns and send the player's actions.
 
-On the `integration` branch, both implementations are present in this checkout. The actual game screens are in `teach-or-perish/game/course/`, and their API client currently matches the shared client exactly. See [INTEGRATION.md](INTEGRATION.md) for merge verification and remaining frontend issues.
+The game and backend are present in this checkout. The main site's screens are in `pips-notebook/game/course/`, and their API client matches the shared client. See [INTEGRATION.md](INTEGRATION.md) for setup and verification notes.
 
 Related docs: [API.md](API.md) has a real request and response for every endpoint, and [STATE_MACHINE.md](STATE_MACHINE.md) shows which action is allowed when.
 
-[FRONTEND_VARIABLES.md](FRONTEND_VARIABLES.md) lists the variables, types and state updates for each screen. [FRONTEND_SOURCE_VARIABLES.md](FRONTEND_SOURCE_VARIABLES.md) is the generated inventory of every variable, field and parameter in the test client.
+[FRONTEND_VARIABLES.md](FRONTEND_VARIABLES.md) lists the public variables, types and state updates for the main game's screens.
 
 ## 1. Setup
 
 | What | Where |
 |---|---|
 | Backend API | `http://localhost:8787/api` (start it with `npm run dev:server` from the repo root) |
-| Your game preview | `http://localhost:4173` (already allowed by the server's CORS settings) |
-| Our test client | `http://localhost:5174` (`npm run dev:client`): a working reference for every screen |
+| Main game | `http://localhost:4173` (root `npm run dev:game`, after restoring the runtime; allowed by default CORS settings) |
 
 To allow another origin, set `CORS_ORIGINS` in `.env` (comma-separated).
 
 **Keep the game's client in sync.** `shared/src/api-client.ts` has no imports and only needs `fetch`. Its existing game copy can be refreshed with:
 
 ```sh
-cp shared/src/api-client.ts teach-or-perish/game/course/api-client.ts
+cp shared/src/api-client.ts pips-notebook/game/course/api-client.ts
 ```
 
 Then, from a scene (your imports use `.js` extensions):
@@ -39,7 +38,7 @@ With no keys in `.env` the server runs on built-in mocks and two sample courses,
 
 ## 2. Your scenes and our endpoints
 
-The integrated `game/main.ts` registers six screens: `Title`, `Upload`, `Learning`, `Fight`, `Boss`, `Results`. Course pages are implemented under `game/course/`; Fight and Boss share `Battle`. Pause is a dialog rather than a registered scene.
+The integrated `game/main.ts` registers eight screens: `Title`, `Upload`, `Learning`, `Fight`, `Boss`, `Results`, `Settings` and `Menu`. Course pages are implemented under `game/course/`; Fight and Boss share `Battle`. Rooms and Pause open `Menu` after pausing the run on the server.
 
 | Screen | Scene | Calls | Leaves when |
 |---|---|---|---|
@@ -49,11 +48,12 @@ The integrated `game/main.ts` registers six screens: `Title`, `Upload`, `Learnin
 | Room fight | `Fight` (`course/battle.ts`) | `turn`, `help`, `retry`, `continueRun` | retry → `Learning`; continue → `Learning` or `Boss` |
 | Boss | `Boss` (`course/battle.ts`) | `turn`, `help` | `boss_end` → `Results` |
 | Results | `Results` (`course/Results.ts`) | Cached `boss_end.results`, `run.results`, or `getResults` | Start over → `Upload` |
-| Pause | Dialog in `course/page.ts` | none | Resume closes the dialog |
+| Rooms/pause | `Menu` in `course/Menu.ts` | `pauseRun`, `resumeRun`, `endRun`, `deleteRun` | Resume restores the saved phase; archive/Home retain the saved expedition |
+| Settings | `Settings` in `course/Settings.ts` | `getApiSettings`, `testApiSettings`, `updateApiSettings` | Back returns to the prior screen |
 
 Notes on your existing scenes:
 
-- **Pause** needs no API call. The fight advances on `turn`; a timed help deadline still runs on the server while paused.
+- **Pause** calls `pauseRun`; resume calls `resumeRun`. The server freezes pending help deadlines while paused, including across restarts.
 - **Restarting** means creating a new run (`createRun`) and entering `Learning`. The integrated Results page clears the current run and returns to setup.
 - **Which scene to show** is decided by `run.phase`: `learning` → `Learning`, `room` and `room_result` → `Fight`, `boss` → `Boss`, `results` → `Results`. Keep the run id and call `getRun(runId)` on load to resume.
 

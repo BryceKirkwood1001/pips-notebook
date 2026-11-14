@@ -1,5 +1,5 @@
 /** Scripted fakes: GameplayTasks, Retriever, a clock you can advance, and a scriptable RNG. */
-import type { Answer, Question } from '@top/shared';
+import type { Answer, Question } from '@pips-notebook/shared';
 import { correctAnswerOf, mappedMisconceptionIds, wrongAnswerFor } from '../../src/core/grading';
 import type { Rng } from '../../src/core/rng';
 import type { Clock } from '../../src/engine/types';
