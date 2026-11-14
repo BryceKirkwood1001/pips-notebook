@@ -78,7 +78,7 @@ the Phaser AE commands.
 | `client/game/course/app.ts`, `page.ts`, `ui.ts` | Run state, navigation and API origin; page frame; DOM helpers |
 | `client/game/course/Upload.ts` | My archive: samples, Create New Dungeon, saved dungeons, run setup and preparation progress |
 | `client/game/course/expedition.ts` | Ending and removing expeditions, and the in-game confirm dialog |
-| `client/game/course/Learning.ts`, `lesson-guide.ts`, `dictation.ts` | Teaching Pip, lesson guidance, on-device dictation |
+| `client/game/course/Learning.ts`, `lesson-guide.ts`, `dictation.ts` | Teaching Pip, lesson guidance, dictation |
 | `client/game/course/battle.ts`, `battle-feedback.ts`, `help.ts` | Room and boss fights, turn cards, "Help me!" questions |
 | `client/game/course/Results.ts`, `report.ts`, `Menu.ts` | Results, the expedition report, the Rooms/Pause menu |
 | `client/game/course/Settings.ts`, `settings-view.ts`, `storage-view.ts` | Settings: the AI provider tab and the MongoDB (storage) tab |

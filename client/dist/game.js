@@ -40556,9 +40556,22 @@ var host4 = clock;
 var Local = [host4.SpeechRecognition, host4.webkitSpeechRecognition].find(
   (r) => !!r && typeof r.available === "function" && typeof r.install === "function" && "processLocally" in r.prototype
 );
+var Service = host4.SpeechRecognition ?? host4.webkitSpeechRecognition;
 var canRecord = !!host4.MediaRecorder && !!host4.AudioContext && !!host4.OfflineAudioContext && !!clock.navigator.mediaDevices?.getUserMedia;
-var onDeviceDictation = !!Local || canRecord;
-var UNSUPPORTED = "This browser cannot record audio for on-device dictation, so nothing was recorded. Type instead.";
+var canDictate = !!Local || !!Service || canRecord;
+function speechServiceOwner() {
+  const agent = clock.navigator.userAgent;
+  if (/Edg\//.test(agent)) return "Microsoft";
+  if (/Chrome|Chromium|CriOS/.test(agent)) return "Google";
+  if (/Safari/.test(agent)) return "Apple";
+  return "your browser's maker";
+}
+var SERVICE_FAILURES = /* @__PURE__ */ new Set(["network", "service-not-allowed", "language-not-supported"]);
+var deviceUnusable = false;
+var serviceUnusable = false;
+var SILENT_FAILURE_MS = 4e3;
+var log3 = (...parts) => console.info("[dictation]", ...parts);
+var UNSUPPORTED = "This browser cannot record audio for dictation, so nothing was recorded. Type instead.";
 var PROBLEMS = {
   "not-allowed": "Microphone access is blocked. Allow it for this page to dictate.",
   "audio-capture": "No microphone was found.",
@@ -40621,7 +40634,7 @@ async function toSamples(recording) {
 function micButton(box2, onText, onStatus) {
   const button = btn("Dictate", () => void toggle(), "mic");
   button.setAttribute("aria-pressed", "false");
-  button.title = onDeviceDictation ? "Speak instead of typing. Speech is recognised on this device; audio is never uploaded." : UNSUPPORTED;
+  button.title = !canDictate ? UNSUPPORTED : Service ? `Speak instead of typing. Uses your browser's speech recognition, which may send your voice to ${speechServiceOwner()} to turn it into text.` : "Speak instead of typing. Speech is recognised on this computer; audio is never uploaded.";
   let recognition = null;
   let recorder = null;
   let stream = null;
@@ -40674,7 +40687,7 @@ function micButton(box2, onText, onStatus) {
       return;
     }
     if (busy) return;
-    if (!onDeviceDictation) {
+    if (!canDictate) {
       onStatus(UNSUPPORTED);
       return;
     }
@@ -40687,11 +40700,12 @@ function micButton(box2, onText, onStatus) {
     try {
       const choice2 = await browserLanguage();
       if (!current()) return;
-      if (choice2) {
+      if (choice2 && !deviceUnusable) {
         const ready = choice2.status === "available" || await Local.install({ langs: [choice2.lang], processLocally: true }).catch(() => false);
         if (!current()) return;
-        if (ready && startLive(choice2.lang, mine)) return;
+        if (ready && startLive(Local, choice2.lang, mine, "device")) return;
       }
+      if (Service && !serviceUnusable && startLive(Service, clock.navigator.language || "en-US", mine, "service")) return;
       if (canRecord) await record2(mine);
       else {
         idle();
@@ -40704,41 +40718,67 @@ function micButton(box2, onText, onStatus) {
       }
     }
   }
-  function startLive(lang, mine) {
+  function startLive(Recognition, lang, mine, where) {
     const current = () => mine === session;
-    const next = new Local();
-    next.processLocally = true;
-    if (next.processLocally !== true) return false;
+    const next = new Recognition();
+    if (where === "device") {
+      next.processLocally = true;
+      if (next.processLocally !== true) return false;
+    } else if ("processLocally" in next) next.processLocally = false;
     next.lang = lang;
     next.continuous = true;
     next.interimResults = true;
     const base = box2.value.trim() ? box2.value.replace(/\s*$/, " ") : "";
+    const started = clock.performance.now();
     let problem = false;
+    let words2 = false;
+    let speech = false;
+    next.onspeechstart = () => {
+      speech = true;
+    };
     next.onresult = (event) => {
       if (!current()) return;
       const heard = Array.from(event.results, (result) => result[0].transcript).join(" ").replace(/\s+/g, " ").trim();
+      if (heard) words2 = true;
       box2.value = (base + heard).slice(0, box2.maxLength > 0 ? box2.maxLength : void 0);
       onText(box2.value);
     };
     next.onerror = (event) => {
       if (!current() || event.error === "aborted") return;
       problem = true;
+      log3(where, "error", event.error);
+      if (where === "service" && SERVICE_FAILURES.has(event.error) && canRecord) {
+        serviceUnusable = true;
+        onStatus(`Your browser's speech service is not available here (${event.error}). Press Dictate again to use a speech model that runs on this computer instead.`);
+        return;
+      }
       onStatus(PROBLEMS[event.error] ?? `Dictation stopped (${event.error}). Your text is unchanged; type instead.`);
     };
     next.onend = () => {
       if (!current()) return;
+      const elapsed = clock.performance.now() - started;
+      log3(where, "ended", { words: words2, speech, seconds: deterministicMath.round(elapsed / 1e3) });
       idle();
-      if (!problem) onStatus("Dictation stopped. Review the text, then press Teach or Answer when you are ready.");
+      if (problem) return;
+      if (!words2 && (speech || elapsed >= SILENT_FAILURE_MS)) {
+        if (where === "device") deviceUnusable = true;
+        else if (canRecord) serviceUnusable = true;
+        const fallback = where === "device" && Service && !serviceUnusable ? `your browser's speech service (it sends your voice to ${speechServiceOwner()})` : canRecord && (where === "device" || serviceUnusable) ? "a speech model that runs on this computer" : null;
+        onStatus(fallback ? `Your browser's speech recognition listened but returned no words. Press Dictate again to use ${fallback} instead.` : "Your browser's speech recognition listened but returned no words. Type instead.");
+        return;
+      }
+      onStatus("Dictation stopped. Review the text, then press Teach or Answer when you are ready.");
     };
     try {
       next.start();
     } catch {
       return false;
     }
+    log3("listening with", where === "device" ? "the on-device recogniser" : `the browser speech service (${speechServiceOwner()})`, lang);
     recognition = next;
     busy = false;
     listening("Stop");
-    onStatus("Listening on this device\u2026 press Stop when you are done.");
+    onStatus(where === "device" ? "Listening on this computer\u2026 press Stop when you are done." : `Listening\u2026 Your browser sends your voice to ${speechServiceOwner()} to turn it into text. Press Stop when you are done.`);
     box2.focus();
     return true;
   }
@@ -41610,18 +41650,18 @@ var Battle = class extends Page {
     title(this, this.boss ? "Final examination" : run.currentRoom?.title ?? "Room battle");
     const view = new RoomView();
     const turns = fight.log.filter((e) => e.kind === "student_answer" || e.kind === "help_result");
-    const log3 = el("div", "turns");
-    for (const event of turns) log3.prepend(turnCard(event));
-    log3.querySelector("details")?.setAttribute("open", "");
+    const log4 = el("div", "turns");
+    for (const event of turns) log4.prepend(turnCard(event));
+    log4.querySelector("details")?.setAttribute("open", "");
     const plates = this.plates(run);
     if (!this.introduced && !turns.length) plates.forEach((p) => p.classList.add("arriving"));
     view.root.append(...plates);
     view.inventory.append(view.entry("Notebook", "Pip\u2019s notebook", mdToEl(run.notebookMd)));
     const summary2 = this.summary;
     if (turns.length) {
-      const book = view.entry("Battle log", "Battle chronicle", log3);
+      const book = view.entry("Battle log", "Battle chronicle", log4);
       view.inventory.append(book);
-      if (!summary2) view.root.append(this.outcome(turns, book, log3));
+      if (!summary2) view.root.append(this.outcome(turns, book, log4));
     }
     stage.classList.toggle("ending", !!summary2);
     if (summary2) view.root.append(summary2.passed ? this.victory(run, turns) : this.defeat(run, summary2));
@@ -41665,14 +41705,14 @@ var Battle = class extends Page {
     return [pip2, foe];
   }
   /** The latest turn stays on screen; clicking it opens that turn in the battle log. */
-  outcome(turns, book, log3) {
+  outcome(turns, book, log4) {
     const latest = turns[turns.length - 1];
     const label = latest.kind === "help_result" ? "Your help" : "Pip\u2019s answer";
     const result = latest.kind === "help_result" && latest.late ? "Time expired" : latest.correct ? "Correct" : "Incorrect";
     const damage = latest.damage === 0 ? "No damage" : `${Number(latest.damage.toFixed(1))} ${this.boss ? "health" : "heart"} lost`;
     const outcome = btn("", () => {
       if (book.getAttribute("aria-expanded") !== "true") book.click();
-      const card = log3.querySelector("details");
+      const card = log4.querySelector("details");
       if (card) {
         card.open = true;
         card.scrollIntoView({ block: "nearest" });
@@ -42367,6 +42407,7 @@ function buildSettingsView(options) {
       el("p", "", "Pip still only knows what you teach. In battle, the AI answers as Pip using nothing but Pip's notebook."),
       el("div", "setup-rule"),
       el("p", "dim", "No key? Choose Offline to play the sample lessons."),
+      el("p", "dim", "Dictate uses your browser's speech recognition. Chrome, Edge and Safari may send your voice to Google, Microsoft or Apple to turn it into text; other browsers use a speech model that runs on this computer."),
       options.practice ? el("p", "warn", "Practice mode uses canned responses. These settings apply when you play through the backend.") : null
     )),
     advanced,

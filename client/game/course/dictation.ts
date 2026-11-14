@@ -1,10 +1,13 @@
-// Dictation that never sends audio anywhere. Two on-device engines, tried in this order:
-// 1. The browser's own on-device speech recognition (Web Speech API with `processLocally = true`, which the spec says
-//    MUST run on the device), when the browser has a local model for the language. Text appears live as it is heard.
-// 2. Otherwise an open speech model that runs inside this page: Moonshine base (MIT licence) through transformers.js,
-//    on the CPU via WebAssembly. Pip's Notebook records the clip, decodes it in the page and transcribes it locally.
-//    The library and model files (about 63 MB) are downloaded once, from jsDelivr and Hugging Face, and then cached by
-//    the browser; the recording itself is never uploaded.
+// Dictation with three engines, tried in this order:
+// 1. The browser's on-device speech recognition (Web Speech API with `processLocally = true`, which the spec says MUST
+//    run on the device), when the browser has a local model for the language. Audio stays on the computer.
+// 2. Otherwise the browser's own speech service (the same API without `processLocally`). Chrome sends the audio to
+//    Google, Edge to Microsoft and Safari to Apple to turn it into text; the game says so on the button and while
+//    listening. Text appears live as it is heard.
+// 3. Otherwise (Firefox, or when that service fails) an open speech model that runs inside this page: Moonshine base
+//    (MIT licence) through transformers.js, on the CPU via WebAssembly. The clip is recorded, decoded and transcribed
+//    in the page. The library and model files (about 63 MB) download once from jsDelivr and Hugging Face and are cached;
+//    the recording itself is never uploaded.
 // Dictation only edits the text box; it never teaches or answers by itself. Navigation cancels it.
 import { btn, clock } from './ui.js';
 
@@ -29,6 +32,7 @@ type Recognition = {
   onresult: ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null;
   onerror: ((event: { error: string }) => void) | null;
   onend: (() => void) | null;
+  onspeechstart?: (() => void) | null;
 };
 type Recognizer = {
   new (): Recognition;
@@ -54,13 +58,36 @@ type AudioWindow = {
 };
 
 const host = clock as unknown as AudioWindow;
-/** Only a recogniser that can be told to stay on the device qualifies. */
+/** Engine 1: only a recogniser that can be told to stay on the device qualifies. */
 const Local = [host.SpeechRecognition, host.webkitSpeechRecognition].find(
   (r): r is Recognizer => !!r && typeof r.available === 'function' && typeof r.install === 'function' && 'processLocally' in r.prototype);
+/** Engine 2: the browser's own speech service, which runs on its maker's servers. */
+const Service = host.SpeechRecognition ?? host.webkitSpeechRecognition;
 const canRecord = !!host.MediaRecorder && !!host.AudioContext && !!host.OfflineAudioContext && !!clock.navigator.mediaDevices?.getUserMedia;
-export const onDeviceDictation = !!Local || canRecord;
+export const canDictate = !!Local || !!Service || canRecord;
 
-const UNSUPPORTED = 'This browser cannot record audio for on-device dictation, so nothing was recorded. Type instead.';
+/** Who runs the browser's speech service, for the disclosure. */
+export function speechServiceOwner(): string {
+  const agent = clock.navigator.userAgent;
+  if (/Edg\//.test(agent)) return 'Microsoft';
+  if (/Chrome|Chromium|CriOS/.test(agent)) return 'Google';
+  if (/Safari/.test(agent)) return 'Apple';
+  return "your browser's maker";
+}
+/** Errors that mean the browser's speech service cannot work here; later dictation uses the in-page model instead. */
+const SERVICE_FAILURES = new Set(['network', 'service-not-allowed', 'language-not-supported']);
+/**
+ * Engines that listened but returned no words this page visit. Some browsers expose the API without a working
+ * recogniser behind it (Brave, some other Chromium browsers), and an on-device language pack can report ready when it
+ * is not. The next press of Dictate then moves on to the next engine.
+ */
+let deviceUnusable = false;
+let serviceUnusable = false;
+/** A session this long without words, or one where speech was detected, counts as the engine not working. */
+const SILENT_FAILURE_MS = 4000;
+const log = (...parts: unknown[]) => console.info('[dictation]', ...parts);
+
+const UNSUPPORTED = 'This browser cannot record audio for dictation, so nothing was recorded. Type instead.';
 const PROBLEMS: Record<string, string> = {
   'not-allowed': 'Microphone access is blocked. Allow it for this page to dictate.',
   'audio-capture': 'No microphone was found.',
@@ -127,7 +154,9 @@ async function toSamples(recording: Blob): Promise<Float32Array> {
 export function micButton(box: HTMLTextAreaElement, onText: (value: string) => void, onStatus: (message: string) => void) {
   const button = btn('Dictate', () => void toggle(), 'mic');
   button.setAttribute('aria-pressed', 'false');
-  button.title = onDeviceDictation ? 'Speak instead of typing. Speech is recognised on this device; audio is never uploaded.' : UNSUPPORTED;
+  button.title = !canDictate ? UNSUPPORTED : Service
+    ? `Speak instead of typing. Uses your browser's speech recognition, which may send your voice to ${speechServiceOwner()} to turn it into text.`
+    : 'Speak instead of typing. Speech is recognised on this computer; audio is never uploaded.';
   let recognition: Recognition | null = null;
   let recorder: RecorderLike | null = null;
   let stream: MediaStream | null = null;
@@ -164,7 +193,7 @@ export function micButton(box: HTMLTextAreaElement, onText: (value: string) => v
     if (recognition) { recognition.stop(); return; }
     if (recorder?.state === 'recording') { recorder.stop(); return; }
     if (busy) return;
-    if (!onDeviceDictation) { onStatus(UNSUPPORTED); return; }
+    if (!canDictate) { onStatus(UNSUPPORTED); return; }
     stopDictation();
     const mine = ++session;
     const current = () => mine === session;
@@ -172,13 +201,14 @@ export function micButton(box: HTMLTextAreaElement, onText: (value: string) => v
     try {
       const choice = await browserLanguage();
       if (!current()) return;
-      if (choice) {
+      if (choice && !deviceUnusable) {
         // A pack can report "downloadable" even when present; install() resolves at once then. It needs the click's
         // user activation, which is still fresh here.
         const ready = choice.status === 'available' || await Local!.install!({ langs: [choice.lang], processLocally: true }).catch(() => false);
         if (!current()) return;
-        if (ready && startLive(choice.lang, mine)) return;
+        if (ready && startLive(Local!, choice.lang, mine, 'device')) return;
       }
+      if (Service && !serviceUnusable && startLive(Service, clock.navigator.language || 'en-US', mine, 'service')) return;
       if (canRecord) await record(mine);
       else { idle(); onStatus(UNSUPPORTED); }
     } catch {
@@ -186,35 +216,69 @@ export function micButton(box: HTMLTextAreaElement, onText: (value: string) => v
     }
   }
 
-  /** Engine 1: live text from the browser's on-device recogniser. False when it cannot start. */
-  function startLive(lang: string, mine: number): boolean {
+  /**
+   * Engines 1 and 2: live text from the browser's recogniser, on the device or through its speech service.
+   * False when it cannot start.
+   */
+  function startLive(Recognition: Recognizer, lang: string, mine: number, where: 'device' | 'service'): boolean {
     const current = () => mine === session;
-    const next = new Local!();
-    next.processLocally = true;
-    if (next.processLocally !== true) return false; // never start without the local guarantee
+    const next = new Recognition();
+    if (where === 'device') {
+      next.processLocally = true;
+      if (next.processLocally !== true) return false; // never claim on-device without the local guarantee
+    } else if ('processLocally' in next) next.processLocally = false;
     next.lang = lang; next.continuous = true; next.interimResults = true;
     const base = box.value.trim() ? box.value.replace(/\s*$/, ' ') : '';
+    const started = clock.performance.now();
     let problem = false;
+    let words = false;
+    let speech = false;
+    next.onspeechstart = () => { speech = true; };
     next.onresult = event => {
       if (!current()) return;
       const heard = Array.from(event.results, result => result[0].transcript).join(' ').replace(/\s+/g, ' ').trim();
+      if (heard) words = true;
       box.value = (base + heard).slice(0, box.maxLength > 0 ? box.maxLength : undefined);
       onText(box.value);
     };
     next.onerror = event => {
       if (!current() || event.error === 'aborted') return;
       problem = true;
+      log(where, 'error', event.error);
+      if (where === 'service' && SERVICE_FAILURES.has(event.error) && canRecord) {
+        serviceUnusable = true;
+        onStatus(`Your browser's speech service is not available here (${event.error}). Press Dictate again to use a speech model that runs on this computer instead.`);
+        return;
+      }
       onStatus(PROBLEMS[event.error] ?? `Dictation stopped (${event.error}). Your text is unchanged; type instead.`);
     };
     next.onend = () => {
       if (!current()) return;
+      const elapsed = clock.performance.now() - started;
+      log(where, 'ended', { words, speech, seconds: Math.round(elapsed / 1000) });
       idle();
-      if (!problem) onStatus('Dictation stopped. Review the text, then press Teach or Answer when you are ready.');
+      if (problem) return;
+      if (!words && (speech || elapsed >= SILENT_FAILURE_MS)) {
+        // It listened but never returned words: try the next engine on the next press.
+        if (where === 'device') deviceUnusable = true;
+        else if (canRecord) serviceUnusable = true;
+        const fallback = where === 'device' && Service && !serviceUnusable
+          ? `your browser's speech service (it sends your voice to ${speechServiceOwner()})`
+          : canRecord && (where === 'device' || serviceUnusable) ? 'a speech model that runs on this computer' : null;
+        onStatus(fallback
+          ? `Your browser's speech recognition listened but returned no words. Press Dictate again to use ${fallback} instead.`
+          : "Your browser's speech recognition listened but returned no words. Type instead.");
+        return;
+      }
+      onStatus('Dictation stopped. Review the text, then press Teach or Answer when you are ready.');
     };
     try { next.start(); } catch { return false; }
+    log('listening with', where === 'device' ? 'the on-device recogniser' : `the browser speech service (${speechServiceOwner()})`, lang);
     recognition = next; busy = false;
     listening('Stop');
-    onStatus('Listening on this device… press Stop when you are done.');
+    onStatus(where === 'device'
+      ? 'Listening on this computer… press Stop when you are done.'
+      : `Listening… Your browser sends your voice to ${speechServiceOwner()} to turn it into text. Press Stop when you are done.`);
     box.focus();
     return true;
   }

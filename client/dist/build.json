@@ -1,6 +1,6 @@
 {
   "name": "pips-notebook",
-  "sourceIdentity": "dcba17ae3ce428eb82a854989df95ca398d8f999a2d4fe25a28b25cb928c1ee5",
+  "sourceIdentity": "1fd0e1e7ab1476bc8c337dc12d9fe22b9677af433fb56cb1191429df024b727a",
   "sources": {
     "../shared/src/api-client.ts": "7521d4922e2f946d98355f17ab3954a2bf6187857c705919157600f1b33927bd",
     "game/art.ts": "7f3d4eb64bc07bed1faf0dd0b15520a1b40917d690155cfd0e93b3b20374b104",
@@ -12,14 +12,14 @@
     "game/course/app.ts": "8e225e1066567787e75e4130af64e424bd5c3a99885c0db8406bf1d3086f0706",
     "game/course/battle-feedback.ts": "145ffc05e81669b08988ae0276c19a9fdcf3e587a989a51b60a3c0b7b3fcf670",
     "game/course/battle.ts": "1ed1e6fcc7435a3a4641971faadb1db1f6bea1a4c34567c55cc6efb54dedfbf9",
-    "game/course/dictation.ts": "cac6584e7cf15daef300589b1ac7d53d16f2ffef7c7b9e94a090b23c6a4ed675",
+    "game/course/dictation.ts": "41126843b0a5086384d7c76a8423aa96ecb97e6dc634393f406aca565275a199",
     "game/course/expedition.ts": "f5c93056053eff83bd4f4e6fdd1dbd0b3707f8035149d16b558d44b2f90af5d8",
     "game/course/help.ts": "ff96a712a32afafdf49b4c94f944c29b4c6bc56e4787003a56da4fddc9a10951",
     "game/course/lesson-guide.ts": "e203f0b4c49b97d6c4dc3904ade7fb4c9a88114fcd09c6341459db59c9d38dd8",
     "game/course/mock.ts": "fb96988f56a00c039505796cb677ff49c828d25f03c588d3d89739cf6566b780",
     "game/course/page.ts": "9696be222997a4ddce61e9d486cfbbbe5394fa6393e8ad42a1878e30ac15c938",
     "game/course/report.ts": "faae8bbf0f9a568eeda55d32c72abd0ababf780fc597155fb8ad8e6b81e5240b",
-    "game/course/settings-view.ts": "99015ec6abe66b7e8f5cc520aa7b425bf0079a4f5a27379d62ff27699515a96a",
+    "game/course/settings-view.ts": "007fc8666d012a303882ae99fb3c65f699d4d745a95c5f7c46b6079b4d00c9f0",
     "game/course/soundtrack.ts": "29f88603714039a5166a868fe02fbcfe4e7fd888843b4f24be27a0c177076303",
     "game/course/storage-view.ts": "2e1171c360a5aad997b3dfcb8763ccc6d48e9ceb02b029d8cc6b354db56ab7b7",
     "game/course/transition.ts": "93f58cc5f512ce17b67ccbcd9f93ae21e0bb14df68ace6f4f72e0a39ae144874",
@@ -158,7 +158,7 @@
     "engine/bakery/src/validate-game.ts": "f03183672e6b6986adf29f890ba035bb8efc92529beba8f02491e8ce4a3b0a87"
   },
   "outputs": {
-    "game.js": "2319e3033088c5b5224622c02973b40c3c1e141e94cce0bc77c1714315417a75",
+    "game.js": "1bcbb78c9117dbe5538c070f79ec51631f52a232a5597559c7966aad2df6c0b0",
     "index.html": "53efc796bd57bc0826bfd9672098cae2ed657e1c329a62430eff35aaa09465f2",
     "media/OFL-Silkscreen.txt": "86c5e9c9382cdcc5948704fdfe60f2aa164a719746931219a42736ecd9cefbd3",
     "media/boss_room_background.png": "1adf4e8e24f528eabdaccdf7b032dd49497f2e93382ce00da16b17086514ffb6",

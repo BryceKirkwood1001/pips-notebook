@@ -29,8 +29,11 @@ Hits float a label over whoever took them. Sprites never cross: attacks tween fr
 spot and never come within 140 units. Room end shows a victory card (stars, stats, door to the next
 room: Pip walks off, title card, walks in) or a defeat card (Pip's wrong reasoning, retry).
 
-Dictation never uploads audio. It uses the browser's on-device recogniser (live text) when
-`SpeechRecognition.available({langs, processLocally:true})` allows; otherwise it records a clip
+Dictation tries three engines. 1) The browser's on-device recogniser (live text, audio stays local) when
+`SpeechRecognition.available({langs, processLocally:true})` allows. 2) Otherwise the browser's own speech
+service (live text; Chrome sends audio to Google, Edge to Microsoft, Safari to Apple), disclosed on the
+button, in the listening message and in Settings; a network/service-not-allowed error switches later
+dictation to engine 3. 3) Otherwise it records a clip
 (max 30s) and transcribes it in the page with Moonshine base (MIT) via transformers.js 4.3.2 on
 WASM. The ~63 MB library/model download comes once from jsDelivr/Hugging Face (Cache API). English
 only. It only edits the text box (appends); navigation cancels it.
@@ -66,7 +69,7 @@ timeouts (see root docs/ARCHITECTURE.md).
 - `course/battle.ts`: nameplates, outcome card, hit labels, victory/defeat, room changes, help modal.
 - `course/report.ts`: expedition log card and full report (public data only).
 - `course/transition.ts`: title-card curtain; `app.ts` goTo walks only when no curtain is up.
-- `course/dictation.ts`: on-device speech recognition button.
+- `course/dictation.ts`: Dictate button (on-device recogniser, browser speech service, or in-page model).
 - `course/expedition.ts`: end/remove actions, confirm dialog, archive run lines.
 - `course/soundtrack.ts`: scene music, tier-matched combat tracks, music toggle.
 - `course/Upload.ts`, `Menu.ts`, `Results.ts`, `Settings.ts`, `settings-view.ts`, `help.ts`.

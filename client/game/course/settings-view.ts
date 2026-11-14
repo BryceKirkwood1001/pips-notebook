@@ -163,6 +163,8 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
     el('div', 'setup-grid', fields, el('aside', 'setup-aside', el('h3', '', 'How it works'),
       el('p', '', 'Pip still only knows what you teach. In battle, the AI answers as Pip using nothing but Pip\'s notebook.'),
       el('div', 'setup-rule'), el('p', 'dim', 'No key? Choose Offline to play the sample lessons.'),
+      el('p', 'dim', "Dictate uses your browser's speech recognition. Chrome, Edge and Safari may send your voice to Google, "
+        + 'Microsoft or Apple to turn it into text; other browsers use a speech model that runs on this computer.'),
       options.practice ? el('p', 'warn', 'Practice mode uses canned responses. These settings apply when you play through the backend.') : null)),
     advanced,
     el('div', 'setup-footer', el('div', 'actions', test, save), el('small', 'dim', 'Testing sends one small request to the AI, which may use a little API credit.')),

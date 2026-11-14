@@ -46,7 +46,7 @@ A room has two halves. In the **lesson**, open **Talk to Pip**, explain each top
 Other things in the game:
 
 - **Rooms** and **Pause** open the expedition menu without losing your place, and pausing stops "Help me!" timers.
-- **Dictate** turns speech into text on your device. It uses the browser's own speech recognition when available; otherwise it downloads an open speech model once (Moonshine base, about 63 MB, from jsDelivr and Hugging Face) and runs it in the page. Audio never leaves your computer.
+- **Dictate** turns speech into text using your browser's speech recognition. If the browser can do it on your computer (recent Chrome with the language downloaded), the audio stays there. Otherwise Chrome, Edge and Safari send your voice to Google, Microsoft or Apple to turn it into text; the Dictate button, the listening message and Settings say so. Browsers without speech recognition, such as Firefox, download an open speech model once (Moonshine base, about 63 MB, from jsDelivr and Hugging Face) and run it in the page, so the audio stays on your computer.
 - While a dungeon is being prepared, **Thinking** shows progress and, with OpenAI, the model's public reasoning summary (not its private reasoning). You can start an expedition as soon as its first room is ready.
 - Music changes with each scene. The **Music** button on the title screen and in the header turns it off, and your browser remembers the choice.
 
@@ -64,7 +64,7 @@ One Node.js process runs everything. The server (Fastify, TypeScript run directl
 | `docs/` | Architecture, API reference, run phases, course preparation, rules and decisions, and marketing art. |
 | `start.command`, `start.bat` | Double-click launchers for macOS and Windows. Both run `scripts/start.mjs`. |
 
-The game needs the internet only for an AI provider, the first install, and the dictation model download. The server listens on every network interface, so other devices on your network can open the game at your computer's address; changing Settings works only from the computer running it. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
+The game needs the internet only for an AI provider, the first install, and dictation (your browser's speech service, or the one-time model download). The server listens on every network interface, so other devices on your network can open the game at your computer's address; changing Settings works only from the computer running it. See [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) for details.
 
 ## Configuration
 
