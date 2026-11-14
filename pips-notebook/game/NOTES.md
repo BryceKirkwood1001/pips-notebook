@@ -29,10 +29,11 @@ Hits float a label over whoever took them. Sprites never cross: attacks tween fr
 spot and never come within 140 units. Room end shows a victory card (stars, stats, door to the next
 room: Pip walks off, title card, walks in) or a defeat card (Pip's wrong reasoning, retry).
 
-Dictation is on-device only: `SpeechRecognition.available({langs, processLocally:true})`, then
-`install()` for the language pack, then `processLocally = true`. No cloud fallback; when local
-recognition is unavailable (the Claude built-in browser reports `unavailable`) it says so and
-records nothing. It only edits the text box; navigation aborts it.
+Dictation never uploads audio. It uses the browser's on-device recogniser (live text) when
+`SpeechRecognition.available({langs, processLocally:true})` allows; otherwise it records a clip
+(max 30s) and transcribes it in the page with Moonshine base (MIT) via transformers.js 4.3.2 on
+WASM. The ~63 MB library/model download comes once from jsDelivr/Hugging Face (Cache API). English
+only. It only edits the text box (appends); navigation cancels it.
 
 Markdown (`ui.ts` `markdown`/`inline`, text nodes only): fenced code, inline code, bold, italics,
 lists and line breaks in questions, options, answers, reasoning, explanations, notes and chat.
@@ -75,5 +76,4 @@ timeouts (see root docs/API_SETTINGS.md).
 ## Missing or simplified
 
 Native `smoke` fails at course/ui.ts:2 (`document` undefined): the headless simulator has no DOM.
-Live microphone dictation has not passed anywhere yet: the built-in browser has no local en-US
-model. Hosted Phaser operations need an owner-linked build; local preview works. No new debug cheats.
+Dictation was verified with a sample clip as the microphone (no live voice test). Hosted Phaser operations need an owner-linked build; local preview works. No new debug cheats.

@@ -18,7 +18,7 @@ Built at HackPrinceton (November 13 to 15, 2026).
 - **Readable combat feedback:** room encounters, a final dragon exam, hit animations and a persistent turn outcome above Next turn. Click the outcome to open that turn in the battle log. The expedition report shows room progress, correct/total answers, accuracy and weak points.
 - **Navigation and saved progress:** Rooms and Pause open the lesson/progress menu. Pausing freezes pending help deadlines. My archive lists **Your saved dungeons** and their expeditions: resume, end or remove an expedition, or delete an entire dungeon after confirmation.
 - **Music transitions:** scene and battle tracks fade out and in; the music preference is remembered in the browser.
-- **On-device dictation only:** Dictate requires browser support for local speech recognition and an available language pack. If unavailable, use typing or your computer's dictation. There is no cloud transcription fallback or audio-upload backend.
+- **On-device dictation only:** Dictate uses the browser's local speech recognition when available (live text, e.g. recent desktop Chrome with the language pack); otherwise it records a short clip and transcribes it inside the page with an open speech model (Moonshine base, MIT, English) via transformers.js. That model (about 63 MB) downloads once from Hugging Face/jsDelivr and is cached by the browser. Audio is never uploaded, and there is no cloud transcription backend.
 
 Preparation shows stage/task progress and, when supplied by OpenAI, public reasoning summaries. These summaries are optional and are not the model's private chain of thought. You can start with a ready selected room while later rooms continue preparing.
 
