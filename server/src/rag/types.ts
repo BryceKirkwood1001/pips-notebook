@@ -62,7 +62,9 @@ export type ChunkDraft = Omit<Chunk, 'embedding'>;
 /**
  * Structure-aware chunking: split on headings, slides and page breaks first, then into chunks of
  * about CHUNK_TOKENS with CHUNK_OVERLAP overlap. A chunk never spans two pages. `conceptIds` starts
- * empty; the ingest pipeline fills it once the outline exists. Ids are `${fileId}_p${page}_${n}`.
+ * empty; the ingest pipeline fills it once the outline exists.
+ * Ids are `${courseId}_${fileId}_p${page}_${n}` (n counts from 0 within the page). The course id is
+ * part of the id because stores upsert by chunk id, so two courses must never share one.
  */
 export interface Chunker {
   chunk(courseId: string, file: ParsedFile): ChunkDraft[];

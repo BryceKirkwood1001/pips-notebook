@@ -36,7 +36,7 @@ Structure-aware (SPEC 3.2):
 - Split first on structure: Markdown headings (`#` to `######`), slide separators (a line of `---`), and page breaks. A chunk never spans two pages. For PDF text, treat short title-like lines as headings where that is cheap and safe; otherwise fall back to page-level sections.
 - `sectionPath` is the heading trail, outermost first.
 - Then split long sections into chunks of about `config.chunkTokens` tokens (estimate 1 token as 4 characters) with `config.chunkOverlap` overlap, cutting at paragraph or sentence boundaries. Keep fenced code blocks whole where possible. Keep the heading line in the first chunk of its section.
-- Chunk ids are `${fileId}_p${page}_${n}`, with `n` counting from 0 within the page. `conceptIds` is `[]`.
+- Chunk ids are `${courseId}_${fileId}_p${page}_${n}`, with `n` counting from 0 within the page. The course id is part of the id because stores upsert by chunk id, so two courses must never share one. `conceptIds` is `[]`.
 - Important for evidence: the chunk text must keep the source text as written (don't rewrite or strip characters inside sentences), because quotes are matched exactly after whitespace normalization.
 
 ### 3. `createEmbedder(llm, config)`

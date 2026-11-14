@@ -225,7 +225,7 @@ export const CoursePackSchema = z.object({
 export type CoursePack = z.infer<typeof CoursePackSchema>;
 
 export const ChunkSchema = z.object({
-  /** `${fileId}_p${page}_${n}` */
+  /** Globally unique (two courses never share a chunk id): `${courseId}_${fileId}_p${page}_${n}` */
   id: z.string().min(1),
   courseId: z.string().min(1),
   fileId: z.string().min(1),

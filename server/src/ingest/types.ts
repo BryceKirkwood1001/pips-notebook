@@ -36,6 +36,8 @@
  * ── Ids ─────────────────────────────────────────────────────────────────────
  *   unit u1..  concept c1..  key point `${conceptId}_k1`..  room r1..  material item m1..
  *   misconception: unique snake_case slug   question: `${courseId}_q1`..   chunk: from the Chunker
+ *   The CLI ingests a sample under the fixed course id `sample-${name}` (e.g. `sample-seasons`),
+ *   so `POST /courses/seed/:sample` can load the fixture as it is and seeding stays idempotent.
  */
 import type { CourseFixture, CoursePack, ProvenanceOrigin, Question, QuestionType } from '@top/shared';
 import type { Config } from '../config';
