@@ -112,24 +112,51 @@ function foeAttack() {
 }
 
 /** Pip walks to `toX` with the walking sheet (or a bouncing step without it). Resolves when the walk ends. */
-export function walk(toX: number): Promise<void> {
+export function walk(toX: number, rest: Clip = 'student_idle', speed = WALK_SPEED): Promise<void> {
     const pip = actorOf('student');
     if (!pip) return Promise.resolve();
     const homeY = pip.data.homeY;
-    const time = Math.max(0.25, Math.abs(toX - pip.x) / WALK_SPEED);
+    const time = Math.max(0.25, Math.abs(toX - pip.x) / speed);
+    const facing = Math.abs(pip.sx);
+    pip.sx = toX < pip.x ? -facing : facing; // the sheets face right; walking left mirrors Pip
     const sheet = game.assets.has('student_walking');
     if (sheet) pip.play('student_walking');
     const bob = game.tween.fromTo(pip, { y: homeY }, { y: homeY - (sheet ? STEP_BOB_WITH_SHEET : STEP_BOB) },
         { duration: STEP_TIME / 2, yoyo: true, loop: Math.max(1, Math.round(time / STEP_TIME)), ease: 'easeOutQuad' });
     return new Promise(resolve => {
         game.tween.to(pip, { x: toX }, { duration: time, ease: 'linear', onComplete: () => {
-            bob.stop(); if (pip.alive) pip.y = homeY; resolve();
+            bob.stop();
+            // Arrived: stop walking in place and take the resting pose (standing, or seated at the desk).
+            if (pip.alive) { pip.y = homeY; pip.sx = facing; if (game.assets.has(rest)) pip.play(rest); }
+            resolve();
         } });
     });
 }
 
-/** Pip leaves through the right edge, for a room change. */
-export function walkOff() { return walk(OFF_RIGHT); }
+/** Poses drawn seated at the study desk: Pip stands up before walking anywhere. */
+const SEATED: string[] = ['student_writing_notes', 'student_raising_hand', 'student_understanding_moment'];
+/** How long Pip takes to get up from the desk (or shake off a lost fight) before walking. */
+const GET_UP_TIME = 0.4;
+
+/** Exits are a little brisker than entrances so a room change does not drag. */
+const EXIT_SPEED = 620;
+export type Exit = 'left' | 'right';
+
+/**
+ * Pip gets up (from the desk, or after a lost fight) and walks off an edge, for a room change. Right is onward
+ * (from the library, or past a beaten foe); left is a retreat, so Pip never walks through a foe still standing.
+ */
+export function walkOff(exit: Exit = 'right'): Promise<void> {
+    const pip = actorOf('student');
+    if (!pip) return Promise.resolve();
+    const seated = SEATED.includes(game.anim(pip)?.name ?? '');
+    const homeY = pip.data.homeY;
+    if (game.assets.has('student_idle')) pip.play('student_idle');
+    // Stand back up to full height and opacity (a lost fight leaves Pip slumped), with a little hop off the chair.
+    game.tween.to(pip, { alpha: 1, sy: Math.abs(pip.sx), y: homeY }, { duration: 0.2, ease: 'easeOutQuad' });
+    if (seated) game.tween.fromTo(pip, { y: homeY }, { y: homeY - 14 }, { duration: GET_UP_TIME / 2, yoyo: true, ease: 'easeOutQuad' });
+    return new Promise<void>(resolve => game.after(GET_UP_TIME, resolve)).then(() => walk(exit === 'left' ? OFF_LEFT : OFF_RIGHT, 'student_idle', EXIT_SPEED));
+}
 
 /** A few steps toward the next scene for a scene change without the curtain (app.ts goTo). */
 export function walkToScene(arrive: () => void) {
@@ -226,7 +253,8 @@ export function drawStage(run: { screen: string; isBoss: boolean; phase: string;
         width: spot.width, layer: 'world', anims: animations('student'), data: { homeX: spot.x, homeY: spot.y },
         ...(animated ? { play: pose } : {}),
     });
-    if (entering) void walk(spot.x).then(() => { if (pip.alive && animated && pose !== idle) pip.play(idle); });
+    if (entering && animated) void walk(spot.x, idle);
+    else if (entering) void walk(spot.x);
     if (!encounter || teaching) return;
     const name: Enemy = foe.enemy;
     const idleClip = `${name}_idle` as const;

@@ -124,6 +124,13 @@ export function createMockApi(): ApiClient {
     r.learning.pendingQuestions = questions;
     if (pending) r.pendingHelpMe = pending.ev;
     else delete r.pendingHelpMe;
+    // Like the server: the next turn's question, shown before Pip answers (odd turns are "Help me!" events).
+    const f = r.phase === 'boss' ? r.boss : r.phase === 'room' ? r.room : undefined;
+    if (r.room) delete r.room.nextQuestion;
+    if (r.boss) delete r.boss.nextQuestion;
+    if (f && !pending && !over && f.turn < f.totalTurns) {
+      f.nextQuestion = f.turn % 2 === 1 ? HELP[helpCount % HELP.length]!.q : STUDENT_QS[(f.turn / 2) % 2]!.q;
+    }
     return structuredClone(r);
   };
   const startFight = (boss: boolean) => {

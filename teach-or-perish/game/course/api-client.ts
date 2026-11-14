@@ -233,8 +233,10 @@ export interface PublicRun {
     helpMeUsed: number;
     log: TurnResult[];
     passed?: boolean;
+    /** The question the next turn asks (public form), so it can be shown before Pip answers. */
+    nextQuestion?: PublicQuestion;
   };
-  boss?: { turn: number; totalTurns: number; health: number; helpMeUsed: number; log: TurnResult[] };
+  boss?: { turn: number; totalTurns: number; health: number; helpMeUsed: number; log: TurnResult[]; nextQuestion?: PublicQuestion };
   pendingHelpMe?: HelpMeTurn;
   results?: Results;
   /** Finished room attempts, oldest first. Absent until the first room fight ends. */

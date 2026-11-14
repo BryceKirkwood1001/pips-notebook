@@ -1,3 +1,4 @@
+import { findHiddenKeys } from '../../test/helpers/leaks';
 import { describe, expect, it } from 'vitest';
 import { PublicRunSchema, RunSchema, type Run } from '@top/shared';
 import { engine } from './index';
@@ -90,7 +91,7 @@ describe('public projection', () => {
     }
   });
 
-  it('shows no upcoming question ids and no misconception ids on student questions', async () => {
+  it('shows only the next question (public form), never the rest of the draw, and no misconception ids', async () => {
     const deps = createDeps();
     let run = newRun(deps);
     deps.tasks.handlers.review = () => ({
@@ -101,8 +102,19 @@ describe('public projection', () => {
     const learning = JSON.stringify(engine.toPublicRun(run, ctx, deps.config));
     expect(learning).not.toContain('m1a');
     run = engine.startRoom(deps, ctx, run).run;
-    const room = JSON.stringify(engine.toPublicRun(run, ctx, deps.config));
-    for (const id of run.room!.questionIds) expect(room).not.toContain(id);
+    const pub = engine.toPublicRun(run, ctx, deps.config);
+    const room = JSON.stringify(pub);
+    // The next /turn's question is presented before Pip answers; it is exactly what that turn reveals anyway.
+    const [next, ...later] = run.room!.questionIds;
+    expect(pub.room!.nextQuestion?.id).toBe(next);
+    expect(pub.room!.nextQuestion).toEqual(engine.toPublicQuestion(ctx.questions.find((q) => q.id === next)!));
+    for (const id of later) expect(room).not.toContain(id);
+    expect(findHiddenKeys(pub)).toEqual([]);
+    // It moves on with the turn and disappears while a help event is pending or the fight is over.
+    const turned = (await engine.takeTurn(deps, ctx, run)).run;
+    const after = engine.toPublicRun(turned, ctx, deps.config).room!;
+    if (turned.pendingHelpMe) expect(after.nextQuestion).toBeUndefined();
+    else expect(after.nextQuestion?.id).toBe(run.room!.questionIds[1]);
     expect(room).not.toContain('Belief 1a'.replace('1a', 'zz')); // sanity
   });
 

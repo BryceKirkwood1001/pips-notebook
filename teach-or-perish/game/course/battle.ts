@@ -1,19 +1,24 @@
 import { api, call, goTo, openMenu, sceneForPhase, setRun, state } from './app.js';
-import type { Answer, HelpMeTurn, PublicRun, TurnResult } from './api-client.js';
+import type { Answer, HelpMeTurn, PublicQuestion, PublicRun, TurnResult } from './api-client.js';
 import { buildHelp } from './help.js';
 import { atWorld, Page, panel, RoomView, stage, title } from './page.js';
-import { btn, clock, el, mdToEl } from './ui.js';
+import { btn, clock, el, mdToEl, questionEl } from './ui.js';
 import { turnCard } from './battle-feedback.js';
 import { attemptStats } from './report.js';
 import { travel } from './transition.js';
-import { DANGER_LEVELS, defeatFoe, defeatPip, drawStage, encounterFor, POS, setArrival, strike, walkOff } from '../art.js';
+import { DANGER_LEVELS, defeatFoe, defeatPip, drawStage, encounterFor, POS, setArrival, strike } from '../art.js';
 
 /** Nameplates sit this far above each actor's centre, in world units: just over the head. */
 const PIP_PLATE_Y = POS.pip.y - 102;
-/** Pip's walk out of a cleared room is cut short after this long (the game clock pauses in a hidden tab). */
-const WALK_OUT_MAX_MS = 1500;
 /** Floating hit labels and the battle banner are removed after this long even without animation events. */
 const POP_MS = 1300;
+/**
+ * Each turn's question flies out of the foe to the centre, stays long enough to read (base + per character, capped;
+ * a click moves on), then retracts into the foe while Pip thinks. Pip's thought bubble stays at least MIN_THINK_MS.
+ */
+const CAST_IN_MS = 450, CAST_OUT_MS = 400, CAST_BASE_MS = 1300, CAST_PER_CHAR_MS = 22, CAST_MAX_MS = 4200, MIN_THINK_MS = 900;
+/** Pip's thought bubble floats beside Pip's head, toward the middle of the arena (world units). */
+const THOUGHT_X = POS.pip.x + 150, THOUGHT_Y = POS.pip.y - 78;
 /** Wrong answers listed on the defeat card (the battle log has all of them). */
 const TRACE_SHOWN = 2;
 
@@ -149,8 +154,6 @@ export class Battle extends Page {
         this.leaving=true;
         const run=state.run!;
         const nextIndex=run.roomIndex+1;
-        stage.querySelector('.end-panel')?.classList.add('leaving');
-        await Promise.race([walkOff(), new Promise(r=>clock.setTimeout(r,WALK_OUT_MAX_MS))]);
         const card=toBoss
             ? {kicker:'All rooms cleared',title:'The final examination',detail:`Pip faces ${run.rules.bossQuestions} questions on everything. Your grade is the health Pip keeps.`}
             : {kicker:`Room ${nextIndex+1} of ${run.rooms.length}`,title:run.rooms[nextIndex]!.title,detail:'Back to the library to teach Pip the next lesson.'};
@@ -173,7 +176,7 @@ export class Battle extends Page {
             if(!next)return false;
             setRun(next);setArrival('study');goTo(sceneForPhase(next.phase));
             return true;
-        });
+        },'left'); // the foe still stands, so Pip retreats the way it came
         if(!ok)this.leaving=false;
     }
 
@@ -207,9 +210,55 @@ export class Battle extends Page {
         const run=await call(()=>api.getRun(state.run!.id));
         if(run){setRun(run);goTo(sceneForPhase(run.phase));}
     }
+    private stepping=false;
+    /** Next turn: the foe presents its question front and center, it retracts, then Pip thinks while the answer comes. */
     private async step() {
-        const result=await call(()=>api.turn(state.run!.id));
-        if(result && this.active) await this.handle(result);
+        if (this.stepping) return;
+        this.stepping=true;
+        const run=state.run!;
+        const question=(this.boss?run.boss:run.room)?.nextQuestion;
+        const next=stage.querySelector<HTMLButtonElement>('.room-actions .gold');
+        if (next) next.disabled=true;
+        try {
+            if (question && !run.pendingHelpMe) await this.castQuestion(question);
+            if (!this.active) return;
+            const stopThinking=question ? this.thinking(question) : ()=>{};
+            const started=clock.performance.now();
+            const result=await call(()=>api.turn(run.id));
+            if (question) await new Promise(r=>clock.setTimeout(r,Math.max(0,MIN_THINK_MS-(clock.performance.now()-started))));
+            stopThinking();
+            if (result && this.active) await this.handle(result);
+            else if (next) next.disabled=false;
+        } finally { this.stepping=false; }
+    }
+
+    /** The question flies out of the foe to the centre, then retracts back into it (click to move on sooner). */
+    private castQuestion(q: PublicQuestion): Promise<void> {
+        const run=state.run!;
+        const foe=encounterFor(run.roomIndex,run.rooms.length,this.boss);
+        const card=el('div','question-cast',el('small','cast-kicker',`${foe.name} asks`),questionEl(q),el('small','cast-hint','Click to continue'));
+        card.style.setProperty('--fx',`${(foe.x/1280)*100}%`);card.style.setProperty('--fy',`${(foe.y/720)*100}%`);
+        card.setAttribute('role','status');
+        stage.querySelector('.room-view')?.append(card);
+        const hold=Math.min(CAST_MAX_MS,CAST_BASE_MS+q.prompt.length*CAST_PER_CHAR_MS);
+        return new Promise(resolve=>{
+            let done=false;
+            const retract=()=>{
+                if(done)return; done=true;
+                card.classList.add('retract');
+                clock.setTimeout(()=>{card.remove();resolve();},CAST_OUT_MS);
+            };
+            card.addEventListener('click',retract);
+            clock.setTimeout(retract,CAST_IN_MS+hold);
+        });
+    }
+
+    /** Pip's thought bubble while the answer is worked out; returns a function that removes it. */
+    private thinking(q: PublicQuestion) {
+        const bubble=atWorld(el('div','thought',el('span','thought-dots',el('i'),el('i'),el('i')),el('strong','','Pip is thinking…'),
+            el('small','',q.prompt)),THOUGHT_X,THOUGHT_Y);
+        stage.querySelector('.room-view')?.append(bubble);
+        return ()=>bubble.remove();
     }
     private async handle(event:TurnResult) {
         const run=state.run!;
@@ -218,7 +267,7 @@ export class Battle extends Page {
                 state.results=event.results;
                 await travel({kicker:'Exam complete',title:'Grading Pip’s exam',detail:'Your grade is the health Pip kept through the exam.'},async()=>{
                     setRun({...run,phase:'results'});goTo('Results');return true;
-                });
+                },'left'); // the exam dragon still stands
                 return;
             case 'room_end': {
                 this.summary=event;
@@ -270,7 +319,7 @@ function hearts(have: number, max: number) {
 }
 /** Danger pips: how fierce this room's monster is (rooms get fiercer toward the end of the expedition). */
 function danger(tier: number) {
-    return el('span', 'danger', el('small', '', 'Danger'), ...Array.from({ length: DANGER_LEVELS }, (_, i) => el('i', i <= tier ? 'pip on' : 'pip')));
+    return el('span', 'danger', el('small', '', 'Danger'), ...Array.from({ length: DANGER_LEVELS }, (_, i) => el('i', i <= tier ? 'danger-pip on' : 'danger-pip')));
 }
 function segments(left: number, total: number) {
     return el('span', 'segments', ...Array.from({ length: total }, (_, i) => el('i', i < left ? 'seg on' : 'seg')));

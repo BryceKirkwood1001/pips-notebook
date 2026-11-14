@@ -125,6 +125,13 @@ export function toPublicRun(run: Run, ctx: EngineContext, config: Config): Publi
     createdAt: run.createdAt,
     updatedAt: run.updatedAt,
   };
+  // The question the next /turn will ask, in its public form: absent between fights, after the last question and
+  // while a "Help me!" event is pending (that event already carries its question).
+  const upcoming = (fight: { questionIds: string[]; turn: number }, phase: Run['phase']) => {
+    if (run.phase !== phase || run.pendingHelpMe || fight.turn >= fight.questionIds.length) return {};
+    const q = ctx.questions.find((x) => x.id === fight.questionIds[fight.turn]);
+    return q ? { nextQuestion: toPublicQuestion(q) } : {};
+  };
   if (run.room) {
     out.room = {
       attempt: run.room.attempt,
@@ -135,6 +142,7 @@ export function toPublicRun(run: Run, ctx: EngineContext, config: Config): Publi
       helpMeUsed: run.room.helpMeUsed,
       log: structuredClone(run.room.log),
       ...(run.room.passed !== undefined ? { passed: run.room.passed } : {}),
+      ...upcoming(run.room, 'room'),
     };
   }
   if (run.boss) {
@@ -144,6 +152,7 @@ export function toPublicRun(run: Run, ctx: EngineContext, config: Config): Publi
       health: run.boss.health,
       helpMeUsed: run.boss.helpMeUsed,
       log: structuredClone(run.boss.log),
+      ...upcoming(run.boss, 'boss'),
     };
   }
   if (pendingHelpMe) out.pendingHelpMe = pendingHelpMe;

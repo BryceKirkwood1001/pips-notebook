@@ -16,6 +16,10 @@ Battle: arena and monster scale with the room's position (danger tier, `art.ts` 
 first room = sunset meadow + Misconception slime, middle = deep forest + Muddle beast, last = moonlit
 ruins + Fallacy drake (5 rooms: 1,2,2,3,3). Nameplate and battle title card show "Danger n of 3".
 The final exam uses the boss room and dragon.
+Next turn: the question flies out of the foe to the centre (click to skip), retracts into it, then
+Pip's thought bubble shows while `/turn` answers (`room/boss.nextQuestion` is the public next question).
+Room changes: Pip gets up from the desk and walks off (right; left past a standing foe after a loss
+or the exam), the title card covers the change, then Pip walks in and stands still.
 Nameplates show Pip's hearts (or exam grade) and questions left; the outcome card is top right.
 Hits float a label over whoever took them. Sprites never cross: attacks tween from a stored home
 spot and never come within 140 units. Room end shows a victory card (stars, stats, door to the next

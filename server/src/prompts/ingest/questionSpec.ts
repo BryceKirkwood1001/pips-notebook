@@ -6,6 +6,7 @@ export const QUESTION_QUALITY_RULES = [
   'Questions must be self-contained: include necessary code, data and assumptions. Do not refer to an unseen diagram, the example, or the above unless the required information is reproduced in the question.',
   'Preserve bounds and assumptions: 100+ is not exactly 100. Use numbers to test a taught relationship, not arbitrary arithmetic on illustration labels. Adapted numbers must be explicitly given in the new question and must not change the underlying taught rule.',
   'Written-answer rubrics specify the required ideas and accept equivalent wording, abbreviations and valid explanations. They must not require copying the source sentence verbatim. A correct answer must not be penalized solely for a different phrasing.',
+  'A rubric requires only the idea the question actually asks for. Precise terms and secondary details (an exact type name, a qualifier, an extra example) are acceptable extras, not requirements, unless the question explicitly asks for them; if a detail matters, ask for it in the question.',
   'If the excerpts do not support a meaningful, unambiguous question, omit that candidate. Never invent a question merely to fill a requested count.',
 ].join('\n');
 

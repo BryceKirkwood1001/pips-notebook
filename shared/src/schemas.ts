@@ -911,6 +911,8 @@ export const PublicRunSchema = z.object({
       helpMeUsed: z.number().int().min(0),
       log: z.array(TurnResultSchema),
       passed: z.boolean().optional(),
+      /** The question the next /turn asks (public form only), so the client can present it before Pip answers. */
+      nextQuestion: PublicQuestionSchema.optional(),
     })
     .optional(),
   boss: z
@@ -920,6 +922,8 @@ export const PublicRunSchema = z.object({
       health: z.number().min(0).max(100),
       helpMeUsed: z.number().int().min(0),
       log: z.array(TurnResultSchema),
+      /** The question the next /turn asks (public form only). */
+      nextQuestion: PublicQuestionSchema.optional(),
     })
     .optional(),
   /** A "Help me!" event waiting for POST /help/:eventId. Same shape as the help_me TurnResult. */
