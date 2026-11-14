@@ -68,7 +68,7 @@ export async function wire(options: WiringOptions): Promise<Wired> {
   const { config, clock } = options;
   const useGemini = config.llmProvider === 'gemini';
 
-  const llm = useGemini ? createGeminiClient(config) : createFakeLlmClient();
+  const llm = useGemini ? createGeminiClient(config) : createFakeLlmClient({ embeddingDims: config.embeddingDims });
   const mongo = await connectMongo(config);
 
   const repo = mongo ? createMongoRepository(mongo.db) : createMemoryRepository();
