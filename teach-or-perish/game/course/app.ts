@@ -1,7 +1,8 @@
 import { ApiError, createApiClient, type PublicRun, type Results, type RunPhase } from './api-client.js';
 import { createMockApi } from './mock.js';
-import { btn, el, host } from './ui.js';
+import { btn, el, host, clock } from './ui.js';
 import { game } from '../engine.js';
+import { walkToScene } from '../art.js';
 
 const params = new URLSearchParams(location.search);
 export const mock = params.get('mock') === '1';
@@ -12,7 +13,30 @@ export const state: {run: PublicRun | null; results: Results | null} = {run:null
 export type Screen = 'Title' | 'Upload' | 'Learning' | 'Fight' | 'Boss' | 'Results' | 'Settings' | 'Menu';
 let currentScreen: Screen = 'Title';
 let settingsReturn: Screen = 'Title';
-export function goTo(screen: Screen) { currentScreen = screen; game.scenes.go(screen); }
+let walking = false;
+export function goTo(screen: Screen) {
+    if (walking) return;
+    const stage = host.querySelector<HTMLElement>('.course-stage');
+    const arrive = () => {
+        if (stage) {
+            stage.inert = false;
+            stage.classList.remove('travelling');
+        }
+        walking = false;
+        currentScreen = screen;
+        game.scenes.go(screen);
+    };
+    const leavesRoom = ['Upload', 'Learning', 'Fight', 'Boss'].includes(currentScreen);
+    const entersRoom = ['Learning', 'Fight', 'Boss', 'Results'].includes(screen);
+    if (currentScreen === screen || !leavesRoom || !entersRoom ||
+        state.run?.pendingHelpMe || clock.matchMedia('(prefers-reduced-motion: reduce)').matches) return arrive();
+    walking = true;
+    if (stage) {
+        stage.inert = true;
+        stage.classList.add('travelling');
+    }
+    walkToScene(arrive);
+}
 export function openSettings() { settingsReturn = currentScreen; goTo('Settings'); }
 export function backFromSettings() { goTo(state.run?.pausedAt ? 'Menu' : state.run ? sceneForPhase(state.run.phase) : settingsReturn === 'Settings' ? 'Title' : settingsReturn); }
 export async function openMenu() {

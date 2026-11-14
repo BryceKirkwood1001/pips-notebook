@@ -1,6 +1,12 @@
 import { game } from './engine.js';
 
-const files = ['concept_room_background','boss_room_background','student_learning','student_fighting','student_finished'];
+const encounters = [
+    { enemy: 'monster', background: 'fight_scene_1' },
+    { enemy: 'monster_2', background: 'fight_scene_2' },
+    { enemy: 'monster_3', background: 'fight_scene_3' },
+] as const;
+const files = ['concept_room_background','boss_room_background','student_learning','student_fighting','student_finished',
+    ...encounters.map(room => room.background)];
 const clips = {
     student_idle: { cols: 4, fps: 3, hold: false },
     student_writing_notes: { cols: 4, fps: 5, hold: false },
@@ -9,13 +15,23 @@ const clips = {
     student_attack: { cols: 5, fps: 10, hold: true },
     monster_idle: { cols: 4, fps: 4, hold: false },
     monster_attack: { cols: 5, fps: 10, hold: true },
+    monster_2_idle: { cols: 4, fps: 4, hold: false },
+    monster_2_attack: { cols: 6, fps: 10, hold: true },
+    monster_3_idle: { cols: 4, fps: 4, hold: false },
+    monster_3_attack: { cols: 8, fps: 11, hold: true },
+    final_boss_idle: { cols: 4, fps: 3, hold: false },
+    final_boss_attack: { cols: 10, fps: 11, hold: true },
+    student_walking: { cols: 4, fps: 8, hold: false },
 };
 type Clip = keyof typeof clips;
 type Actor = 'student' | 'monster';
 
-function animations(actor: Actor) {
+type Enemy = typeof encounters[number]['enemy'] | 'final_boss';
+
+function animations(prefix: 'student' | Enemy) {
     return Object.fromEntries(Object.entries(clips)
-        .filter(([key]) => key.startsWith(actor + '_') && game.assets.has(key))
+        .filter(([key]) => game.assets.has(key) && (prefix === 'student'
+            ? key.startsWith('student_') : key === prefix + '_idle' || key === prefix + '_attack'))
         .map(([strip, { fps, hold }]) => [strip, { strip, fps, hold }]));
 }
 
@@ -36,9 +52,24 @@ export function teachingPose(hasQuestion: boolean, understood = false) {
     else playPose('student', rest);
 }
 
-export function playAttack(correct: boolean) {
+function enemyFor(index: number, boss: boolean): Enemy {
+    return boss ? 'final_boss' : encounters[index % encounters.length]!.enemy;
+}
+
+export function playAttack(correct: boolean, roomIndex: number, boss: boolean) {
     if (correct) playPose('student', 'student_attack', 'student_idle');
-    else playPose('monster', 'monster_attack', 'monster_idle');
+    else {
+        const enemy = enemyFor(roomIndex, boss);
+        playPose('monster', `${enemy}_attack`, `${enemy}_idle`);
+    }
+}
+
+export function walkToScene(arrive: () => void) {
+    const [pip] = game.roster.tagged('student');
+    if (!pip || !game.assets.has('student_walking')) return arrive();
+    pip.play('student_walking');
+    game.tween.to(pip, { x: pip.x + 165 }, { duration: 0.78 });
+    game.after(0.8, arrive);
 }
 
 export async function loadArt() {
@@ -65,11 +96,12 @@ export async function loadArt() {
 }
 export function drawStage(run: { screen: string; isBoss: boolean; phase: string; index: number; victory: boolean }) {
     const boss = run.isBoss || run.screen === 'report';
-    const bg = boss ? 'boss_room_background' : 'concept_room_background';
+    const teaching = run.phase === 'teach';
+    const field = encounters[run.index % encounters.length]!;
+    const bg = boss ? 'boss_room_background' : run.screen === 'room' && !teaching ? field.background : 'concept_room_background';
     const key = (s: string) => game.assets.has(s) ? s : 'fallback-'+s;
     const encounter = run.screen === 'room' || run.isBoss;
     game.spawn({texture:key(bg), x:640, y:360, width:1280,height:720,layer:'back'});
-    const teaching = run.phase === 'teach';
     const idle = teaching ? 'student_writing_notes' : 'student_idle';
     const animated = !run.victory && game.assets.has(idle);
     const fallback = run.victory ? 'student_finished' : encounter && !teaching ? 'student_fighting' : 'student_learning';
@@ -81,12 +113,14 @@ export function drawStage(run: { screen: string; isBoss: boolean; phase: string;
         ...(animated ? { play: idle } : {}),
     });
     if (!encounter || teaching) return;
-    const slime = game.assets.has('monster_idle');
+    const name = enemyFor(run.index, run.isBoss);
+    const idleClip = `${name}_idle` as const;
+    const hasEnemy = game.assets.has(idleClip);
     const enemy = game.spawn({
-        tags: ['monster'], texture: slime ? 'monster_idle' : 'foe' + (run.isBoss ? 3 : run.index % 3),
-        x: 861, y: run.isBoss ? 501 : 531, width: run.isBoss ? 255 : 191, layer: 'world',
-        anims: animations('monster'), ...(slime ? { play: 'monster_idle' } : {}),
+        tags: ['monster'], texture: hasEnemy ? idleClip : 'foe' + (run.isBoss ? 3 : run.index % 3),
+        x: 861, y: run.isBoss ? 474 : 531, width: run.isBoss ? 330 : 191, layer: 'world',
+        anims: animations(name), ...(hasEnemy ? { play: idleClip } : {}),
     });
-    if (slime) enemy.sx *= -1;
+    if (hasEnemy) enemy.sx *= -1;
     if (run.phase === 'won') { game.tween.to(enemy,{alpha:0,scale:0.1},{duration:0.5}); return; }
 }

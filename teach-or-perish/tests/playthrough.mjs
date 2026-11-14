@@ -78,7 +78,7 @@ try {
                 if(type==='checkbox')await input.check();
                 else await input.fill(type==='number'?'23.5':'equinox');
             }else{
-                const options=modal.locator('button').filter({hasNotText:/Submit|Reset/});
+                const options=modal.locator('button').filter({hasNotText:/Submit|Reset|Pause & rooms/});
                 if(await button('Reset').count()){
                     for(let i=0;i<await options.count();i++)await options.nth(i).click();
                 }else await options.first().click();

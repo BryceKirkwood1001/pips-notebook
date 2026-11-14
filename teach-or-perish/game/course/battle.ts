@@ -118,7 +118,7 @@ export class Battle extends Page {
                     run.phase=event.phaseAfter;
                 }
                 this.create();
-                animateAnswer(event.correct);
+                animateAnswer(event.correct, run.roomIndex, this.boss);
             }
         }
     }
@@ -127,8 +127,8 @@ export function arena(run:PublicRun|null,screen:string) {
     drawStage({screen,isBoss:screen==='boss',index:run?.roomIndex??0,victory:screen==='report',
         phase:run?.phase==='learning'?'teach':run?.room?.passed && screen==='room'?'won':'intro'});
 }
-function animateAnswer(correct:boolean) {
-    playAttack(correct);
+function animateAnswer(correct:boolean, roomIndex:number, boss:boolean) {
+    playAttack(correct, roomIndex, boss);
     const attacker=game.roster.tagged(correct?'student':'monster')[Symbol.iterator]().next().value;
     const victim=game.roster.tagged(correct?'monster':'student')[Symbol.iterator]().next().value;
     if(attacker)game.tween.to(attacker,{x:attacker.x+(correct?100:-100)},{duration:.14,yoyo:true});

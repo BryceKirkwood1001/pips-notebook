@@ -40,6 +40,16 @@
     "media/student_attack.png",
     "media/monster_idle.png",
     "media/monster_attack.png",
+    "media/monster_2_idle.png",
+    "media/monster_2_attack.png",
+    "media/monster_3_idle.png",
+    "media/monster_3_attack.png",
+    "media/final_boss_idle.png",
+    "media/final_boss_attack.png",
+    "media/student_walking.png",
+    "media/fight_scene_1.png",
+    "media/fight_scene_2.png",
+    "media/fight_scene_3.png",
     "media/font.css",
     "media/OFL-PixelifySans.txt"
   ]
