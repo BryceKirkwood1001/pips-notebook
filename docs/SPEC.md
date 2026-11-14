@@ -130,14 +130,14 @@ No model can reliably guess "seconds" directly, so build the budget from **obser
 ## 3. Architecture, stack, and RAG
 
 ### 3.1 Repo layout and stack
-npm workspaces: `shared` and `server`. The Phaser AE game has a separate toolchain.
+npm workspaces: `shared` and `server`. The Phaser AE game has a separate toolchain; its build is committed and served by the server.
 ```
 /                         repo root
-  pips-notebook/        main Phaser AE game (port 4173)
+  client/                 Phaser AE game (source in client/game, committed build in client/dist)
   shared/                 Zod schemas, TS types, dependency-free API client
   server/                 Node 22+ TypeScript backend
   samples/                sample course materials + cached course-pack fixtures
-  docs/                   SPEC, API, STATE_MACHINE, PHASER_INTEGRATION, DECISIONS
+  docs/                   SPEC, API, ARCHITECTURE, STATE_MACHINE, INGEST, DECISIONS
   .claude/agents/         saved subagent briefs for reuse
 ```
 
@@ -148,7 +148,7 @@ npm workspaces: `shared` and `server`. The Phaser AE game has a separate toolcha
 - **Vitest** for tests
 - **Generation:** Google Gemini through the official **`@google/genai`** SDK. Use the model from env `GEMINI_MODEL`, a current fast Flash model (check the SDK docs for the right name). Use JSON structured output (`responseMimeType: application/json` plus a response schema), validate everything with Zod, retry once on a parse or validation failure, and give every call a timeout.
 - **Storage:** MongoDB Atlas through the official `mongodb` driver, behind a `Repository` interface. If `MONGODB_URI` isn't set, the server persists to `.local/archive`; isolated tests use memory storage.
-- **Ports:** main game on **4173**, backend API on **8787**. Allow CORS from `http://localhost:4173` by default.
+- **Ports:** the game and the API together on **8787** (`npm start`); the game's live dev preview runs on **4173**. Allow CORS from `http://localhost:4173` by default.
 
 ### 3.2 Material ingestion and RAG
 - **Uploads:** one or more `.pdf`, `.txt` or `.md` files per course, or JSON `{ text }`.

@@ -39,7 +39,7 @@
  *   The CLI ingests a sample under the fixed course id `sample-${name}` (e.g. `sample-seasons`),
  *   so `POST /courses/seed/:sample` can load the fixture as it is and seeding stays idempotent.
  */
-import type { CourseFixture, CoursePack, ProvenanceOrigin, Question, QuestionType } from '@pips-notebook/shared';
+import type { ProvenanceOrigin, QuestionType } from '@pips-notebook/shared';
 import type { Config } from '../config';
 import type { Clock } from '../engine/types';
 import type { IngestTasks } from '../llm/types';
@@ -91,13 +91,4 @@ export interface IngestReport {
   /** Wall-clock milliseconds until the first room was ready, and until the whole pack was. */
   firstRoomReadyMs?: number;
   totalMs: number;
-}
-
-export interface IngestPipeline {
-  runIngest(deps: IngestDeps, input: IngestInput): Promise<IngestReport>;
-  checkCoverage(pack: CoursePack, questions: Question[], config: Config): CoverageReport;
-  /** Snapshot of an ingested course for `samples/cache/<sample>.json`. */
-  buildFixture(deps: IngestDeps, courseId: string, sample: string): Promise<CourseFixture>;
-  /** Semantic checks beyond the schema (evidence, misconception ids, concept ids). */
-  validateQuestion(question: Question, pack: CoursePack): string[];
 }

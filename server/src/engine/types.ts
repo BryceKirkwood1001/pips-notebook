@@ -8,7 +8,7 @@
  * EXPORTS other modules import from `server/src/engine/index.ts` (exact names):
  *   export const engine: Engine
  *   export { toPublicRun, toPublicQuestion }          // also available as engine.toPublicRun, ...
- *   notebook helpers: parseNotebook, notebookLines     // see NotebookHelpers below
+ *   notebook helpers: parseNotebook(md) -> sections in order, notebookLines(md) -> every bullet text
  *
  * ERRORS: throw `AppError` from server/src/errors.ts.
  *   wrong_phase (409)            the action is not allowed in `run.phase`
@@ -211,12 +211,4 @@ export interface Engine {
 
   /** The ONLY way an unanswered question leaves the server. */
   toPublicQuestion(question: Question): PublicQuestion;
-}
-
-/** Signatures of the notebook helpers exported from `server/src/engine/index.ts`. */
-export interface NotebookHelpers {
-  /** Sections in document order. `notes` are bullet texts without the "- " prefix. */
-  parseNotebook(notebookMd: string): { title: string; notes: string[] }[];
-  /** Every bullet text in the notebook, without the "- " prefix. */
-  notebookLines(notebookMd: string): string[];
 }

@@ -1,6 +1,6 @@
 # HTTP API reference
 
-Base URL: `http://localhost:8787/api`. All responses are JSON. The game origin `http://localhost:4173` is allowed by default; configure `CORS_ORIGINS` for others.
+Base URL: `http://localhost:8787/api`. All responses are JSON. The game is served from the same origin; the Phaser dev preview on `http://localhost:4173` is allowed by default, and `CORS_ORIGINS` adds others.
 
 These examples were captured from the integrated mock API by `scripts/e2e.ts`, using seed 42 and the seasons fixture. Ids and timestamps are real per-run values and will differ on your machine. An auxiliary run supplies the explicit learning-answer and wrong-phase examples. Full captured bodies are in [api-examples.json](api-examples.json); excerpts below omit fields, without altering the retained values. The `/debug` capture itself is also an excerpt.
 
@@ -9,7 +9,7 @@ npm run e2e -- --capture-file docs/api-examples.json
 npm run docs:api
 ```
 
-The client is [shared/src/api-client.ts](../shared/src/api-client.ts), and the complete public types are in that same dependency-free file. See [STATE_MACHINE.md](STATE_MACHINE.md) for transitions and [PHASER_INTEGRATION.md](PHASER_INTEGRATION.md) for rendering.
+The client is [shared/src/api-client.ts](../shared/src/api-client.ts), and the complete public types are in that same dependency-free file. See [STATE_MACHINE.md](STATE_MACHINE.md) for transitions and [ARCHITECTURE.md](ARCHITECTURE.md) for rendering.
 
 ## Endpoints
 

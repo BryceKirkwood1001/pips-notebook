@@ -7,7 +7,7 @@ This is a 36-hour hackathon build. Working beats elegant. Write simple, readable
 ## Hard rules
 
 1. **Edit only the paths your brief says you own.** Everything else is read-only for you, in particular:
-   - `pips-notebook/` is a teammate's game. Never edit, install, build or run anything inside it.
+   - `client/` is the game (frontend). Backend agents never edit, install, build or run anything inside it.
    - `shared/`, `docs/`, every `package.json`, the root config files, and these orchestrator-owned server files: every `types.ts` interface file, `server/src/core/**`, `server/src/config.ts`, `server/src/errors.ts`, `server/src/app.ts`, `server/src/routes.ts`, `server/src/container.ts`, `server/src/index.ts`, `server/src/services/**`.
    - If you need a change in a file you don't own, do not make it. Describe the exact diff in your final report.
 2. **No git state changes.** Don't commit, stash, reset, checkout or switch branches. `git status` and `git diff` are fine. The orchestrator commits.

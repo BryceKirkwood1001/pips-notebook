@@ -1,10 +1,10 @@
 import { defineConfig } from 'vitest/config';
 
-// Backend/shared tests and isolated frontend controller checks; no native game test discovery.
+// Backend and shared tests, plus the game's isolated controller tests in client/tests (no native game test discovery).
 export default defineConfig({
   test: {
-    include: ['server/**/*.test.ts', 'shared/**/*.test.ts', 'scripts/**/*.test.ts'],
-    exclude: ['**/node_modules/**', 'pips-notebook/**'],
+    include: ['server/**/*.test.ts', 'shared/**/*.test.ts', 'client/tests/**/*.test.ts'],
+    exclude: ['**/node_modules/**', 'client/phaser/**'],
     environment: 'node',
     testTimeout: 15000,
   },

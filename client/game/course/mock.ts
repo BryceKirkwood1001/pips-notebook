@@ -1,0 +1,404 @@
+// In-browser fake of the API client (use with ?mock=1). Just enough to walk through every scene.
+// Script: room 1 attempt 1 is lost (reasoning trace), then everything passes; "Help me!" fires on every
+// odd turn and cycles through all six question types; the boss has three help events.
+import { clock } from './ui.js';
+import {
+  ApiError,
+  type Answer,
+  type ApiClient,
+  type FailedTurn,
+  type HelpMeTurn,
+  type PublicCourse,
+  type PublicQuestion,
+  type PublicRoomReport,
+  type PublicRun,
+  type PublicStudentQuestion,
+  type Results,
+  type RunPhase,
+  type TurnResult,
+} from '../../../shared/src/api-client.js';
+
+const wait = (ms = 150) => new Promise((r) => clock.setTimeout(r, ms));
+const q = (id: string, type: string, prompt: string, payload: object): PublicQuestion =>
+  ({ id, type, prompt, difficulty: 3, timeBudgetSec: 15, payload }) as PublicQuestion;
+
+// Help questions with their keys, one per type (cycled).
+const HELP: { q: PublicQuestion; key: Answer; text: string }[] = [
+  { q: q('h1', 'mcq', 'What causes the seasons?', { options: ['Axial tilt', 'Distance to the sun', 'Solar flares'] }), key: { choiceIndex: 0 }, text: 'Axial tilt' },
+  { q: q('h2', 'true_false', 'True or false?', { statement: 'Earth is closest to the sun in July.' }), key: { value: false }, text: 'False' },
+  { q: q('h3', 'multi_select', 'Which are solstices or equinoxes?', { options: ['June solstice', 'Leap day', 'March equinox'] }), key: { choiceIndexes: [0, 2] }, text: 'June solstice, March equinox' },
+  { q: q('h4', 'numeric', 'What is the tilt of Earth\'s axis?', { unit: 'degrees' }), key: { value: 23.5 }, text: '23.5 degrees' },
+  { q: q('h5', 'short_text', 'Name the day with equal day and night.', {}), key: { text: 'equinox' }, text: 'equinox' },
+  { q: q('h6', 'ordering', 'Order the seasons starting at spring.', { items: ['Autumn', 'Spring', 'Winter', 'Summer'] }), key: { order: [1, 3, 0, 2] }, text: 'Spring, Summer, Autumn, Winter' },
+];
+
+// Student questions asked during fights: even index = student gets it right (unless the script says lose).
+const STUDENT_QS = [
+  { q: q('s1', 'mcq', 'Why is it hotter in summer?', { options: ['Closer to the sun', 'Sunlight hits more directly'] }), right: 'Sunlight hits more directly', wrong: 'Closer to the sun' },
+  { q: q('s2', 'true_false', 'True or false?', { statement: 'The seasons are the same in both hemispheres.' }), right: 'False', wrong: 'True' },
+];
+
+const ROOMS = [
+  { id: 'r1', title: 'Why we have seasons', description: 'Why Earth has seasons, and why distance to the sun is not the reason.',
+    learningObjectives: ['Explain how the tilted axis changes how directly sunlight arrives', 'Explain why the orbit’s distance is not the cause'],
+    concepts: [{ id: 'c1', title: 'Axial tilt', summary: 'Earth’s axis is tilted about 23.5 degrees, so each hemisphere takes turns facing the sun more directly.' },
+      { id: 'c2', title: 'Orbit', summary: 'Earth’s orbit is nearly circular; it is closest to the sun in January, during northern winter.' }] },
+  { id: 'r2', title: 'Equinoxes and solstices', description: 'The four turning points of the year.',
+    concepts: [{ id: 'c3', title: 'Solstice', summary: 'Solstices are the longest and shortest days; equinoxes have equal day and night.' }] },
+];
+/** Pip's practice questions, one per topic, asked the first time that topic is taught. */
+const PIP_ASKS: Record<string, string> = {
+  c1: 'Wait, is it hotter in summer because we are closer to the sun?',
+  c2: 'Does the orbit make Earth much closer to the sun in July?',
+  c3: 'What is a solstice?',
+};
+
+const RESULTS: Results = {
+  predictedGradePct: 78.4,
+  letter: 'C+',
+  target: 'B',
+  metTarget: false,
+  conceptAccuracy: [
+    { conceptId: 'c1', title: 'Axial tilt', correct: 3, total: 4, accuracy: 0.75 },
+    { conceptId: 'c2', title: 'Orbit', correct: 1, total: 2, accuracy: 0.5 },
+    { conceptId: 'c3', title: 'Solstice', correct: 2, total: 2, accuracy: 1 },
+  ],
+  helpMe: { offered: 9, correct: 5, wrong: 3, late: 1, avgSolveTimeSec: 11.2 },
+  costlyMisconceptions: [
+    {
+      id: 'm1', conceptId: 'c1', conceptTitle: 'Axial tilt', description: 'Thinks distance to the sun causes the seasons',
+      beliefStatement: 'Summer happens because Earth is closer to the sun.', correction: 'Seasons come from the 23.5 degree axial tilt.',
+      origin: 'skipped', questionId: 's1', questionPrompt: 'Why is it hotter in summer?',
+      materialRef: { fileId: 'f1', fileName: 'seasons.pdf', page: 3, sectionPath: ['Seasons', 'Tilt'], quote: 'The tilt of the axis, not distance, drives the seasons.' },
+    },
+  ],
+};
+
+function isRight(key: Answer, a: Answer): boolean {
+  if (key.text !== undefined) return (a.text ?? '').trim().toLowerCase().includes(key.text);
+  return JSON.stringify([key.choiceIndex, key.choiceIndexes, key.value, key.order]) === JSON.stringify([a.choiceIndex, a.choiceIndexes, a.value, a.order]);
+}
+
+export function createMockApi(): ApiClient {
+  let polls = 0;
+  let run: PublicRun | null = null;
+  let attempt = 1;
+  let helpCount = 0;
+  let pending: { ev: HelpMeTurn; item: (typeof HELP)[number] } | null = null;
+  let over = false;
+  let failed: FailedTurn[] = [];
+  let questions: PublicStudentQuestion[] = [];
+  let notebook = '# Notebook\n';
+  let learned = { asked: 0, answered: 0, skipped: 0 };
+  /** Notes by topic title, rendered into the notebook markdown. */
+  let notes: Record<string, string[]> = {};
+  const render = () => { notebook = '# Notebook\n' + Object.entries(notes).map(([t, list]) => `## ${t}\n${list.map((n) => `- ${n}\n`).join('')}`).join(''); };
+  const note = (title: string, text: string) => { const list = (notes[title] ??= []); if (!list.includes(text)) list.push(text); render(); };
+
+  // Each tab owns its practice run. Keep the pending event and original deadline across reloads.
+  const storageKey = 'pips-notebook.practice.v1';
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(storageKey) ?? 'null');
+    if (saved?.run?.id === 'mock-run') {
+      ({ run, attempt, helpCount, pending, over, failed, questions, notebook } = saved);
+      notes = saved.notes ?? {}; learned = saved.learned ?? learned;
+    }
+  } catch { /* Browser storage can be unavailable. The run still works in memory. */ }
+  const save = () => {
+    try { sessionStorage.setItem(storageKey, JSON.stringify({run, attempt, helpCount, pending, over, failed, questions, notebook, notes, learned})); }
+    catch { /* Storage is optional in practice mode. */ }
+  };
+
+  const need = (...phases: RunPhase[]) => {
+    if (run?.endedAt) throw new ApiError(409, 'run_ended', 'This expedition was ended.');
+    if (run?.pausedAt) throw new ApiError(409, 'run_paused', 'Resume the expedition first.');
+    if (!run || !phases.includes(run.phase)) throw new ApiError(409, 'wrong_phase', `Not allowed in phase ${run?.phase}`);
+    return run;
+  };
+  const fightLog = () => (run!.phase === 'boss' ? run!.boss!.log : run!.room!.log);
+  const view = (): PublicRun => {
+    const r = run!;
+    r.rooms.forEach((x, i) => (x.state = i < r.roomIndex ? 'passed' : i === r.roomIndex ? 'current' : 'upcoming'));
+    r.currentRoom = r.phase === 'boss' || r.phase === 'results' ? null : r.rooms[r.roomIndex];
+    r.notebookMd = notebook;
+    r.learning.pendingQuestions = questions;
+    if (pending) r.pendingHelpMe = pending.ev;
+    else delete r.pendingHelpMe;
+    // Like the server: the next turn's question, shown before Pip answers (odd turns are "Help me!" events).
+    const f = r.phase === 'boss' ? r.boss : r.phase === 'room' ? r.room : undefined;
+    if (r.room) delete r.room.nextQuestion;
+    if (r.boss) delete r.boss.nextQuestion;
+    if (f && !pending && !over && f.turn < f.totalTurns) {
+      f.nextQuestion = f.turn % 2 === 1 ? HELP[helpCount % HELP.length]!.q : STUDENT_QS[(f.turn / 2) % 2]!.q;
+    }
+    return structuredClone(r);
+  };
+  const startFight = (boss: boolean) => {
+    over = false;
+    failed = [];
+    pending = null;
+    if (boss) run!.boss = { turn: 0, totalTurns: 6, health: 100, helpMeUsed: 0, log: [] };
+    else run!.room = { attempt, turn: 0, totalTurns: 4, hearts: 3, maxHearts: 3, helpMeUsed: 0, log: [] };
+  };
+
+  /** A finished room attempt goes into the practice history, like the server's between-room report. */
+  const record = () => {
+    const r = run!;
+    const room = r.room!;
+    const turns = room.log.filter((t): t is Extract<TurnResult, { kind: 'student_answer' | 'help_result' }> => t.kind === 'student_answer' || t.kind === 'help_result');
+    const concepts = r.rooms[r.roomIndex]!.concepts.map((c) => ({ id: c.id, title: c.title }));
+    const report: PublicRoomReport = {
+      roomId: r.rooms[r.roomIndex]!.id, title: r.rooms[r.roomIndex]!.title, attempt, passed: room.hearts > 0,
+      hearts: room.hearts, maxHearts: room.maxHearts, correct: turns.filter((t) => t.correct).length, total: turns.length,
+      helped: turns.filter((t) => t.kind === 'help_result').length, teachCount: r.learning.teachCount,
+      questionsAsked: learned.asked, questionsAnswered: learned.answered, questionsSkipped: learned.skipped,
+      missed: turns.filter((t) => !t.correct).map((t, i) => ({ prompt: t.question.prompt, by: t.kind === 'help_result' ? 'help' as const : 'student' as const, concepts: [concepts[i % concepts.length]!] })),
+    };
+    r.history = [...(r.history ?? []), report];
+  };
+
+  /** Apply damage and work out whether the fight is over. */
+  const settle = (wrong: boolean) => {
+    const r = run!;
+    const boss = r.phase === 'boss';
+    const f = boss ? r.boss! : r.room!;
+    f.turn += 1;
+    const damage = wrong ? (boss ? 17 : 1) : 0;
+    if (boss) r.boss!.health -= damage;
+    else r.room!.hearts -= damage;
+    const done = f.turn >= f.totalTurns || (!boss && r.room!.hearts <= 0);
+    if (done && !boss) r.room!.passed = r.room!.hearts > 0;
+    over = done;
+    if (done) r.phase = boss ? 'results' : 'room_result';
+    return { damage, hearts: boss ? undefined : r.room!.hearts, health: boss ? r.boss!.health : undefined, phaseAfter: r.phase };
+  };
+
+  /** The practice course as preparation has got so far (`polls` getCourse calls; room 2 is ready last). */
+  const course = (): PublicCourse => {
+    const stage = polls < 2 ? 'parsing' : polls < 3 ? 'outline' : polls < 6 ? 'concepts' : 'ready';
+    const ready = (id: string) => (id === 'r1' ? polls >= 3 : polls >= 6);
+    return {
+      id: 'mock-course', title: 'Seasons (mock)', status: { stage, conceptsReady: [] }, files: [],
+      units: [{ id: 'u1', title: 'Unit 1: The sky', concepts: ROOMS.flatMap((r) => r.concepts.map((c) => ({ ...c, ready: ready(r.id) }))) }],
+      rooms: ROOMS.map((r) => ({ id: r.id, title: r.title, description: r.description, ...(r.learningObjectives ? { learningObjectives: r.learningObjectives } : {}), conceptIds: r.concepts.map((c) => c.id), ready: ready(r.id) })),
+      styleSummary: { voice: 'friendly', notation: 'plain', topFormats: ['mcq'] },
+    };
+  };
+
+  const results = (): Results => ({...RESULTS, target: run!.targetGrade,
+    metTarget: ['C+', 'C', 'C-', 'D'].includes(run!.targetGrade)});
+  const api: ApiClient = {
+    // The practice course shows in My archive once a practice run exists, so its expedition can be resumed, ended or removed.
+    listArchive: async () => ({courses: run ? [course()] : [],runs:run?[{id:run.id,courseId:run.courseId,phase:run.phase,roomIndex:run.roomIndex,rooms:run.rooms.length,updatedAt:run.updatedAt,
+      ...(run.pausedAt ? {pausedAt:run.pausedAt} : {}), ...(run.endedAt ? {endedAt:run.endedAt} : {})}]:[]}),
+    pauseRun: async () => { if (!run) throw new ApiError(404,'not_found','No practice run'); if (!run.endedAt) run.pausedAt ??= new Date().toISOString(); return view(); },
+    resumeRun: async () => {
+      if (!run) throw new ApiError(404,'not_found','No practice run');
+      if (run.endedAt) throw new ApiError(409, 'run_ended', 'This expedition was ended.');
+      if (run.pausedAt && pending?.ev.deadline) pending.ev.deadline = new Date(Date.parse(pending.ev.deadline) + Math.max(0,new Date().getTime()-Date.parse(run.pausedAt))).toISOString();
+      delete run.pausedAt; return view();
+    },
+    endRun: async (id) => {
+      if (!run || run.id !== id) throw new ApiError(404, 'not_found', 'No practice run');
+      if (!run.endedAt) {
+        if (run.phase === 'results') throw new ApiError(409, 'wrong_phase', 'This expedition is already finished.');
+        run.endedAt = new Date().toISOString(); run.updatedAt = run.endedAt; delete run.pausedAt; pending = null;
+      }
+      return view();
+    },
+    deleteRun: async (id) => {
+      if (!run || run.id !== id) throw new ApiError(404, 'not_found', 'No practice run');
+      run = null; pending = null;
+      return { deleted: true as const, id };
+    },
+    deleteCourse: async (id) => {
+      if (!run || id !== 'mock-course') throw new ApiError(404, 'not_found', 'No practice dungeon');
+      run = null; pending = null; questions = []; notebook = '# Notebook\n'; polls = 0;
+      notes = {}; learned = {asked:0,answered:0,skipped:0}; attempt = 1; helpCount = 0; over = false; failed = [];
+      return { deleted: true as const, id };
+    },
+    health: async () => ({ ok: true, llmProvider: 'mock', storage: 'browser', debug: true }),
+    listSamples: async () => (await wait(), { samples: [{ id: 'seasons', title: 'Seasons (mock sample)' }] }),
+    seedCourse: async () => (await wait(), polls = 0, { courseId: 'mock-course' }),
+    createCourseFromText: async () => (await wait(), polls = 0, { courseId: 'mock-course' }),
+    uploadCourse: async () => (await wait(), polls = 0, { courseId: 'mock-course' }),
+
+    getCourse: async (): Promise<PublicCourse> => {
+      polls += 1; // the course "ingests" over a few polls; room 2 is ready last
+      return course();
+    },
+
+    createRun: async (body) => {
+      await wait();
+      // A course that already has a practice run is prepared, even after a reload resets `polls`.
+      if (polls < 3 && !run) throw new ApiError(425, 'room_not_ready', 'The first room is still being ingested.');
+      const ids = body.scope?.roomIds ?? ROOMS.map((r) => r.id);
+      const rooms = ROOMS.filter((r) => ids.includes(r.id)).map((r) => ({ ...r, ready: true, state: 'upcoming' as const }));
+      attempt = 1; helpCount = 0; pending = null; over = false; failed = []; questions = []; notebook = '# Notebook\n';
+      notes = {}; learned = { asked: 0, answered: 0, skipped: 0 };
+      run = {
+        id: 'mock-run', courseId: body.courseId, courseTitle: 'Seasons (mock)', targetGrade: body.targetGrade,
+        studentEmoji: body.studentEmoji ?? '🤖', phase: 'learning', roomIndex: 0, rooms, currentRoom: rooms[0], notebookMd: notebook,
+        learning: { pendingQuestions: [], teachCount: 0 },
+        rules: { roomQuestions: 4, roomHearts: 3, bossQuestions: 6, maxStudentQuestions: 3, helpMeTimed: true },
+        createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      };
+      return view();
+    },
+    getRun: async (id) => {
+      await wait(50);
+      if (!run || run.id !== id) throw new ApiError(404, 'not_found', 'This practice run is not available in this tab.');
+      return view();
+    },
+
+    teach: async (_id, explanation, conceptId) => {
+      await wait(700);
+      need('learning');
+      const room = run!.rooms[run!.roomIndex]!;
+      if (conceptId && !room.concepts.some((c) => c.id === conceptId)) throw new ApiError(400, 'validation_error', 'That topic is not in this room.');
+      run!.learning.teachCount += 1;
+      const topics = conceptId ? room.concepts.filter((c) => c.id === conceptId) : room.concepts;
+      for (const c of topics) {
+        note(c.title, explanation.split(/(?<=[.!?])\s+/)[0]!.slice(0, 90));
+        const id = `sq_${room.id}_${attempt}_${c.id}`;
+        if (PIP_ASKS[c.id] && !questions.some((x) => x.id === id)) { questions.push({ id, text: PIP_ASKS[c.id]!, status: 'open', conceptId: c.id }); learned.asked += 1; }
+      }
+      return { notebookMd: notebook, questions: structuredClone(questions) };
+    },
+    answerQuestion: async (_id, qid, answer) => {
+      await wait();
+      need('learning');
+      const resolved = answer.trim().length > 15; // a long answer "resolves" it
+      const asked = questions.find((x) => x.id === qid)!;
+      asked.status = 'answered'; learned.answered += 1;
+      const topic = run!.currentRoom!.concepts.find((c) => c.id === asked.conceptId) ?? run!.currentRoom!.concepts[0]!;
+      note(topic.title, resolved ? answer.trim().slice(0, 90) : 'Summer happens because Earth is closer to the sun.');
+      return { resolved, notebookMd: notebook };
+    },
+    skipQuestion: async (_id, qid) => {
+      await wait();
+      need('learning');
+      const asked = questions.find((x) => x.id === qid)!;
+      asked.status = 'skipped'; learned.skipped += 1;
+      const topic = run!.currentRoom!.concepts.find((c) => c.id === asked.conceptId) ?? run!.currentRoom!.concepts[0]!;
+      note(topic.title, 'Summer happens because Earth is closer to the sun.');
+      return { notebookMd: notebook };
+    },
+    ready: async () => {
+      await wait();
+      need('learning');
+      questions.forEach((x) => { if (x.status === 'open') { x.status = 'skipped'; learned.skipped += 1; } });
+      run!.phase = 'room';
+      startFight(false);
+      return view();
+    },
+
+    turn: async (): Promise<TurnResult> => {
+      await wait();
+      need('room', 'room_result', 'boss', 'results');
+      const r = run!;
+      const boss = r.boss && (r.phase === 'boss' || r.phase === 'results');
+      if (over) {
+        if (boss) return { kind: 'boss_end', results: results() };
+        return { kind: 'room_end', passed: r.room!.hearts > 0, hearts: r.room!.hearts, failedTurns: failed };
+      }
+      if (pending) {
+        if (pending.ev.deadline && new Date().getTime() > Date.parse(pending.ev.deadline)) return api.help(r.id,pending.ev.eventId,pending.item.key);
+        return pending.ev;
+      }
+      const f = boss ? r.boss! : r.room!;
+      if (f.turn % 2 === 1) {
+        const item = HELP[helpCount++ % HELP.length];
+        const ev: HelpMeTurn = {
+          kind: 'help_me', eventId: `e${helpCount}`, question: item.q, timeBudgetSec: 15,
+          deadline: item.q.type === 'ordering' ? null : new Date(new Date().getTime() + 15000).toISOString(), // ordering is untimed
+        };
+        pending = { ev, item };
+        fightLog().push(ev);
+        return ev;
+      }
+      // The student answers. Room 1 attempt 1 is lost on purpose; the boss gets one wrong.
+      const lose = (r.roomIndex === 0 && attempt === 1 && !boss) || (!!boss && f.turn === 2);
+      const s = STUDENT_QS[(f.turn / 2) % 2];
+      const d = settle(lose);
+      const res: TurnResult = {
+        kind: 'student_answer', question: s.q, answer: {}, answerText: lose ? s.wrong : s.right, correct: !lose,
+        correctAnswer: { answer: {}, text: s.right }, explanation: 'Direct sunlight is stronger.',
+        reasoning: lose ? 'My notes say summer is when we are closer to the sun.' : 'My notes mention the tilt.',
+        citedNotes: lose ? ['Summer happens because Earth is closer to the sun.'] : ['Seasons come from the 23.5 degree axial tilt.'],
+        reason: lose ? 'wrong belief' : undefined, ...d,
+      };
+      if (lose) failed.push({ question: s.q, reasoning: res.reasoning, citedNotes: res.citedNotes });
+      fightLog().push(res);
+      if (over && !boss) record();
+      return res;
+    },
+    help: async (_id, eventId, answer) => {
+      await wait();
+      need('room', 'boss');
+      if (!pending || pending.ev.eventId !== eventId) throw new ApiError(409, 'help_event_not_pending', 'That event is not pending.');
+      const { ev, item } = pending;
+      const late = ev.deadline !== null && new Date().getTime() > Date.parse(ev.deadline);
+      const correct = !late && isRight(item.key, answer) && !(run!.roomIndex === 0 && attempt === 1 && run!.phase === 'room');
+      pending = null;
+      const d = settle(!correct);
+      const res: TurnResult = {
+        kind: 'help_result', eventId, question: item.q, correct, late, correctAnswer: { answer: item.key, text: item.text },
+        explanation: 'See the course notes.', solveTimeSec: 7, noteAdded: !correct ? undefined : `Remember: ${item.text}`, ...d,
+      };
+      if (res.noteAdded) note(run!.rooms[Math.min(run!.roomIndex, run!.rooms.length - 1)]!.concepts[0]!.title, res.noteAdded);
+      fightLog().push(res);
+      if (over && run!.phase === 'room_result') record();
+      return res;
+    },
+    retry: async () => {
+      await wait();
+      need('room_result');
+      if (run!.room!.hearts > 0) throw new ApiError(409, 'wrong_phase', 'The room was passed; use continue.');
+      attempt += 1;
+      run!.phase = 'learning';
+      run!.learning.teachCount = 0;
+      questions = []; learned = { asked: 0, answered: 0, skipped: 0 };
+      return view();
+    },
+    continueRun: async () => {
+      await wait();
+      need('room_result');
+      if (run!.room!.hearts <= 0) throw new ApiError(409, 'wrong_phase', 'The room was failed; use retry.');
+      attempt = 1;
+      questions = []; learned = { asked: 0, answered: 0, skipped: 0 };
+      run!.learning.teachCount = 0;
+      if (run!.roomIndex + 1 < run!.rooms.length) {
+        run!.roomIndex += 1;
+        run!.phase = 'learning';
+      } else {
+        run!.phase = 'boss';
+        startFight(true);
+      }
+      return view();
+    },
+    getResults: async () => (need('results'), results()),
+    getApiSettings: async () => { throw new ApiError(501, 'not_implemented', 'API setup uses the local backend.'); },
+    updateApiSettings: async () => { throw new ApiError(501, 'not_implemented', 'API setup uses the local backend.'); },
+    testApiSettings: async () => { throw new ApiError(501, 'not_implemented', 'API setup uses the local backend.'); },
+    getDebug: async () => ({
+      misconceptionStates: [{ id: 'm1', state: 'active', origin: 'skipped' }],
+      currentQuestionAnswerKeys: HELP.map((h) => ({ id: h.q.id, key: h.key })),
+      provenance: { source: 'mock', quote: 'The tilt of the axis drives the seasons.' },
+      timeBudget: { base: 15, difficultyFactor: 1, multiplier: 1 },
+    }),
+  };
+  // Persist the internal fixture state only after a successful mutation.
+  const remember = <A extends unknown[], R>(method: (...args: A) => Promise<R>) => async (...args: A) => {
+    const result = await method(...args);
+    save();
+    return result;
+  };
+  return {...api, pauseRun: remember(api.pauseRun), resumeRun: remember(api.resumeRun), endRun: remember(api.endRun), deleteRun: remember(api.deleteRun), deleteCourse: remember(api.deleteCourse),
+    createRun: remember(api.createRun), teach: remember(api.teach),
+    answerQuestion: remember(api.answerQuestion), skipQuestion: remember(api.skipQuestion),
+    ready: remember(api.ready), turn: remember(api.turn), help: remember(api.help),
+    retry: remember(api.retry), continueRun: remember(api.continueRun)};
+}
+
+

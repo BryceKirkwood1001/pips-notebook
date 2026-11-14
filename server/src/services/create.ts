@@ -15,7 +15,6 @@ import {
   type FileType,
   type PublicCourse,
   type PublicRun,
-  type PublicStudentQuestion,
   type Question,
   type Run,
   type TimeBudgetBreakdown,

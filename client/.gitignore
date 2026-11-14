@@ -1,0 +1,12 @@
+node_modules/
+phaser/
+game/shots/
+game/play/
+# The build in dist/ is committed so the game runs without the Phaser AE toolkit.
+# The server serves media from game/media, so the build's copy of it stays out.
+dist/media/
+dist/.phaser-ae-output.json
+.phaser/*
+!.phaser/build.json
+# Engine manual, written by every bake (npm run build); read it from there.
+game/docs/

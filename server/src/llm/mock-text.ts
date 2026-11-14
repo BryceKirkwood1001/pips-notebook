@@ -29,11 +29,3 @@ export function coverage(needle: string, haystack: string): number {
   for (const k of n) if (h.has(k)) hit += 1;
   return hit / n.size;
 }
-
-/** Number of keywords two texts share. */
-export function sharedKeywords(a: string, b: string): number {
-  const hb = keywords(b);
-  let n = 0;
-  for (const k of keywords(a)) if (hb.has(k)) n += 1;
-  return n;
-}

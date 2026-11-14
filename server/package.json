@@ -12,6 +12,7 @@
   "dependencies": {
     "@fastify/cors": "^11.4.3",
     "@fastify/multipart": "^10.1.8",
+    "@fastify/static": "10.1.8",
     "@google/genai": "^3.3.0",
     "@pips-notebook/shared": "*",
     "dotenv": "^18.0.10",
