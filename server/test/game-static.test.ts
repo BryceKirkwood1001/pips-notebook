@@ -33,7 +33,7 @@ describe('game served with the API', () => {
     const css = await get('/media/game.css');
     expect(css.statusCode).toBe(200);
     expect(css.headers['content-type']).toContain('text/css');
-    const music = await get('/media/music/menu.mp3', { range: 'bytes=0-99' });
+    const music = await get('/media/music/menu.m4a', { range: 'bytes=0-99' });
     expect(music.statusCode).toBe(206);
     expect(music.rawPayload.length).toBe(100);
   });

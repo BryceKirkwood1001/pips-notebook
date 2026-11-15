@@ -39909,7 +39909,7 @@ function loadCurrentTrack() {
   player.pause();
   player.volume = 0;
   loadedTrack = currentTrack;
-  player.src = "media/music/" + loadedTrack + ".mp3";
+  player.src = "media/music/" + loadedTrack + ".m4a";
 }
 player.addEventListener("playing", () => {
   if (enabled && !host3.hidden && loadedTrack === currentTrack) fadeTo(MUSIC_VOLUME, FADE_IN_MS);

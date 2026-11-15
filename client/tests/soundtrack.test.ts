@@ -49,10 +49,10 @@ describe('scene soundtrack transitions', () => {
         expect(env.audio.volume).toBeCloseTo(0.45);
         music.playSceneMusic('Learning');
         vi.advanceTimersByTime(325);
-        expect(env.audio.src).toContain('menu.mp3');
+        expect(env.audio.src).toContain('menu.m4a');
         expect(env.audio.volume).toBeCloseTo(0.225);
         vi.advanceTimersByTime(325);
-        expect(env.audio.src).toContain('learning.mp3');
+        expect(env.audio.src).toContain('learning.m4a');
         expect(env.audio.volume).toBe(0);
         vi.advanceTimersByTime(1000); // Buffering must not consume the fade-in.
         expect(env.audio.volume).toBe(0);
@@ -79,7 +79,7 @@ describe('scene soundtrack transitions', () => {
         vi.advanceTimersByTime(250);
         music.playSceneMusic('Title');
         vi.advanceTimersByTime(1500);
-        expect(env.audio.src).toContain('menu.mp3');
+        expect(env.audio.src).toContain('menu.m4a');
         expect(env.audio.volume).toBeCloseTo(0.45);
         expect(env.audio.play).toHaveBeenCalledTimes(1);
     });
@@ -92,9 +92,9 @@ describe('scene soundtrack transitions', () => {
         vi.advanceTimersByTime(1500);
         expect(env.audio.paused).toBe(true);
         expect(env.audio.volume).toBe(0);
-        expect(env.audio.src).toContain('menu.mp3');
+        expect(env.audio.src).toContain('menu.m4a');
         expect(music.toggleMusic()).toBe(true);
-        expect(env.audio.src).toContain('learning.mp3');
+        expect(env.audio.src).toContain('learning.m4a');
         playing();
         vi.advanceTimersByTime(900);
         expect(env.audio.volume).toBeCloseTo(0.45);
@@ -109,7 +109,7 @@ describe('scene soundtrack transitions', () => {
         expect(env.audio.paused).toBe(true);
         expect(env.audio.volume).toBe(0);
         music.playSceneMusic('Boss');
-        expect(env.audio.src).toContain('finalboss.mp3');
+        expect(env.audio.src).toContain('finalboss.m4a');
         env.hidden = false;
         visibility();
         playing();
