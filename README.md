@@ -42,11 +42,10 @@ The first start downloads the build tools (about a minute). `npm start` builds t
 
 | Option | Cost | How it updates |
 |---|---|---|
-| **GitHub Pages** with the included workflow (`.github/workflows/pages.yml`) | Free (public repository) | Every push to the `public` branch rebuilds and publishes the site. |
+| A static or shared hosting plan (GoDaddy, cPanel and similar) | The plan's price | Run `npm run build` and upload the contents of `site/` (File Manager or FTP). |
 | **Cloudflare Pages** or **Netlify**, connected to the repository | Free | They run `npm run build` on every push and serve `site/`. |
-| A shared hosting plan (GoDaddy, cPanel and similar) | The plan's price | Run `npm run build` and upload the contents of `site/` to `public_html`. |
 
-Every option needs **https** (all three give it for free): browsers allow the microphone for dictation only on secure pages.
+The repository does not publish the site anywhere by itself. Every option needs **https** (both give it, free on most plans): browsers allow the microphone for dictation only on secure pages.
 
 ## How a game works
 
