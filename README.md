@@ -27,7 +27,7 @@ The first start downloads dependencies, so it needs an internet connection and t
 - If another program is using port 8787, the next free port is used. To choose one: `npm start -- --port 9000`.
 - If macOS won't open a downloaded `start.command`, go to **System Settings → Privacy & Security** and choose **Open Anyway**, or run `npm start` in Terminal.
 
-**No API key is needed to try it.** A fresh install runs in **Offline** mode, which uses canned AI responses. Press **Play** and pick one of the sample lessons; **Gravity** is the quickest. To play with your own material, choose OpenAI or Google Gemini in **Settings** and paste a key. Uploads in Offline mode use a simple heuristic and often fail to prepare.
+**No API key is needed to try it.** A fresh install runs in **Offline** mode, which uses simple built-in rules instead of AI: Pip learns a fact when your explanation uses its key words, so explain each idea in plain sentences. Press **Play** and pick one of the sample lessons; **Gravity** is the quickest. To play with your own material, choose OpenAI or Google Gemini in **Settings** and paste a key. Uploads in Offline mode use a simple heuristic and often fail to prepare.
 
 ## How a game works
 
@@ -41,7 +41,7 @@ The first start downloads dependencies, so it needs an internet connection and t
 | **Expedition** | One playthrough of a dungeon, from the first room to the results. Expeditions are saved in **My archive**, where you can resume, end or remove them. |
 | **"Help me!"** | Now and then Pip asks you to answer a question yourself, with a timer based on how hard it is. |
 
-A room has two halves. In the **lesson**, open **Talk to Pip**, explain each topic and answer Pip's questions; **Pip has a question!** means one is waiting. Then press **Ready: go fight** and use **Next turn** to watch Pip answer from the notebook. Each turn shows Pip's answer, reasoning, the notes Pip used and the correct answer. If Pip runs out of hearts, **Retry** returns to the lesson with the notebook kept and hearts refilled. The boss exam covers every room in the expedition, and up to half of its questions aim at wrong beliefs still in the notebook.
+A room has two halves. In the **lesson**, open **Talk to Pip**, explain each topic and answer Pip's questions; **Pip has a question!** means one is waiting. Once Pip has notes on a topic, a **Topic taught** banner appears with a button to the next topic; you can still teach that topic more. Then press **Ready: go fight** and use **Next turn** to watch Pip answer from the notebook. Each turn shows Pip's answer, reasoning, the notes Pip used and the correct answer. If Pip runs out of hearts, **Retry** returns to the lesson with the notebook kept and hearts refilled. The boss exam covers every room in the expedition, and up to half of its questions aim at wrong beliefs still in the notebook.
 
 Other things in the game:
 
@@ -96,7 +96,7 @@ Run these from the repository folder.
 | `npm run dev` | Runs the server and restarts it when server code changes. Install dependencies first (`npm ci`). |
 | `npm test` | Runs the tests, including a check that `client/dist/` is up to date with the game source. `npm run test:watch` reruns on changes. |
 | `npm run typecheck` | Type-checks `server/` and `shared/`. The game's own check is `npm --prefix client run typecheck`, which needs the Phaser tools. |
-| `npm run e2e` | Plays a full game against a temporary Offline server and prints the transcript. Add `-- --sample binary-search` for the other sample. |
+| `npm run e2e` | Plays a full game against a temporary Offline server and prints the transcript. Add `-- --sample binary-search` for another sample. |
 | `npm run build:game` | Rebuilds `client/dist/` from the game source. Needs the Phaser tools (below). |
 | `npm run dev:game` | Live-rebuilding game preview at localhost:4173, using the API on port 8787. Needs the Phaser tools. |
 | `npm run ingest -- <file>` | Prepares a dungeon from a file and saves it to `samples/cache/`, which adds it to the built-in samples. Uses the configured provider. |
@@ -105,11 +105,9 @@ Run these from the repository folder.
 
 ## Demo script
 
-For a short game, pick **Gravity** in step 2 instead: one room with two topics, a three-question room fight with a "Help me!" on the second question, and a four-question boss.
-
 1. Start the game ([Play it](#play-it)).
-2. Press **Play**, pick **Why Earth Has Seasons** from the Library, choose the rooms and a target grade, and start.
-3. **Lesson.** Open **Talk to Pip**, explain each topic and answer Pip's questions. Check the notebook before pressing **Ready: go fight**.
+2. Press **Play** and pick a lesson from the Library: **Gravity** for a short game (one room with two topics, a three-question room fight with a "Help me!" on the second question, and a four-question boss), or **Why Earth Has Seasons** for a full one. Choose a target grade and start.
+3. **Lesson.** Open **Talk to Pip**, explain each topic and answer Pip's questions. Check the notebook before pressing **Ready: go fight**. To see a wrong belief at work, teach one on purpose, for example "There is no gravity in space."
 4. **Room fight.** Press **Next turn** and watch Pip answer from the notebook. Click a turn to see Pip's answer, the notes Pip cited and how it was graded.
 5. **"Help me!"** When Pip asks for help, answer before the timer runs out.
 6. **Boss.** The exam covers every room you chose and goes after wrong beliefs left in the notebook.
