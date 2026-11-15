@@ -147,16 +147,31 @@ export class LearningScene extends Page {
     const notes = notesByTitle(this.run.notebookMd).get(concept.title) ?? [];
     const thread = this.threads.get(concept.id) ?? el('div', 'lesson-thread');
     this.threads.set(concept.id, thread);
+    const asked = this.questions.filter(q => q.conceptId === concept.id);
+    // Taught = Pip has notes on it. Then the box below is optional, and the page says the player can move on.
+    const taught = notes.length > 0;
+    const asking = asked.some(q => q.status === 'open');
+    const last = index === this.concepts.length - 1;
+    const nextLabel = last ? 'Review the lesson →' : `Next: ${this.concepts[index + 1]!.title} →`;
+    const goNext = () => { this.step += 1; this.renderStep(); };
     const box = el('textarea');
-    box.rows = 4; box.maxLength = EXPLANATION_MAX;
-    box.placeholder = `Explain ${concept.title} in your own words: a definition, why it matters, an example…`;
+    box.rows = taught ? 2 : 4; box.maxLength = EXPLANATION_MAX;
+    box.placeholder = taught
+      ? 'Optional: add an example, or correct something in Pip’s notes…'
+      : `Explain ${concept.title} in your own words: a definition, why it matters, an example…`;
     box.value = this.drafts.get(concept.id) ?? '';
     box.setAttribute('aria-label', `Teach Pip about ${concept.title}`);
     box.addEventListener('input', () => this.drafts.set(concept.id, box.value));
     const status = el('p', 'lesson-status');
     status.setAttribute('role', 'status');
-    const teach = btn('Teach this topic', () => void this.teach(concept, box, thread, status, teach));
-    const asked = this.questions.filter(q => q.conceptId === concept.id);
+    const teach = btn(taught ? 'Teach more' : 'Teach this topic', () => void this.teach(concept, box, thread, status, teach), taught ? 'alt' : 'gold');
+    const progress = taught && !asking
+      ? el('div', 'topic-done', el('p', '', el('b', '', '✓ Topic taught. '),
+          `Pip has ${notes.length} note${notes.length === 1 ? '' : 's'} on it. ${last ? 'Review the lesson when you are ready.' : 'Move on to the next topic.'}`),
+        btn(nextLabel, goNext))
+      : asking
+        ? el('p', 'topic-hint', 'Pip asked a question above. Answer it, or move on: if you skip it, Pip keeps that idea.')
+        : null;
     const page = el('div', '',
       el('small', 'lesson-kicker', `Topic ${index + 1} of ${this.concepts.length}`),
       el('h3', '', concept.title),
@@ -165,10 +180,11 @@ export class LearningScene extends Page {
         notes.length ? el('ul', '', ...notes.map(n => el('li', '', inline(n)))) : el('p', 'dim', 'Teach it below.')),
       thread,
       asked.length ? el('h4', '', 'Pip asks') : null, asked.length ? this.questionList(asked) : null,
-      el('label', 'teach-label', `Teach Pip about ${concept.title}`), box,
+      progress,
+      el('label', 'teach-label', taught ? 'Teach Pip more (optional)' : `Teach Pip about ${concept.title}`), box,
       el('div', 'teach-row', teach, micButton(box, value => this.drafts.set(concept.id, value), message => { status.textContent = message; })),
       status,
-      this.nav(true, index === this.concepts.length - 1 ? 'Review the lesson →' : `Next: ${this.concepts[index + 1]!.title} →`, () => { this.step += 1; this.renderStep(); }));
+      this.nav(true, nextLabel, goNext));
     return page;
   }
 

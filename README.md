@@ -27,7 +27,7 @@ The first start downloads dependencies, so it needs an internet connection and t
 - If another program is using port 8787, the next free port is used. To choose one: `npm start -- --port 9000`.
 - If macOS won't open a downloaded `start.command`, go to **System Settings → Privacy & Security** and choose **Open Anyway**, or run `npm start` in Terminal.
 
-**No API key is needed to try it.** A fresh install runs in **Offline** mode, which uses canned AI responses. Open **My archive → Library** and pick one of the sample lessons. To play with your own material, choose OpenAI or Google Gemini in **Settings** and paste a key. Uploads in Offline mode use a simple heuristic and often fail to prepare.
+**No API key is needed to try it.** A fresh install runs in **Offline** mode, which uses canned AI responses. Press **Play** and pick one of the sample lessons. To play with your own material, choose OpenAI or Google Gemini in **Settings** and paste a key. Uploads in Offline mode use a simple heuristic and often fail to prepare.
 
 ## How a game works
 
@@ -106,7 +106,7 @@ Run these from the repository folder.
 ## Demo script
 
 1. Start the game ([Play it](#play-it)).
-2. Open **My archive → Library**, pick **Why Earth Has Seasons**, choose the rooms and a target grade, and start.
+2. Press **Play**, pick **Why Earth Has Seasons** from the Library, choose the rooms and a target grade, and start.
 3. **Lesson.** Open **Talk to Pip**, explain each topic and answer Pip's questions. Check the notebook before pressing **Ready: go fight**.
 4. **Room fight.** Press **Next turn** and watch Pip answer from the notebook. Click a turn to see Pip's answer, the notes Pip cited and how it was graded.
 5. **"Help me!"** When Pip asks for help, answer before the timer runs out.
@@ -156,7 +156,3 @@ npm run build
 | [Silkscreen](https://fonts.google.com/specimen/Silkscreen) | Pixel font | SIL Open Font License (`client/game/media/OFL-Silkscreen.txt`) |
 | [`dotenv`](https://github.com/motdotla/dotenv) | Reading `.env` | BSD-2-Clause |
 | [TypeScript](https://www.typescriptlang.org), [`tsx`](https://tsx.is), [Vitest](https://vitest.dev), [`pdf-lib`](https://pdf-lib.js.org) | Language, running TypeScript, tests, test PDFs | Apache-2.0, MIT, MIT, MIT |
-
-Art and music: **TODO, ask the team** who made the sprites, backgrounds and soundtrack in `client/game/media/`, and under what terms.
-
-The game, server and docs were built during the event with help from Claude Code and Codex.

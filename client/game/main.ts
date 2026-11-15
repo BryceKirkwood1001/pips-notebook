@@ -23,7 +23,7 @@ for(const name of screens) game.scenes.register({name,enter(){
         const id=new URLSearchParams(location.search).get('run');
         const heading=el('h1', '', "Pip's", el('br'), 'Notebook');
         const menu=el('nav','title-actions',
-            btn('Play',()=>id?void resume(id):openCoursePicker('Create New Dungeon')),
+            btn('Play',()=>id?void resume(id):openCoursePicker('Library')),
             btn('My archive',()=>openCoursePicker('Library'),'alt'),
             btn('Settings',openSettings,'alt'),musicButton());
         menu.setAttribute('aria-label','Main menu');

@@ -285,6 +285,21 @@ export const MaterialItemSchema = z.object({
 export type MaterialItem = z.infer<typeof MaterialItemSchema>;
 
 /**
+ * A course's own pace, overriding the server's gameplay settings for runs of that course. Used by short
+ * hand-made demos (samples/cache/demo-*.json) so one dungeon can be played in about 90 seconds.
+ */
+export const CoursePaceSchema = z.object({
+  roomQuestions: z.number().int().min(1).max(20).optional(),
+  roomHearts: z.number().int().min(1).max(10).optional(),
+  bossQuestions: z.number().int().min(1).max(30).optional(),
+  maxStudentQuestions: z.number().int().min(0).max(5).optional(),
+  helpMeProb: z.number().min(0).max(1).optional(),
+  /** A "Help me!" question always comes on this turn of the room fight (1 = the first), whatever `helpMeProb` says. */
+  helpMeRoomTurn: z.number().int().min(1).max(20).optional(),
+}).strict();
+export type CoursePace = z.infer<typeof CoursePaceSchema>;
+
+/**
  * The course pack. Chunks (with embeddings) and questions are stored separately.
  * During progressive ingest the pack is saved early with empty arrays and filled in stage by stage.
  */
@@ -301,6 +316,8 @@ export const CoursePackSchema = z.object({
   materialItems: z.array(MaterialItemSchema),
   /** Server-only retrieval profile; provider changes must not mix vector spaces. */
   embeddingProfile: CourseEmbeddingSchema.optional(),
+  /** Overrides the server's gameplay settings for this course (short demos). */
+  pace: CoursePaceSchema.optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

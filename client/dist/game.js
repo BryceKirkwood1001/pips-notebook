@@ -41165,17 +41165,36 @@ var LearningScene = class extends Page {
     const notes = notesByTitle(this.run.notebookMd).get(concept.title) ?? [];
     const thread = this.threads.get(concept.id) ?? el("div", "lesson-thread");
     this.threads.set(concept.id, thread);
+    const asked = this.questions.filter((q2) => q2.conceptId === concept.id);
+    const taught = notes.length > 0;
+    const asking = asked.some((q2) => q2.status === "open");
+    const last = index === this.concepts.length - 1;
+    const nextLabel = last ? "Review the lesson \u2192" : `Next: ${this.concepts[index + 1].title} \u2192`;
+    const goNext = () => {
+      this.step += 1;
+      this.renderStep();
+    };
     const box2 = el("textarea");
-    box2.rows = 4;
+    box2.rows = taught ? 2 : 4;
     box2.maxLength = EXPLANATION_MAX;
-    box2.placeholder = `Explain ${concept.title} in your own words: a definition, why it matters, an example\u2026`;
+    box2.placeholder = taught ? "Optional: add an example, or correct something in Pip\u2019s notes\u2026" : `Explain ${concept.title} in your own words: a definition, why it matters, an example\u2026`;
     box2.value = this.drafts.get(concept.id) ?? "";
     box2.setAttribute("aria-label", `Teach Pip about ${concept.title}`);
     box2.addEventListener("input", () => this.drafts.set(concept.id, box2.value));
     const status = el("p", "lesson-status");
     status.setAttribute("role", "status");
-    const teach = btn("Teach this topic", () => void this.teach(concept, box2, thread, status, teach));
-    const asked = this.questions.filter((q2) => q2.conceptId === concept.id);
+    const teach = btn(taught ? "Teach more" : "Teach this topic", () => void this.teach(concept, box2, thread, status, teach), taught ? "alt" : "gold");
+    const progress = taught && !asking ? el(
+      "div",
+      "topic-done",
+      el(
+        "p",
+        "",
+        el("b", "", "\u2713 Topic taught. "),
+        `Pip has ${notes.length} note${notes.length === 1 ? "" : "s"} on it. ${last ? "Review the lesson when you are ready." : "Move on to the next topic."}`
+      ),
+      btn(nextLabel, goNext)
+    ) : asking ? el("p", "topic-hint", "Pip asked a question above. Answer it, or move on: if you skip it, Pip keeps that idea.") : null;
     const page2 = el(
       "div",
       "",
@@ -41191,16 +41210,14 @@ var LearningScene = class extends Page {
       thread,
       asked.length ? el("h4", "", "Pip asks") : null,
       asked.length ? this.questionList(asked) : null,
-      el("label", "teach-label", `Teach Pip about ${concept.title}`),
+      progress,
+      el("label", "teach-label", taught ? "Teach Pip more (optional)" : `Teach Pip about ${concept.title}`),
       box2,
       el("div", "teach-row", teach, micButton(box2, (value) => this.drafts.set(concept.id, value), (message) => {
         status.textContent = message;
       })),
       status,
-      this.nav(true, index === this.concepts.length - 1 ? "Review the lesson \u2192" : `Next: ${this.concepts[index + 1].title} \u2192`, () => {
-        this.step += 1;
-        this.renderStep();
-      })
+      this.nav(true, nextLabel, goNext)
     );
     return page2;
   }
@@ -42544,7 +42561,7 @@ for (const name of screens) game.scenes.register({ name, enter() {
     const menu = el(
       "nav",
       "title-actions",
-      btn("Play", () => id2 ? void resume(id2) : openCoursePicker("Create New Dungeon")),
+      btn("Play", () => id2 ? void resume(id2) : openCoursePicker("Library")),
       btn("My archive", () => openCoursePicker("Library"), "alt"),
       btn("Settings", openSettings, "alt"),
       musicButton()
