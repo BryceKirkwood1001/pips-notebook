@@ -27,7 +27,7 @@ The first start downloads dependencies, so it needs an internet connection and t
 - If another program is using port 8787, the next free port is used. To choose one: `npm start -- --port 9000`.
 - If macOS won't open a downloaded `start.command`, go to **System Settings → Privacy & Security** and choose **Open Anyway**, or run `npm start` in Terminal.
 
-**No API key is needed to try it.** A fresh install runs in **Offline** mode, which uses canned AI responses. Press **Play** and pick one of the sample lessons. To play with your own material, choose OpenAI or Google Gemini in **Settings** and paste a key. Uploads in Offline mode use a simple heuristic and often fail to prepare.
+**No API key is needed to try it.** A fresh install runs in **Offline** mode, which uses canned AI responses. Press **Play** and pick one of the sample lessons; **Gravity: 90-Second Demo** is the quickest. To play with your own material, choose OpenAI or Google Gemini in **Settings** and paste a key. Uploads in Offline mode use a simple heuristic and often fail to prepare.
 
 ## How a game works
 
@@ -59,8 +59,8 @@ One Node.js process runs everything. The server (Fastify, TypeScript run directl
 | `client/` | The game. Source in `client/game/` (screens in `client/game/course/`), prebuilt copy in `client/dist/`. |
 | `server/` | API, game rules, course preparation, search over your material, AI providers and storage. Also serves the game. |
 | `shared/` | The data contracts (Zod schemas) the server checks every request against, and the API client the game and scripts use. |
-| `samples/` | Two sample handouts with ready-made dungeons, plus `rock-paper-scissors.pdf` for trying an upload. |
-| `scripts/` | `start.mjs` (what `npm start` runs), the offline end-to-end test and the API doc generator. |
+| `samples/` | Ready-made dungeons: a short gravity demo and two sample handouts, plus `rock-paper-scissors.pdf` for trying an upload. |
+| `scripts/` | `start.mjs` (what `npm start` runs), the offline end-to-end test, the API doc generator and `build-demo-gravity.ts`, which writes the gravity demo. |
 | `docs/` | Architecture, API reference, run phases, course preparation, rules and decisions, and marketing art. |
 | `start.command`, `start.bat` | Double-click launchers for macOS and Windows. Both run `scripts/start.mjs`. |
 
@@ -104,6 +104,8 @@ Run these from the repository folder.
 | `npm run docs:api` | Rebuilds `docs/API.md` from recorded requests. `npm run e2e -- --capture-file docs/api-examples.json` records new ones. |
 
 ## Demo script
+
+For a short game, pick **Gravity: 90-Second Demo** in step 2 instead: one room with two topics, a three-question room fight with a "Help me!" on the second question, and a four-question boss.
 
 1. Start the game ([Play it](#play-it)).
 2. Press **Play**, pick **Why Earth Has Seasons** from the Library, choose the rooms and a target grade, and start.
