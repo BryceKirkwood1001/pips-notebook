@@ -286,13 +286,6 @@ export const answerCorrectly = (input: StudentAnswerInput, oracle?: StudentOracl
   return { answer, reasoning: 'From my notes.', citedNotes: first ? [first] : [] };
 };
 
-/** The student's wrong answer following misconception `id`'s path, citing the first note. */
-export const answerWrong = (input: StudentAnswerInput, oracle?: StudentOracle): StudentAnswerOutput => ({
-  answer: { dontKnow: true },
-  reasoning: 'I do not know.',
-  citedNotes: [],
-});
-
 export function createFakeTasks(): FakeTasks {
   const t: FakeTasks = {
     calls: { review: [], resolution: [], answer: [], gradeOpen: [] },

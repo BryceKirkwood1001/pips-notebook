@@ -7,7 +7,7 @@
 import { fileURLToPath } from 'node:url';
 import dotenv from 'dotenv';
 import { z } from 'zod';
-import { TARGET_GRADES, type TargetGrade } from '@pips-notebook/shared';
+import { TARGET_GRADES, type CoursePace, type TargetGrade } from '@pips-notebook/shared';
 
 export type GradeThresholds = Record<TargetGrade, number>;
 
@@ -51,6 +51,8 @@ export interface Config {
   bossTargetedShare: number;
   // "Help me!"
   helpMeProb: number;
+  /** Set only by a course's pace (demos): "Help me!" always comes on this turn of the room fight (1-based). */
+  helpMeRoomTurn?: number;
   helpMeMaxPerRoom: number;
   helpMeMaxPerBoss: number;
   helpMeTimed: boolean;
@@ -252,4 +254,14 @@ export function loadConfigFromProcess(): Config {
 /** A config for tests: all defaults, mock LLM, in-memory storage, plus overrides. */
 export function testConfig(overrides: Partial<Config> = {}): Config {
   return { ...loadConfig({ LLM_PROVIDER: 'mock' }), ...overrides };
+}
+
+/** The settings for a run of a course with its own pace (short courses); other courses get `config` unchanged. */
+export function withPace(config: Config, pace: CoursePace | undefined): Config {
+  if (!pace) return config;
+  const paced = { ...config };
+  for (const key of ['roomQuestions', 'roomHearts', 'bossQuestions', 'maxStudentQuestions', 'helpMeProb', 'helpMeRoomTurn'] as const) {
+    if (pace[key] !== undefined) paced[key] = pace[key];
+  }
+  return paced;
 }

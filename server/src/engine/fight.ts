@@ -232,9 +232,10 @@ export async function takeTurn(deps: EngineDeps, ctx: EngineContext, input: Run)
   const q = questionById(ctx.questions, f.questionIds[f.turn]);
   const now = deps.clock.now();
 
-  // 2. Roll for "Help me!".
+  // 2. Roll for "Help me!". A course's pace can place it on a set room turn instead (demos); the roll is then skipped.
   const cap = kind === 'room' ? deps.config.helpMeMaxPerRoom : deps.config.helpMeMaxPerBoss;
-  if (q.type !== 'free_response' && f.helpMeUsed < cap && deps.rng.next() < deps.config.helpMeProb) {
+  const placed = kind === 'room' && deps.config.helpMeRoomTurn === f.turn + 1;
+  if (q.type !== 'free_response' && f.helpMeUsed < cap && (placed || deps.rng.next() < deps.config.helpMeProb)) {
     const timeBudgetSec = Math.max(1, Math.round(q.timeBudgetSec * deps.config.helpMeTimeMultiplier));
     run.pendingHelpMe = {
       eventId: `help_${fightKey(run)}_t${f.turn}`,

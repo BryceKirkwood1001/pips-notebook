@@ -1,5 +1,6 @@
 /**
- * The Fastify app: CORS, multipart uploads, routes, and one error shape for everything.
+ * The Fastify app: CORS, multipart uploads, the /api routes, the game itself (static.ts), and one error
+ * shape for everything.
  *
  *   const container = await createContainer();
  *   const app = await buildApp(container);
@@ -13,6 +14,7 @@ import Fastify, { type FastifyInstance } from 'fastify';
 import type { Container } from './container';
 import { AppError, ERROR_STATUS, isAppError, type ErrorCode } from './errors';
 import { registerRoutes } from './routes';
+import { registerGame } from './static';
 
 /** Maps an HTTP status that Fastify or a plugin produced onto one of our error codes. */
 const codeForStatus = (status: number): ErrorCode => {
@@ -64,7 +66,8 @@ export async function buildApp(container: Container): Promise<FastifyInstance> {
     });
   });
 
-  registerRoutes(app, container.services, container.settings, config);
+  registerRoutes(app, container.services, container.settings, container.storage, config);
+  await registerGame(app);
 
   app.addHook('onClose', async () => {
     await container.close();

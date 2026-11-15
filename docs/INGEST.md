@@ -1,7 +1,5 @@
 # Ingest and RAG
 
-For the later source-alignment prompt, independent question-quality gate, and Memory Hierarchy reference evaluation, see [QUESTION_QUALITY.md](QUESTION_QUALITY.md). Cached/existing question banks are not rewritten by a prompt change.
-
 How uploaded course material becomes a course pack: an outline, a style profile, misconceptions and a verified question bank. The code is in `server/src/ingest/` (pipeline), `server/src/llm/ingest/` (model tasks), `server/src/rag/` (parsing, chunks, retrieval) and `server/src/core/timeBudget.ts`.
 
 ## Pipeline stages
@@ -44,13 +42,27 @@ Text and Markdown files are read directly and split into pages on form feeds.
 - **Chunking is structure-aware.** Text is split on headings, slide separators and page breaks first, then into chunks of about `CHUNK_TOKENS` (400) tokens with `CHUNK_OVERLAP` (15%) overlap. A chunk never spans two pages. Each chunk keeps `fileId`, `page`, `sectionPath` (its heading trail) and `conceptIds`.
 - **Embeddings** come from Gemini `gemini-embedding-001`, with task type `RETRIEVAL_DOCUMENT` for chunks and `RETRIEVAL_QUERY` for queries, at `EMBEDDING_DIMS` (768) dimensions.
 - **The vector store** is MongoDB Atlas Vector Search (`$vectorSearch` on the `chunks` collection, filtered by `courseId`). The index is created from code at startup if it is missing. With no `MONGODB_URI`, the actual server persists chunks/vectors under `.local/archive` and ranks them with cosine similarity. Explicit test containers default to an isolated in-memory store.
-
-After batched extraction and exact evidence lookup, live ingestion now runs a whole-course lesson planner. It merges overlapping concepts across batches and assigns every source concept exactly once to a small number of complete lessons, with descriptions and teaching objectives. Question generation uses the resulting canonical concepts/rooms. See [ARCHIVE_AND_LESSONS.md](ARCHIVE_AND_LESSONS.md) for validation, the ArrayLists reference and persistent storage.
 - **Retrieval is hybrid**: first the concept's own chunks (structure), then the top `RETRIEVAL_TOP_K` (6) vector hits for the query, with duplicates removed.
 
 Retrieval is used for building misconceptions, adapting and generating questions, verification, resolution checks in the learning phase, and grading short-text and free-response answers.
 
 **The student never uses retrieval.** It only ever sees its notebook.
+
+## Large documents and the outline
+
+The outline is extracted in bounded batches of at most 12 page segments or 24,000 characters of extracted text, plus up to 6,000 characters of document-wide orientation (titles and objectives, treated as data; evidence must come from the current batch). Original file ids and page numbers are kept, and a long page is split without dropping text. Batch results merge repeated concept titles, key points, prerequisites and material items. A whole PDF is attached natively only when the complete outline input fits that bound; larger PDFs use their extracted text. The outline prompt skips logistics, unrelated review of previous classes, rhetorical hooks and repeated reveal slides as independent objectives.
+
+Course preparation calls get their own deadline (`INGEST_LLM_TIMEOUT_MS`, 180 s per request by default), separate from interactive turns (`LLM_TIMEOUT_MS`, 30 s). Timeouts name the operation that failed.
+
+## Lesson planning
+
+After batched extraction and exact evidence lookup, a whole-course planner groups the concepts into complete lessons (rooms) before any questions are written: normally 3–5 (1–2 for short material, at most 6), each with a description and 2–5 teaching objectives. It merges overlapping concepts across batches and must assign every source concept exactly once. The provider can only use this upload's real concept ids; a coverage mismatch gets one correction request naming the missing, repeated or unknown ids, and a second mismatch stops preparation rather than dropping topics. Evidence is carried over in code, so the planner cannot replace it with generated quotes, and the planning prompt never sees hidden misconception data. Code: `server/src/ingest/lesson-plan.ts`.
+
+Concept summaries, room descriptions and objectives are public study guidance for the player. They do not teach Pip: the student model still sees only its notebook and the public question.
+
+## Progress while preparing
+
+`status.activity` reports real task progress (reading and indexing, each outline batch, question preparation, final coverage) as `message` (up to 240 characters), optional `completed`/`total` counts, and an optional `summary`. For OpenAI's Luna models, outline calls stream with `reasoning.summary: auto`, and only the **public reasoning summaries** are forwarded (latest 1,200 characters, labeled as such in the game). Raw reasoning and partial structured output never reach progress, and question generation, verification and gameplay publish no summaries, so the hidden question bank stays private. If a provider rejects summaries, the client retries without them. Active stream events extend the preparation idle deadline up to a ten-minute ceiling; a silent request still times out. No invented thoughts are shown when a summary is unavailable.
 
 ## Evidence
 
@@ -66,15 +78,28 @@ Questions come from the material wherever possible. Each question records where 
 | 2 | `adapted` | The same structure and style as a material item, with new numbers, names or context. Used to get extra questions for retries. |
 | 3 | `generated` | Only to fill coverage gaps. Generation is conditioned on the course's style profile plus few-shot examples taken from the material, so new questions read like the course: same notation, units, code language, scenario types, depth and phrasing. |
 
-Supported types: `mcq`, `true_false`, `multi_select`, `numeric`, `short_text`, `ordering` and `free_response` (used sparingly). Free responses use model grading; short text first uses deterministic matching, then a model rubric fallback. The mix of types follows the style profile, so a physics course gets numeric problems and a programming course gets code-output questions.
+Supported types: `mcq`, `true_false`, `multi_select`, `numeric`, `short_text`, `ordering` and `free_response` (used sparingly). Free responses use model grading; short text first uses deterministic matching, then a model rubric fallback. Written answers are graded on the core idea the question asks for: an answer that states it correctly and asserts nothing false gets credit even without a secondary detail the rubric mentions, unless the question explicitly asks for that detail. The mix of types follows the style profile, so a physics course gets numeric problems and a programming course gets code-output questions.
 
 Every wrong answer that a known misconception would produce is mapped to that misconception (a wrong option, the wrong true/false value, a known wrong number, a text pattern or a wrong order). The learning phase and the boss both depend on these mappings.
+
+## Question quality rules
+
+`QUESTION_QUALITY_RULES` in `server/src/prompts/ingest/questionSpec.ts` applies to conversion, adaptation, generation and verification:
+
+- Every fact, relationship, formula and answer a question needs must be supported by the uploaded passages; no filling gaps with outside knowledge.
+- Assess mechanisms, explanations, comparisons and applications, not slide wording, rhetorical hooks or decorative numbers.
+- Include the code, data and assumptions the question needs; never refer to an unseen diagram or example.
+- Respect stated bounds (such as `100+`); numeric questions apply taught relationships instead of incidental arithmetic.
+- Rubrics require only what the question asks and accept equivalent meaning, so precise terms are acceptable extras rather than requirements.
+- Omit unsupported or ambiguous candidates instead of inventing questions to reach a count.
+
+A narrow deterministic check also rejects prompts that ask what a slide or instructor said. Prompt changes do not rewrite question banks that are already stored.
 
 ## Verification
 
 Each question is solved a second time, independently, by a model call that sees only the public question and retrieved evidence, never the answer key. Its answer is compared with the key by the same deterministic grading code the game uses.
 
-- Agreement: the question is marked `verified: true`, and the verifier's worked steps and difficulty (1 to 5) are stored.
+- Agreement: the question is marked `verified: true`, and the verifier's worked steps and difficulty (1 to 5) are stored. A live verifier must also judge the question `usable` with no `qualityIssue`; a solvable but poor question stays unverified.
 - Disagreement: the question is stored with `verified: false` and regenerated once.
 
 **Only verified questions are ever served.** Unverified ones are kept for debugging.
@@ -125,7 +150,7 @@ The worked steps and the difficulty come from the verification call. Two things 
 npm run ingest -- samples/seasons.md
 ```
 
-This ingests the file and writes `samples/cache/seasons.json`, the fixture that `POST /api/courses/seed/seasons` loads instantly. It prints a coverage and provenance report and exits with an error if an invariant fails. With a `GEMINI_API_KEY` in `.env` it uses Gemini; without one it replays canned model outputs for the two bundled samples through the same pipeline, so the fixtures can be rebuilt offline.
+This ingests the file and writes `samples/cache/seasons.json`, the fixture that `POST /api/courses/seed/seasons` loads instantly. It prints a coverage and provenance report and exits with an error if an invariant fails. With a live provider configured (Settings or `.env`) it uses that provider; without one it replays canned model outputs for the two bundled samples through the same pipeline, so the fixtures can be rebuilt offline.
 
 ## Prompt safety
 
@@ -135,4 +160,4 @@ Course-derived titles, filenames, questions, style profiles, rubrics and misconc
 
 ## Offline limitations
 
-The two bundled samples replay canned outputs through the real pipeline and satisfy coverage. Unknown uploads use a small heuristic fallback, which may produce a partial pack but cannot guarantee the required pool size or multi-concept coverage. Such packs now report `error` instead of `ready`. Gemini and Atlas have not been checked live in the Codex continuation because credentials were absent.
+The two bundled samples replay canned outputs through the real pipeline and satisfy coverage. Unknown uploads use a small heuristic fallback, which may produce a partial pack but cannot guarantee the required pool size or multi-concept coverage. Such packs now report `error` instead of `ready`. Live Gemini and Atlas runs have not been verified end to end.

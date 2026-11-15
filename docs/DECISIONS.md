@@ -4,9 +4,9 @@ Choices made where the build brief left a detail open. Newest sections are added
 
 ## The teammate's game (original backend-only scope)
 
-`pips-notebook/` is the front-end teammate's Phaser AE game (`@phaser-ae/cli`, preview on port 4173). During the original backend-only work it was read-only. The user's subsequent request to combine frontend/backend is handled on `integration`; see [INTEGRATION.md](INTEGRATION.md). The scene snapshot below records the original checkout, before that merge.
+The game (now `client/`) is the front-end teammate's Phaser AE game (`@phaser-ae/cli`, preview on port 4173). During the original backend-only work it was read-only. Frontend and backend were later combined; see [ARCHITECTURE.md](ARCHITECTURE.md). The scene snapshot below records the original checkout, before that merge; those skeleton scenes have since been removed.
 
-Scenes registered in `pips-notebook/game/main.ts` as of the first read (Nov 13):
+Scenes registered in `game/main.ts` as of the first read (Nov 13):
 
 | Scene name | File | What it does today |
 |---|---|---|
@@ -15,7 +15,7 @@ Scenes registered in `pips-notebook/game/main.ts` as of the first read (Nov 13):
 | `pause` | `game/scenes/Pause.ts` | Pushed over `play`. Resume, Restart, Title. |
 | `gameover` | `game/scenes/GameOver.ts` | "Game over", Play again, Title. |
 
-Original flow: `title → play → gameover`, with `pause` pushed on top of `play`. That checkout had no upload, learning, fight, boss or results scenes. The current integration guide now maps the merged game's implemented screens.
+Original flow: `title → play → gameover`, with `pause` pushed on top of `play`. That checkout had no upload, learning, fight, boss or results scenes. [ARCHITECTURE.md](ARCHITECTURE.md) maps the merged game's screens.
 
 The remote branch `origin/codex/playable-prototype` only adds a standalone `prototype/index.html`; it has the same four scenes.
 
@@ -24,9 +24,9 @@ The remote branch `origin/codex/playable-prototype` only adds a standalone `prot
 - **Node 22 or later**, not 20. `@google/genai` 3.x requires Node 22.
 - **Zod 3.25**, not Zod 4. The brief asks for `zod-to-json-schema`, which targets Zod 3 schemas.
 - **TypeScript 5.9** (the tried and tested line) rather than 7.0.
-- **Phaser AE** for the main game on port 4173, with its runtime restored separately from the backend workspace.
+- **Phaser AE** for the game. Its build is committed in `client/dist/` and served by the backend, so only rebuilding the game needs the separately restored Phaser AE runtime.
 - No build step. The server and scripts run through `tsx`; `shared` exports its TypeScript source directly.
-- One Vitest run from the repo root covers `server/`, `shared/` and `scripts/`.
+- One Vitest run from the repo root covers `server/`, `shared/` and `client/tests/`.
 - `pdf-lib` is a dev dependency, used only to generate small PDFs inside tests.
 
 ## Contracts
@@ -75,4 +75,4 @@ The remote branch `origin/codex/playable-prototype` only adds a standalone `prot
 - Bound Files API upload and status requests by `LLM_TIMEOUT_MS`, with the existing overall processing wait. Return generic provider/invalid-output errors to clients, without raw provider diagnostics or rejected model output.
 - Delimit course-derived prompt fields as well as player text. Remove fixed concept/key-point/misconception quotas from the outline and misconception prompts.
 - In untimed mode, label the budget as an estimated solve time with no deadline. Timed help remains an optional rule from the original design.
-- Record real endpoint examples through `npm run e2e -- --capture-file docs/api-examples.json`; regenerate `docs/API.md` with `npm run docs:api`. Debug examples are explicit excerpts. See `CONTINUATION_LOG.md` and `REVIEW.md` for evidence and remaining limitations.
+- Record real endpoint examples through `npm run e2e -- --capture-file docs/api-examples.json`; regenerate `docs/API.md` with `npm run docs:api`. Debug examples are explicit excerpts.

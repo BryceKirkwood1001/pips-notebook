@@ -46,6 +46,43 @@ export type TestApiSettingsResponse = z.infer<typeof TestApiSettingsResponseSche
 export const CourseEmbeddingSchema = z.object({ provider: LlmProviderSchema, model: z.string(), dims: z.number().int().positive() });
 export type CourseEmbedding = z.infer<typeof CourseEmbeddingSchema>;
 
+/** Where dungeons are saved: this computer's `.local/archive`, or MongoDB. `memory` only in test servers. */
+export const StorageBackendSchema = z.enum(['local', 'mongodb']);
+export type StorageBackend = z.infer<typeof StorageBackendSchema>;
+const MongoNameSchema = z.string().trim().min(1).max(63).regex(/^[A-Za-z0-9_-]+$/);
+export const UpdateStorageSettingsBodySchema = z.object({
+  backend: StorageBackendSchema,
+  mongodb: z.object({
+    /** Omitted = keep, null = remove. The connection string is write-only, like API keys. */
+    uri: z.string().trim().min(1).max(4096).regex(/^mongodb(\+srv)?:\/\//, 'must start with mongodb:// or mongodb+srv://').nullable().optional(),
+    database: MongoNameSchema.optional(),
+    vectorIndex: MongoNameSchema.optional(),
+  }).strict().optional(),
+  /** Copy the dungeons in the storage in use now into the new one. Ids already there are skipped. */
+  copyExisting: z.boolean().optional(),
+}).strict();
+export type UpdateStorageSettingsBody = z.infer<typeof UpdateStorageSettingsBodySchema>;
+export const StorageSettingsSchema = z.object({
+  /** The saved choice. */
+  backend: StorageBackendSchema,
+  /** What is in use now. Differs from `backend` when MongoDB could not be reached at startup. */
+  active: z.enum(['local', 'mongodb', 'memory']),
+  mongodb: z.object({ hasUri: z.boolean(), host: z.string().nullable(), database: z.string(), vectorIndex: z.string() }),
+  /** Dungeons in the storage in use now. */
+  courses: z.number().int().nonnegative(),
+  /** Why the saved choice is not in use, when it is not. */
+  error: z.string().nullable(),
+  persistence: z.enum(['local', 'session']),
+});
+export type StorageSettings = z.infer<typeof StorageSettingsSchema>;
+export const SaveStorageSettingsResponseSchema = StorageSettingsSchema.extend({
+  /** Present when `copyExisting` was requested and the storage changed. */
+  copied: z.object({ courses: z.number().int(), runs: z.number().int(), skipped: z.number().int() }).nullable(),
+});
+export type SaveStorageSettingsResponse = z.infer<typeof SaveStorageSettingsResponseSchema>;
+export const TestStorageSettingsResponseSchema = z.object({ ok: z.boolean(), message: z.string() });
+export type TestStorageSettingsResponse = z.infer<typeof TestStorageSettingsResponseSchema>;
+
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Primitives
 // ─────────────────────────────────────────────────────────────────────────────
@@ -248,6 +285,21 @@ export const MaterialItemSchema = z.object({
 export type MaterialItem = z.infer<typeof MaterialItemSchema>;
 
 /**
+ * A course's own pace, overriding the server's gameplay settings for runs of that course. Used by short
+ * courses, such as the Gravity sample, so one dungeon can be played in a couple of minutes.
+ */
+export const CoursePaceSchema = z.object({
+  roomQuestions: z.number().int().min(1).max(20).optional(),
+  roomHearts: z.number().int().min(1).max(10).optional(),
+  bossQuestions: z.number().int().min(1).max(30).optional(),
+  maxStudentQuestions: z.number().int().min(0).max(5).optional(),
+  helpMeProb: z.number().min(0).max(1).optional(),
+  /** A "Help me!" question always comes on this turn of the room fight (1 = the first), whatever `helpMeProb` says. */
+  helpMeRoomTurn: z.number().int().min(1).max(20).optional(),
+}).strict();
+export type CoursePace = z.infer<typeof CoursePaceSchema>;
+
+/**
  * The course pack. Chunks (with embeddings) and questions are stored separately.
  * During progressive ingest the pack is saved early with empty arrays and filled in stage by stage.
  */
@@ -264,6 +316,8 @@ export const CoursePackSchema = z.object({
   materialItems: z.array(MaterialItemSchema),
   /** Server-only retrieval profile; provider changes must not mix vector spaces. */
   embeddingProfile: CourseEmbeddingSchema.optional(),
+  /** Overrides the server's gameplay settings for this course (short courses). */
+  pace: CoursePaceSchema.optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

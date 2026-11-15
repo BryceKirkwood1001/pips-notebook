@@ -1,4 +1,4 @@
-/** Server entry point: `npm run dev:server` (watch) or `npm start`. */
+/** Server entry point. `npm start` (scripts/start.mjs) runs it; `npm run dev` runs it in watch mode. */
 import { buildApp } from './app';
 import { createContainer } from './container';
 
@@ -14,7 +14,7 @@ try {
 }
 
 const health = container.services.health();
-console.log(`[server] Pip's Notebook API on http://localhost:${config.port}/api`);
+console.log(`[server] Pip's Notebook on http://localhost:${config.port} (API under /api)`);
 console.log(
   `[server] llm=${health.llmProvider} storage=${health.storage} debug=${health.debug}` +
     (config.demoMode ? ' demo=true' : ''),

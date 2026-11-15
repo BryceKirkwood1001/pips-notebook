@@ -1,8 +1,8 @@
 # Frontend variables by screen
 
-This is the public game-data handoff for the main Phaser AE site on port 4173. Source paths below are relative to `pips-notebook/game/` unless stated otherwise. See [the game source map](../pips-notebook/game/README.md) for implementation details.
+This is the public game-data handoff for the Phaser AE game. Source paths below are relative to `client/game/` unless stated otherwise. See [the game source map](../client/game/README.md) for implementation details.
 
-Use [api-client.ts](../shared/src/api-client.ts) for the exact TypeScript types and API methods. It has zero imports and can be copied into the Phaser AE game. [API.md](API.md) supplies real requests/responses; [PHASER_INTEGRATION.md](PHASER_INTEGRATION.md) explains scene wiring.
+Use [api-client.ts](../shared/src/api-client.ts) for the exact TypeScript types and API methods; the game imports it directly. [API.md](API.md) supplies real requests/responses; [ARCHITECTURE.md](ARCHITECTURE.md) explains scene wiring.
 
 `?` means optional; `[]` means an array; `null` is an intentional empty value. Server responses own game state. Frontend state owns form inputs, animation and presentation.
 
@@ -13,7 +13,7 @@ Use [api-client.ts](../shared/src/api-client.ts) for the exact TypeScript types 
 | Title/resume | `main.ts` | URL run id, `run.phase`, `run.results`, `run.pendingHelpMe` | `getRun` |
 | Course picker/upload | `course/Upload.ts` | `samples`, uploaded `files`, pasted `text`, optional `title`, `courseId` | `listSamples`, `seedCourse`, `uploadCourse`, `createCourseFromText` |
 | Saved dungeons | `course/Upload.ts` | Saved courses and expeditions, selected course/run | `listArchive`, `deleteCourse`, `endRun`, `deleteRun`, `resumeRun` |
-| Ingest progress/run setup | `course/Upload.ts` | `course`, `status`, units, rooms, selected room ids, `targetGrade`, `studentEmoji` | `getCourse`, `createRun` |
+| Ingest progress/run setup | `course/Upload.ts` | `course`, `status`, units, rooms, selected room ids, `targetGrade` | `getCourse`, `createRun` |
 | Learning/notebook | `course/Learning.ts` | `run`, `currentRoom`, `notebookMd`, explanation, student questions, answer text, feedback | `teach`, `answerQuestion`, `skipQuestion`, `ready` |
 | Room fight/failure/retry | `course/battle.ts` | `run.room`, `TurnResult`, hearts, reasoning, cited notes, `passed`, `failedTurns` | `turn`, `help`, `retry`, `continueRun` |
 | Help modal | `course/help.ts` | `eventId`, public `question`, typed `answer`, `timeBudgetSec`, `deadline`, derived time left | `help`, `turn` for expiry |
@@ -33,18 +33,17 @@ The game registers `Title`, `Upload`, `Learning`, `Fight`, `Boss`, `Results`, `S
 | `state.results` | `Results \| null`, initially `null` | Boss, Results | Cache the final results |
 | `inflight` | `boolean`, initially `false` | `app.ts` call wrapper | Prevent concurrent UI submissions |
 | `params` | `URLSearchParams` | Startup | Read the query parameters below |
-| `params.get('api')` | `string \| null`; default `http://localhost:8787` | API initialization | Server origin, without `/api` |
+| `params.get('api')` | `string \| null`; default: the page's own origin (`http://localhost:8787` on the 4173 dev preview) | API initialization | Server origin, without `/api` |
 | `params.get('run')` / `runId` | `string \| null` | Boot/resume and URL persistence | Reload an existing run |
 | `params.get('mock')` / `mock` | `mock=1` → `true` | API initialization | Use the browser's canned mock API; omit this to test the real backend, even when that backend uses mock LLM tasks |
 | `TARGET_GRADES` | `A, A-, B+, B, B-, C+, C, C-, D` | Setup | Target selector options |
-| `STUDENT_EMOJIS` | Exported `readonly` list from client | Setup, all run headers | Allowed non-human student choices |
 | `ApiError.status`, `.code`, `.message` | `number`, `string`, `string` | Error banner on every screen | Show/handle failed requests; status `0` denotes a network error |
 
 No API key, MongoDB URI, hidden misconception state or answer key belongs in browser configuration or local storage. Settings accepts keys only as temporary password inputs sent to the local backend; the read API exposes only `hasApiKey`. Gameplay settings come from `run.rules`; set server environment variables on the backend.
 
 ## API Settings fields and source variables
 
-`course/settings-view.ts` implements the setup form, mounted by `course/Settings.ts` in the main game's frame. See [API_SETTINGS.md](API_SETTINGS.md) for setup and storage rules.
+`course/settings-view.ts` implements the setup form, mounted by `course/Settings.ts` in the main game's frame. See [ARCHITECTURE.md](ARCHITECTURE.md#model-providers-and-api-setup) for setup and storage rules.
 
 | Name/field | Type | Use |
 |---|---|---|
@@ -57,8 +56,8 @@ No API key, MongoDB URI, hidden misconception state or answer key belongs in bro
 | `timeout` / `timeoutMs` | Seconds input / integer milliseconds | UI accepts 1–180 whole seconds |
 | `ingestTimeout` / `ingestTimeoutMs` | Seconds input / integer milliseconds | Per-request course preparation budget; 1–600 whole seconds, default 180; separate from interactive turns |
 | `origin` / `apiOrigin` | URL input / string | Backend origin; query parameter overrides `top.apiOrigin` in localStorage, then localhost default |
-| `persistence` / response `persistence` | Paragraph / `'local' \| 'session'` | Backend persistence feedback |
-| `dimensions` / response `embeddingDims` | Paragraph / number | Read-only retrieval dimensions |
+| response `persistence` | `'local' \| 'session'` | Returned by the API; not shown on the page |
+| response `embeddingDims` | number | Returned by the API; not shown on the page |
 | `loaded`, `active` | boolean | Gate Save/Test until load; ignore responses after scene closes |
 | `controller` | AbortController | Cancel browser requests when leaving Settings; each request also has a deadline |
 | `root`, `status`, `keyStatus`, `providerCards`, `cards`, `fields`, `offline` | DOM handles / map | Component structure, selected state and request feedback |
@@ -69,9 +68,24 @@ No API key, MongoDB URI, hidden misconception state or answer key belongs in bro
 
 These setup responses do not belong in `PublicRun`. Changing a provider keeps existing runs; changing the backend origin starts a new client session. The browser's `?mock=1` canned practice mode remains independent of the backend provider.
 
-The actual game's battle feedback now lives in `course/battle-feedback.ts`: `turnCard(event)` renders one completed event with labeled answer/reasoning/evidence/expected-answer fields and a separate damage footer. `course/battle.ts` keeps title, hearts/attempt/answered counts and actions separate and refreshes the canonical run after completed turns. Question headings can be suppressed by `questionEl(question, false)` when the card summary already displays the prompt. See [QUESTION_QUALITY.md](QUESTION_QUALITY.md) for the associated layout and prompt fixes.
+The actual game's battle feedback now lives in `course/battle-feedback.ts`: `turnCard(event)` renders one completed event with labeled answer/reasoning/evidence/expected-answer fields and a separate damage footer. `course/battle.ts` keeps title, hearts/attempt/answered counts and actions separate and refreshes the canonical run after completed turns. Question headings can be suppressed by `questionEl(question, false)` when the card summary already displays the prompt.
 
 The actual game's `UploadScene.retryUpload` retains the submitted file array or notes/title while that scene stays open. An ingest error exposes **Retry preparation**, which submits a new course and clears stale room selections. Leaving/reloading Upload releases those inputs. A failed course keeps Start disabled and shows a preparation-error hint, rather than asking the player to select nonexistent rooms.
+
+## MongoDB (storage) settings fields
+
+`course/storage-view.ts` builds the **MongoDB** tab of Settings; `course/settings-view.ts` shows it next to the **AI provider** tab.
+
+| Name/field | Type | Use |
+|---|---|---|
+| `selected` / body `backend` | `'local' \| 'mongodb'` | Card choice: This computer or MongoDB |
+| `uri` / body `mongodb.uri` | Password input / string, `null` removes | Write-only connection string; blank keeps the saved one |
+| `database`, `vectorIndex` / body `mongodb.database`, `mongodb.vectorIndex` | Text inputs / strings | Database and Atlas vector index names |
+| `copy` / body `copyExisting` | Checkbox / boolean | Shown only when saving would switch storage and the current one has dungeons |
+| response `active`, `courses`, `error` | `'local' \| 'mongodb' \| 'memory'`, number, string or null | "In use now" line and the startup-fallback warning |
+| response `mongodb.hasUri`, `mongodb.host` | boolean, string or null | Saved-connection state; the host is shown, the string never is |
+| response `copied` | `{ courses, runs, skipped }` or null | Result line after Save & switch |
+| `afterStorageSwitch()` | `app.ts` | Clears the open run and results after a switch; Back goes to the title |
 
 ## Course picker and upload inputs
 
@@ -79,12 +93,14 @@ The actual game's `UploadScene.retryUpload` retains the submitted file array or 
 |---|---|---|
 | `samples[]` | `{ id: string; title: string }[]` | `listSamples()` → sample buttons |
 | `sample` | `string` (`seasons` or `binary-search`) | Selected sample id → `seedCourse(sample)` |
-| `files[]` | `{ name: string; data: Blob }[]` | File input → `uploadCourse(files, title?)`; a browser `File` is a `Blob` |
-| `text` | Nonempty `string` | Textarea → `createCourseFromText(text, title?)` |
+| `files[]` | `{ name: string; data: Blob }[]` | Files subsection → `uploadCourse(files, title?, text?)`; a browser `File` is a `Blob` |
+| `text` | `string` | Notes subsection; notes alone use `createCourseFromText(text, title?)`, while mixed sources use the third `uploadCourse` argument |
 | `title?` | `string`, max 200 chars for JSON | Optional course title input |
 | `courseId` | `string` | Upload/seed response → poll course and create run |
 
 File formats are `.pdf`, `.txt`, `.md` (`.markdown` is also accepted by the server). `POST /courses` returns 202 before ingest finishes; watch `status` rather than treating upload acceptance as readiness.
+
+My archive switches between Library and Create New Dungeon. The creation form keeps both sources visible, one optional title and one submit action; at least one file or nonblank notes is required. With files present, the shared client adds notes as a uniquely named `pasted-notes.md` source in the same multipart request, preserving text, indentation and source provenance. Section switches retain files, notes and title; Retry preparation uses the complete submitted source snapshot.
 
 ## Ingest/setup: every `PublicCourse` field
 
@@ -123,7 +139,7 @@ Run-creation inputs:
 |---|---|---|
 | `courseId` | Required `string` | Selected/uploaded course |
 | `targetGrade` | Required `TargetGrade` | Target selector; test client starts at `B` |
-| `studentEmoji?` | `StudentEmoji` | Student selector; use `STUDENT_EMOJIS` |
+| `studentEmoji?` | `StudentEmoji` | Optional API compatibility field; main-game setup omits it and always presents Pip |
 | `scope?.roomIds[]` | Nonempty `string[]` if supplied | Selected rooms; omit scope to include every room |
 
 Enable Start once the first selected room is ready. Later rooms can still be ingesting. A 425 response means the requested room needs more time.
@@ -138,7 +154,7 @@ These are available on the run, even if a particular screen does not render them
 | `run.id` | `string` | Every action, resume URL |
 | `run.courseId`, `run.courseTitle` | `string` | Course context, headings |
 | `run.targetGrade` | `TargetGrade` | Learning/fight headers, target display |
-| `run.studentEmoji` | `string` | Student sprite/header |
+| `run.studentEmoji` | `string` | API compatibility metadata; the main game's fixed Pip sprite does not depend on it |
 | `run.phase` | `learning \| room \| room_result \| boss \| results` | Choose the screen |
 | `run.roomIndex` | Zero-based `number` | Progress; display `+1` to the player |
 | `run.rooms[]` | `PublicRunRoom[]` | Gauntlet map/progress |
@@ -171,7 +187,7 @@ These are available on the run, even if a particular screen does not render them
 
 Navigation: `learning` → Learning; `room` or `room_result` → Fight; `boss` → Boss; `results` → Results. Keep the server's current run rather than recalculating phase/health locally.
 
-New native-game navigation: `pausedAt` opens `Menu`; Rooms/Pause calls `pauseRun(id)` and Resume expedition calls `resumeRun(id)`. `listArchive()` supplies public `courses[]` and recent run summaries for My archive / Your saved dungeons. The game uses the latest `student_answer`/`help_result` in the current fight log for its persistent outcome card. Click opens and focuses that same turn in the chronicle. See [ARCHIVE_AND_LESSONS.md](ARCHIVE_AND_LESSONS.md) for the full native file map and persistence behavior.
+New native-game navigation: `pausedAt` opens `Menu`; Rooms/Pause calls `pauseRun(id)` and Resume expedition calls `resumeRun(id)`. `listArchive()` supplies public `courses[]` and recent run summaries for My archive / Your saved dungeons. The game uses the latest `student_answer`/`help_result` in the current fight log for its persistent outcome card. Click opens and focuses that same turn in the chronicle. See [ARCHITECTURE.md](ARCHITECTURE.md) for the source map and persistence behavior.
 
 ## Learning and notebook variables
 

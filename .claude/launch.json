@@ -2,16 +2,16 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "game",
+      "name": "app",
+      "runtimeExecutable": "node",
+      "runtimeArgs": ["scripts/start.mjs", "--no-open"],
+      "port": 8787
+    },
+    {
+      "name": "game-dev",
       "runtimeExecutable": "npm",
       "runtimeArgs": ["run", "dev:game"],
       "port": 4173
-    },
-    {
-      "name": "api",
-      "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev:server"],
-      "port": 8787
     }
   ]
 }

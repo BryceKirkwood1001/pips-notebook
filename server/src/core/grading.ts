@@ -8,7 +8,7 @@
  *   - the grounding rule ("correct only with a valid notebook citation"), which the engine applies
  *     on top of the outcome.
  */
-import type { Answer, PublicQuestion, Question, QuestionType, RevealedAnswer } from '@pips-notebook/shared';
+import type { Answer, PublicQuestion, Question, RevealedAnswer } from '@pips-notebook/shared';
 
 export type GradeStatus =
   /** Right by the type's rule. */
@@ -280,13 +280,3 @@ export function targetsMisconception(question: Question, misconceptionId: string
   if (question.type === 'free_response') return question.misconceptionIds.includes(misconceptionId);
   return mappedMisconceptionIds(question).includes(misconceptionId);
 }
-
-/** Question types "Help me!" may use: everything except free_response (SPEC 2.5). */
-export const HELP_ME_TYPES: readonly QuestionType[] = [
-  'mcq',
-  'true_false',
-  'multi_select',
-  'numeric',
-  'short_text',
-  'ordering',
-];

@@ -8,7 +8,7 @@ tools: Read, Glob, Grep, Bash
 
 You audit the Pip's Notebook backend. **You are read-only: do not create, edit or delete any file, and do not change git state.** You may run read-only commands and the existing test and script commands (`npx vitest run`, `npm run e2e`, `npm run typecheck`, `git status`, `git diff`).
 
-Repo root: `.`. Ignore the folder `pips-notebook/` inside it (a teammate's separate game) except to confirm with `git status` that nothing in it changed.
+Repo root: `.`. Ignore the game in `client/` except to confirm with `git status` that nothing in it changed; `server/src/static.ts` only serves its committed build.
 
 ## Read first
 

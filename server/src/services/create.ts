@@ -15,12 +15,11 @@ import {
   type FileType,
   type PublicCourse,
   type PublicRun,
-  type PublicStudentQuestion,
   type Question,
   type Run,
   type TimeBudgetBreakdown,
 } from '@pips-notebook/shared';
-import type { Config } from '../config';
+import { withPace, type Config } from '../config';
 import { createRng } from '../core/rng';
 import { calibratedTimeBudget, computeTimeBudget, effectiveTimeBudget, materialTimeHintFor } from '../core/timeBudget';
 import type { Clock, Engine, EngineContext, EngineDeps } from '../engine/types';
@@ -155,14 +154,11 @@ export function createServices(deps: ServiceDeps): Services {
     return run;
   }
 
-  const engineDeps = (rng: EngineDeps['rng']): EngineDeps => ({
-    config,
-    tasks: deps.gameplayTasks,
-    retriever: deps.retriever,
-    ...deps.getGameplay?.(),
-    rng,
-    clock,
-  });
+  /** The engine's dependencies for one run, with the course's own pace applied (short courses). */
+  const engineDeps = (rng: EngineDeps['rng'], pack: CoursePack): EngineDeps => {
+    const selected: EngineDeps = { config, tasks: deps.gameplayTasks, retriever: deps.retriever, ...deps.getGameplay?.(), rng, clock };
+    return { ...selected, config: withPace(selected.config, pack.pace) };
+  };
 
   /**
    * Load the run, call one engine function with the run's RNG, store the RNG state and the new run.
@@ -178,7 +174,7 @@ export function createServices(deps: ServiceDeps): Services {
       if (run.pausedAt) throw new AppError('run_paused', 'This run is paused. Resume it from the menu first.');
       const ctx = await loadContext(run.courseId);
       const rng = createRng(run.rngState);
-      const out = await fn(engineDeps(rng), ctx, run);
+      const out = await fn(engineDeps(rng, ctx.pack), ctx, run);
       out.run.rngState = rng.state();
       await repo.saveRun(out.run);
       if (out.stats?.length) await repo.recordStats(out.stats);
@@ -186,7 +182,7 @@ export function createServices(deps: ServiceDeps): Services {
     });
   }
 
-  const publicRun = (run: Run, ctx: EngineContext): PublicRun => engine.toPublicRun(run, ctx, config);
+  const publicRun = (run: Run, ctx: EngineContext): PublicRun => engine.toPublicRun(run, ctx, withPace(config, ctx.pack.pace));
 
   // ── Samples ───────────────────────────────────────────────────────────────
 
@@ -273,22 +269,24 @@ export function createServices(deps: ServiceDeps): Services {
     async listSamples() {
       let names: string[];
       try {
-        names = (await readdir(cacheDir)).filter((f) => f.endsWith('.json')).sort();
+        names = (await readdir(cacheDir)).filter((f) => f.endsWith('.json')).sort((a, b) => a.localeCompare(b));
       } catch {
         return { samples: [] };
       }
-      const samples: { id: string; title: string }[] = [];
+      const samples: { id: string; title: string; short: boolean }[] = [];
       for (const file of names) {
         const id = file.replace(/\.json$/, '');
         if (!SAMPLE_NAME.test(id)) continue;
         try {
-          const json = JSON.parse(await readFile(path.join(cacheDir, file), 'utf8')) as { pack?: { title?: string } };
-          samples.push({ id, title: json.pack?.title || id });
+          const json = JSON.parse(await readFile(path.join(cacheDir, file), 'utf8')) as { pack?: { title?: string; pace?: unknown } };
+          samples.push({ id, title: json.pack?.title || id, short: !!json.pack?.pace });
         } catch {
           // An unreadable fixture is simply not offered.
         }
       }
-      return { samples };
+      // Short samples (packs with their own pace) come first, then the others alphabetically.
+      samples.sort((a, b) => Number(b.short) - Number(a.short));
+      return { samples: samples.map(({ id, title }) => ({ id, title })) };
     },
 
     async seedCourse(sample) {
@@ -363,7 +361,7 @@ export function createServices(deps: ServiceDeps): Services {
       const ctx = await loadContext(body.courseId);
       const seed = deps.newSeed();
       const rng = createRng(seed);
-      const run = engine.createRun(engineDeps(rng), ctx, { ...body, rngSeed: seed });
+      const run = engine.createRun(engineDeps(rng, ctx.pack), ctx, { ...body, rngSeed: seed });
       run.rngState = rng.state();
       await repo.saveRun(run);
       return publicRun(run, ctx);
