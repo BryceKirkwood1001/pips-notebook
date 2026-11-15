@@ -6,7 +6,7 @@ import { btn, clock, el, inline, mdToEl, questionEl } from './ui.js';
 import { turnCard } from './battle-feedback.js';
 import { attemptStats } from './report.js';
 import { travel } from './transition.js';
-import { DANGER_LEVELS, defeatFoe, defeatPip, drawStage, encounterFor, POS, setArrival, strike } from '../art.js';
+import { DANGER_LEVELS, defeatFoe, defeatPip, drawStage, encounterFor, POS, setArrival, strike, resultsMood } from '../art.js';
 
 /** Nameplates sit this far above each actor's centre, in world units: just over the head. */
 const PIP_PLATE_Y = POS.pip.y - 102;
@@ -332,6 +332,7 @@ function meter(value: number, max: number, label: string) {
 
 export function arena(run:PublicRun|null,screen:string) {
     drawStage({screen,isBoss:screen==='boss',index:run?.roomIndex??0,rooms:run?.rooms.length??1,victory:screen==='report',
+        mood:screen==='report'?resultsMood(state.results??run?.results):undefined,
         // Pip sits at the desk only in the lesson room itself; on the archive or menu screens Pip stands.
         phase:run?.phase==='learning'&&screen==='room'?'teach':run?.room?.passed && screen==='room'?'won':'intro'});
 }

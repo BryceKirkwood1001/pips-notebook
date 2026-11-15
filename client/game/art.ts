@@ -60,6 +60,23 @@ export type Arrival = 'study' | 'fight' | null;
 let arrival: Arrival = null;
 export function setArrival(next: Arrival) { arrival = next; }
 
+/**
+ * How Pip looks on the results screen. Only an A that met the target gets the cheering pose with the A+ paper; a met
+ * target with a lower grade is a happy stand, a missed target sends Pip back to the desk, and an F has Pip worried
+ * and raising a hand for help.
+ */
+export type ResultsMood = 'celebrate' | 'pleased' | 'study' | 'worried';
+export function resultsMood(results: { letter: string; metTarget: boolean } | null | undefined): ResultsMood {
+    if (!results) return 'pleased';
+    if (results.metTarget) return results.letter.startsWith('A') ? 'celebrate' : 'pleased';
+    return results.letter === 'F' ? 'worried' : 'study';
+}
+const MOOD_CLIPS: Record<Exclude<ResultsMood, 'celebrate'>, Clip> = {
+    pleased: 'student_idle', study: 'student_writing_notes', worried: 'student_raising_hand',
+};
+/** A still picture standing in for a missing animation sheet, per mood. */
+const moodStill = (mood: ResultsMood) => mood === 'celebrate' || mood === 'pleased' ? 'student_finished' : 'student_learning';
+
 type Enemy = typeof tiers[number]['enemy'] | 'final_boss';
 
 function animations(prefix: 'student' | Enemy) {
@@ -238,18 +255,37 @@ export async function loadArt() {
     ]);
 }
 
-export function drawStage(run: { screen: string; isBoss: boolean; phase: string; index: number; rooms: number; victory: boolean }) {
+const textureOf = (s: string) => game.assets.has(s) ? s : 'fallback-' + s;
+
+/** Swaps Pip's results pose once the grade is known (after a reload the results arrive after the stage is drawn). */
+export function showResultsPose(mood: ResultsMood) {
+    const old = actorOf('student');
+    if (!old) return;
+    old.destroy();
+    const clip = mood === 'celebrate' ? null : MOOD_CLIPS[mood];
+    const animated = !!clip && game.assets.has(clip);
+    const spot = POS.lounge;
+    game.spawn({
+        texture: animated ? clip! : textureOf(moodStill(mood)), tags: ['student'], x: spot.x, y: spot.y,
+        width: spot.width, layer: 'world', anims: animations('student'), data: { homeX: spot.x, homeY: spot.y },
+        ...(animated ? { play: clip! } : {}),
+    });
+}
+
+export function drawStage(run: { screen: string; isBoss: boolean; phase: string; index: number; rooms: number; victory: boolean; mood?: ResultsMood }) {
     const entering = arrival; arrival = null;
     const boss = run.isBoss || run.screen === 'report';
     const teaching = run.phase === 'teach';
     const foe = encounterFor(run.index, run.rooms, run.isBoss);
     const bg = boss ? 'boss_room_background' : run.screen === 'room' && !teaching ? foe.background : 'concept_room_background';
-    const key = (s: string) => game.assets.has(s) ? s : 'fallback-'+s;
+    const key = textureOf;
     const encounter = run.screen === 'room' || run.isBoss;
     game.spawn({texture:key(bg), x:640, y:360, width:1280,height:720,layer:'back'});
-    const idle = teaching ? 'student_writing_notes' : 'student_idle';
-    const animated = !run.victory && game.assets.has(idle);
-    const fallback = run.victory ? 'student_finished' : encounter && !teaching ? 'student_fighting' : 'student_learning';
+    // On the results screen Pip's pose follows the grade (see resultsMood).
+    const mood = run.victory ? (run.mood ?? 'pleased') : null;
+    const idle: Clip = mood && mood !== 'celebrate' ? MOOD_CLIPS[mood] : teaching ? 'student_writing_notes' : 'student_idle';
+    const animated = mood !== 'celebrate' && game.assets.has(idle);
+    const fallback = mood ? moodStill(mood) : encounter && !teaching ? 'student_fighting' : 'student_learning';
     const spot = !encounter ? POS.lounge : teaching ? POS.desk : POS.pip;
     // The writing pose has Pip seated at a desk, so Pip walks in standing and sits down on arrival.
     const pose = entering && game.assets.has('student_idle') ? 'student_idle' : idle;

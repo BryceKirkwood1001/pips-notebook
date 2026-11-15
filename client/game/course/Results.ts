@@ -4,7 +4,7 @@ import { api, call, goTo, setRun, state } from './app.js';
 import { btn, el, inline } from './ui.js';
 import { reportBook } from './report.js';
 import { travel } from './transition.js';
-import { setArrival } from '../art.js';
+import { resultsMood, setArrival, showResultsPose } from '../art.js';
 
 export class ResultsScene extends Page {
   /** What to do next: replay the same course and rooms, read the full report, or go back to My archive. */
@@ -34,9 +34,12 @@ export class ResultsScene extends Page {
     if (!run) return goTo('Upload');
     title(this, 'Results');
     let results: Results | null | undefined = state.results ?? run.results ?? null;
+    const known = !!results;
     if (!results) results = await call(() => api.getResults(run.id));
     if (!results) { panel(this, btn('Reload results', () => goTo('Results'))); return; }
     state.results = results;
+    // The stage was drawn before these results arrived: give Pip the pose that matches the grade.
+    if (!known) showResultsPose(resultsMood(results));
     panel(this, this.render(results));
   }
 

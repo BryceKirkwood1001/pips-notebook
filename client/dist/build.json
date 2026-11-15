@@ -1,17 +1,17 @@
 {
   "name": "pips-notebook",
-  "sourceIdentity": "baa69caf56159208afa65ac2aba2d8911525b3e0db661d5e55db1b59ae264336",
+  "sourceIdentity": "85325d81ab766a9ff6ad5a15c310227fb8eba3012ac5c05b8a66dde8e3585d7e",
   "sources": {
     "../shared/src/api-client.ts": "7521d4922e2f946d98355f17ab3954a2bf6187857c705919157600f1b33927bd",
-    "game/art.ts": "7f3d4eb64bc07bed1faf0dd0b15520a1b40917d690155cfd0e93b3b20374b104",
+    "game/art.ts": "28a2ca69f316d04bb8b4321d5701c9fdd0dd7316a703752535a8a0c883e74874",
     "game/course/Learning.ts": "ac068c22c18fc714ad4abbca2ec84d624e9980ad7e59da5ec59d6bebfa9c4f61",
     "game/course/Menu.ts": "eb383d7af8fb5ad4fc9c4cd86d04f1ff544999e34bfc5cb4405404048573d89e",
-    "game/course/Results.ts": "b4b02a06869a04907975039d24862889c9bdd1b4e1cbd2eab647302fc0994e51",
+    "game/course/Results.ts": "9dba3fffe893678fd930b28500a02dcb633d7356a8ddb87d576d9f03cbf97da0",
     "game/course/Settings.ts": "6e9450df047e79e19426a75d4f31623346d9a6a04e1b3a2a1ac7ea80c6407806",
     "game/course/Upload.ts": "e3b42355794020db4acf495253975e8f4a091c1b88211d04ee09c0acd65e606f",
     "game/course/app.ts": "8e225e1066567787e75e4130af64e424bd5c3a99885c0db8406bf1d3086f0706",
     "game/course/battle-feedback.ts": "145ffc05e81669b08988ae0276c19a9fdcf3e587a989a51b60a3c0b7b3fcf670",
-    "game/course/battle.ts": "1ed1e6fcc7435a3a4641971faadb1db1f6bea1a4c34567c55cc6efb54dedfbf9",
+    "game/course/battle.ts": "a207bd4151da5af387bcd5ff5806dd61a281fb5979e37b926a5ed4f1ca6f3e6a",
     "game/course/dictation.ts": "41126843b0a5086384d7c76a8423aa96ecb97e6dc634393f406aca565275a199",
     "game/course/expedition.ts": "f5c93056053eff83bd4f4e6fdd1dbd0b3707f8035149d16b558d44b2f90af5d8",
     "game/course/help.ts": "ff96a712a32afafdf49b4c94f944c29b4c6bc56e4787003a56da4fddc9a10951",
@@ -158,7 +158,7 @@
     "engine/bakery/src/validate-game.ts": "f03183672e6b6986adf29f890ba035bb8efc92529beba8f02491e8ce4a3b0a87"
   },
   "outputs": {
-    "game.js": "29c43c94318b3e1fe7582c34254ccd07eaad91007d5b5ad57c3dd8ba208fa2ae",
+    "game.js": "86e922a5f143f5640343bdea914cd580878e827db358514afd9d9fab008db465",
     "index.html": "53efc796bd57bc0826bfd9672098cae2ed657e1c329a62430eff35aaa09465f2",
     "media/OFL-Silkscreen.txt": "86c5e9c9382cdcc5948704fdfe60f2aa164a719746931219a42736ecd9cefbd3",
     "media/boss_room_background.png": "1adf4e8e24f528eabdaccdf7b032dd49497f2e93382ce00da16b17086514ffb6",

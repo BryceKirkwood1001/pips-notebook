@@ -7178,7 +7178,7 @@ function installWebGpu(k, prepared, deferRegistration = false) {
       ownVersion.set(d.tex, d.version);
     }
   };
-  const textureOf = (tex) => tex ? own.get(tex)?.view ?? null : atlasView;
+  const textureOf2 = (tex) => tex ? own.get(tex)?.view ?? null : atlasView;
   const fill = (t, base) => {
     const cutoffs = k.registry.get("sprite-cutout", "sprite-cutout")?.thresholds();
     if (texIds.length < t.count) texIds = new Uint32Array(deterministicMath.max(t.count, texIds.length * 2));
@@ -7278,7 +7278,7 @@ function installWebGpu(k, prepared, deferRegistration = false) {
         textures2++;
         textureBytes += p.bytes;
       }
-      const bag = { device, format, context, encoder: encoder3, view, texture, atlas: atlasView, textureOf, sampler, width: canvas.width, height: canvas.height, logicalWidth: k.surface.width, logicalHeight: k.surface.height, stats: { drawCalls, instances: lastInstances, textures: textures2, textureBytes } };
+      const bag = { device, format, context, encoder: encoder3, view, texture, atlas: atlasView, textureOf: textureOf2, sampler, width: canvas.width, height: canvas.height, logicalWidth: k.surface.width, logicalHeight: k.surface.height, stats: { drawCalls, instances: lastInstances, textures: textures2, textureBytes } };
       ctx.backend["webgpu"] = bag;
       const pass = encoder3.beginRenderPass({ colorAttachments: [{ view, loadOp: "clear", clearValue: k.surface.clear, storeOp: "store" }] });
       pass.end();
@@ -8552,7 +8552,7 @@ function installWebGl2(k, deferRegistration = false) {
       ownVersion.set(d.tex, d.version);
     }
   };
-  const textureOf = (id2) => id2 ? own.get(id2) ?? null : tex;
+  const textureOf2 = (id2) => id2 ? own.get(id2) ?? null : tex;
   const fill = (t, base) => {
     const cutoffs = k.registry.get("sprite-cutout", "sprite-cutout")?.thresholds();
     if (texIds.length < t.count) texIds = new Uint32Array(deterministicMath.max(t.count, texIds.length * 2));
@@ -8613,7 +8613,7 @@ function installWebGl2(k, deferRegistration = false) {
         bound = null;
         continue;
       }
-      const source = textureOf(from);
+      const source = textureOf2(from);
       if (!source) continue;
       gl.bindVertexArray(vao);
       gl.activeTexture(gl.TEXTURE0);
@@ -8704,7 +8704,7 @@ function installWebGl2(k, deferRegistration = false) {
       gl.clearColor(c.r * c.a, c.g * c.a, c.b * c.a, c.a);
       gl.clearDepth(1);
       gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
-      ctx.backend["webgl2"] = { gl, atlas: tex, textureOf, framebuffer: scene.framebuffer, color: scene.color, depth: scene.depth, width: cv.width, height: cv.height, logicalWidth: k.screen.width, logicalHeight: k.screen.height };
+      ctx.backend["webgl2"] = { gl, atlas: tex, textureOf: textureOf2, framebuffer: scene.framebuffer, color: scene.color, depth: scene.depth, width: cv.width, height: cv.height, logicalWidth: k.screen.width, logicalHeight: k.screen.height };
     });
     k.frame.addPass("sprites", { after: "begin" }, (ctx) => {
       if (!gl) return;
@@ -34182,7 +34182,7 @@ function ui() {
       });
       const radii = (r, w, h) => r === "pill" ? [deterministicMath.min(w, h) / 2, deterministicMath.min(w, h) / 2, deterministicMath.min(w, h) / 2, deterministicMath.min(w, h) / 2] : Array.isArray(r) ? r : [r ?? 12, r ?? 12, r ?? 12, r ?? 12];
       const atlas = k.assets, missingTexture = /* @__PURE__ */ new Set();
-      const textureOf = (name) => {
+      const textureOf2 = (name) => {
         if (!name) return null;
         for (const key of [`ui-texture-${name}`, name]) {
           if (!pictureExists(key)) continue;
@@ -34259,7 +34259,7 @@ function ui() {
         f[o + 57] = st.shinePeriod;
         f[o + 58] = st.shineWidth;
         f[o + 59] = phase;
-        const tx2 = textureOf(st.texture);
+        const tx2 = textureOf2(st.texture);
         f[o + 60] = deterministicMath.max(0, UI_RIM_FINISHES.indexOf(st.borderFinish));
         f[o + 61] = st.borderStripeWidth;
         f[o + 62] = st.borderStripeAngle * deterministicMath.PI / 180;
@@ -35243,9 +35243,9 @@ function backdrops() {
         pipelines.set(key, p);
         return p;
       };
-      const bgUniforms = (bag, textureOf) => {
+      const bgUniforms = (bag, textureOf2) => {
         if (bgKey === null) return [[0, 0, 0, 0], [1, 1, 0, 0], null];
-        const f = assets.framePlace(assets.frames(bgKey)), own = f.tex ? assets.ownTexture(f.tex) : null, image = textureOf(f.tex);
+        const f = assets.framePlace(assets.frames(bgKey)), own = f.tex ? assets.ownTexture(f.tex) : null, image = textureOf2(f.tex);
         if (!image) return [[0, 0, 0, 0], [1, 1, 0, 0], null];
         const tw = own?.width ?? assets.size, th = own?.height ?? assets.size;
         const rect2 = [f.x / tw, f.y / th, (f.x + f.w) / tw, (f.y + f.h) / th];
@@ -38649,6 +38649,17 @@ var arrival = null;
 function setArrival(next) {
   arrival = next;
 }
+function resultsMood(results) {
+  if (!results) return "pleased";
+  if (results.metTarget) return results.letter.startsWith("A") ? "celebrate" : "pleased";
+  return results.letter === "F" ? "worried" : "study";
+}
+var MOOD_CLIPS = {
+  pleased: "student_idle",
+  study: "student_writing_notes",
+  worried: "student_raising_hand"
+};
+var moodStill = (mood) => mood === "celebrate" || mood === "pleased" ? "student_finished" : "student_learning";
 function animations(prefix) {
   return Object.fromEntries(Object.entries(clips).filter(([key]) => game.assets.has(key) && (prefix === "student" ? key.startsWith("student_") : key === prefix + "_idle" || key === prefix + "_attack")).map(([strip, { fps, hold }]) => [strip, { strip, fps, hold }]));
 }
@@ -38833,6 +38844,26 @@ async function loadArt() {
     }))
   ]);
 }
+var textureOf = (s) => game.assets.has(s) ? s : "fallback-" + s;
+function showResultsPose(mood) {
+  const old = actorOf("student");
+  if (!old) return;
+  old.destroy();
+  const clip = mood === "celebrate" ? null : MOOD_CLIPS[mood];
+  const animated = !!clip && game.assets.has(clip);
+  const spot = POS.lounge;
+  game.spawn({
+    texture: animated ? clip : textureOf(moodStill(mood)),
+    tags: ["student"],
+    x: spot.x,
+    y: spot.y,
+    width: spot.width,
+    layer: "world",
+    anims: animations("student"),
+    data: { homeX: spot.x, homeY: spot.y },
+    ...animated ? { play: clip } : {}
+  });
+}
 function drawStage(run) {
   const entering = arrival;
   arrival = null;
@@ -38840,12 +38871,13 @@ function drawStage(run) {
   const teaching = run.phase === "teach";
   const foe = encounterFor(run.index, run.rooms, run.isBoss);
   const bg = boss ? "boss_room_background" : run.screen === "room" && !teaching ? foe.background : "concept_room_background";
-  const key = (s) => game.assets.has(s) ? s : "fallback-" + s;
+  const key = textureOf;
   const encounter = run.screen === "room" || run.isBoss;
   game.spawn({ texture: key(bg), x: 640, y: 360, width: 1280, height: 720, layer: "back" });
-  const idle = teaching ? "student_writing_notes" : "student_idle";
-  const animated = !run.victory && game.assets.has(idle);
-  const fallback = run.victory ? "student_finished" : encounter && !teaching ? "student_fighting" : "student_learning";
+  const mood = run.victory ? run.mood ?? "pleased" : null;
+  const idle = mood && mood !== "celebrate" ? MOOD_CLIPS[mood] : teaching ? "student_writing_notes" : "student_idle";
+  const animated = mood !== "celebrate" && game.assets.has(idle);
+  const fallback = mood ? moodStill(mood) : encounter && !teaching ? "student_fighting" : "student_learning";
   const spot = !encounter ? POS.lounge : teaching ? POS.desk : POS.pip;
   const pose = entering && game.assets.has("student_idle") ? "student_idle" : idle;
   game.spawn({
@@ -41412,12 +41444,14 @@ var ResultsScene = class extends Page {
     if (!run) return goTo("Upload");
     title(this, "Results");
     let results = state.results ?? run.results ?? null;
+    const known = !!results;
     if (!results) results = await call(() => api.getResults(run.id));
     if (!results) {
       panel(this, btn("Reload results", () => goTo("Results")));
       return;
     }
     state.results = results;
+    if (!known) showResultsPose(resultsMood(results));
     panel(this, this.render(results));
   }
   render(r) {
@@ -42012,6 +42046,7 @@ function arena(run, screen2) {
     index: run?.roomIndex ?? 0,
     rooms: run?.rooms.length ?? 1,
     victory: screen2 === "report",
+    mood: screen2 === "report" ? resultsMood(state.results ?? run?.results) : void 0,
     // Pip sits at the desk only in the lesson room itself; on the archive or menu screens Pip stands.
     phase: run?.phase === "learning" && screen2 === "room" ? "teach" : run?.room?.passed && screen2 === "room" ? "won" : "intro"
   });
