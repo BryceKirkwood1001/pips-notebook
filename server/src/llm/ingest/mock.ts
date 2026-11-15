@@ -6,7 +6,6 @@
  * The instance is stateful in one way: adapt/generate hand out each canned question once, so repeated
  * calls for the same gap move on to the next canned questions instead of repeating the first ones.
  */
-import { readFileSync } from 'node:fs';
 import type { Answer, Concept, WorkedStep } from '@pips-notebook/shared';
 import { normalizeText } from '../../core/grading';
 import { questionKey } from '../../ingest/util';
@@ -14,8 +13,15 @@ import type { CoverageGap, IngestTasks, QuestionDraft, VerifyQuestionOutput } fr
 import { heuristicOutline, heuristicQuestions, heuristicStyle } from './heuristic';
 import type { CannedQuestion, CannedSample } from './mock-types';
 
-const load = (name: string): CannedSample =>
-  JSON.parse(readFileSync(new URL(`./mock-data/${name}.json`, import.meta.url), 'utf8')) as CannedSample;
+// Bundled with the code (JSON imports), so Offline mode needs no file access or network.
+import binarySearch from './mock-data/binary-search.json';
+import seasons from './mock-data/seasons.json';
+
+const CANNED: Record<'seasons' | 'binary-search', CannedSample> = {
+  seasons: seasons as unknown as CannedSample,
+  'binary-search': binarySearch as unknown as CannedSample,
+};
+const load = (name: keyof typeof CANNED): CannedSample => structuredClone(CANNED[name]);
 
 const STEP_TEXT: Record<WorkedStep['kind'], string> = {
   recall: 'Recall the relevant fact from the notes.',

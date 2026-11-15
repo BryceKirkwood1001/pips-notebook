@@ -2,6 +2,7 @@ import { expect, test } from 'vitest';
 import { createContainer } from '../src/container';
 import { buildApp } from '../src/app';
 import { createFakeLlmClient } from '../src/llm/fake-client';
+import { createDirectorySampleSource } from '../src/node/samples';
 import { TeachResponseSchema } from '@pips-notebook/shared';
 
 test('teaching exposes the student reply and notes over HTTP, including a specific empty-note reply',async()=>{
@@ -12,8 +13,8 @@ test('teaching exposes the student reply and notes over HTTP, including a specif
     statedMisconceptionIds:[],resolvedMisconceptionIds:[],questions:[],
   })}});
   const c=await createContainer({env:{LLM_PROVIDER:'openai',OPENAI_API_KEY:'fake-test-key',HELP_ME_PROB:'0'},
-    settingsFile:false,dataDir:false,llmFactory:()=>llm,seed:42});
-  const app=await buildApp(c);
+    llmFactory:()=>llm,seed:42,samples:createDirectorySampleSource()});
+  const app=buildApp(c);
   try {
     const {courseId}=await c.services.seedCourse('seasons');
     const run=await c.services.createRun({courseId,targetGrade:'B'});

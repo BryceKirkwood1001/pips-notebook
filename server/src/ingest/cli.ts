@@ -1,6 +1,7 @@
 /**
- * `npm run ingest -- samples/seasons.md [more files]`
+ * `npm run ingest -- samples/seasons.md [more files]` (a maintainer tool, run with Node; not part of the game)
  * Ingests one or more files into in-memory storage and writes samples/cache/<name>.json (a CourseFixture).
+ * The provider comes from the environment: `GEMINI_API_KEY=... npm run ingest -- notes.md`, or Offline without a key.
  * With several files they are ingested as one course named after the first file. Exits non-zero when
  * ingest fails or a coverage invariant does not hold.
  */
@@ -8,10 +9,9 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { basename, extname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { FileType } from '@pips-notebook/shared';
-import { loadConfigFromProcess } from '../config';
+import { loadConfig } from '../config';
 import { systemClock } from '../engine/types';
 import { createLlmClient } from '../llm';
-import { createApiSettingsManager } from '../settings';
 import { createMockIngestTasks } from '../llm/ingest/mock';
 import type { IngestTasks } from '../llm/types';
 import { createChunker, createEmbedder, createMaterialParser, createMemoryVectorStore, createRetriever } from '../rag';
@@ -27,8 +27,7 @@ async function main(): Promise<number> {
     console.error('usage: npm run ingest -- <file.md|.txt|.pdf> [more files]');
     return 2;
   }
-  const manager = await createApiSettingsManager(loadConfigFromProcess(), { file: fileURLToPath(new URL('../../../.local/api-settings.json', import.meta.url)) });
-  const config = manager.config();
+  const config = loadConfig(process.env);
   config.llmTimeoutMs = config.ingestLlmTimeoutMs;
   const mock = config.llmProvider === 'mock';
   const llm = createLlmClient(config);

@@ -1,14 +1,27 @@
-import { mkdtemp, readFile, rm, stat, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { z } from 'zod';
 import { buildApp } from '../src/app';
+import { browserSettingsStore } from '../src/browser/main';
 import { loadConfig, testConfig, type Config } from '../src/config';
 import { createContainer } from '../src/container';
 import { createFakeLlmClient } from '../src/llm/fake-client';
 import type { LlmClient } from '../src/llm/types';
-import { createApiSettingsManager } from '../src/settings';
+import { createDirectorySampleSource } from '../src/node/samples';
+import { createApiSettingsManager, memorySettingsStore } from '../src/settings';
+
+/** A Web Storage area (localStorage / sessionStorage) backed by a Map. */
+function storageArea(): Storage & { dump(): Record<string, string> } {
+  const items = new Map<string, string>();
+  return {
+    get length() { return items.size; },
+    key: (i: number) => [...items.keys()][i] ?? null,
+    getItem: (k: string) => items.get(k) ?? null,
+    setItem: (k: string, v: string) => { items.set(k, String(v)); },
+    removeItem: (k: string) => { items.delete(k); },
+    clear: () => items.clear(),
+    dump: () => Object.fromEntries(items),
+  };
+}
 
 const secret = 'test-credential-never-return';
 const cleanups: (() => Promise<unknown>)[] = [];
@@ -36,34 +49,55 @@ describe('API settings', () => {
     expect(manager.read().providers.openai.hasApiKey).toBe(false);
   });
 
-  it('atomically persists private settings and restores them after restart', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'top-settings-'));
-    cleanups.push(() => rm(directory, { recursive: true, force: true }));
-    const file = join(directory, 'private', 'api-settings.json');
-    const manager = await createApiSettingsManager(testConfig(), { file });
+  it('keeps settings in this browser and restores them after a reload', async () => {
+    const local = storageArea(), session = storageArea();
+    vi.stubGlobal('localStorage', local); vi.stubGlobal('sessionStorage', session);
+    cleanups.push(async () => vi.unstubAllGlobals());
+    const manager = await createApiSettingsManager(testConfig(), { store: browserSettingsStore });
+    expect(manager.read().persistence).toBe('local');
     await manager.save({ provider: 'openai', openai: { apiKey: secret }, timeoutMs: 45000, ingestTimeoutMs: 240000 });
-    expect((await stat(file)).mode & 0o777).toBe(0o600);
-    expect((await stat(join(directory, 'private'))).mode & 0o777).toBe(0o700);
-    expect(JSON.parse(await readFile(file, 'utf8')).openai.apiKey).toBe(secret);
-    const restored = await createApiSettingsManager(testConfig(), { file });
+    expect(Object.keys(local.dump())).toEqual(['pips-notebook.ai-settings']);
+    expect(JSON.parse(local.getItem('pips-notebook.ai-settings')!).openai.apiKey).toBe(secret);
+    expect(session.dump()).toEqual({});
+    const restored = await createApiSettingsManager(testConfig(), { store: browserSettingsStore });
     expect(restored.read()).toMatchObject({ provider: 'openai', timeoutMs: 45000, ingestTimeoutMs: 240000, persistence: 'local' });
     expect(restored.config().openaiApiKey).toBe(secret);
-    const legacy = JSON.parse(await readFile(file, 'utf8')); delete legacy.ingestTimeoutMs;
-    await writeFile(file, JSON.stringify(legacy));
-    const migrated = await createApiSettingsManager(testConfig(), { file });
+    const legacy = JSON.parse(local.getItem('pips-notebook.ai-settings')!); delete legacy.ingestTimeoutMs;
+    local.setItem('pips-notebook.ai-settings', JSON.stringify(legacy));
+    const migrated = await createApiSettingsManager(testConfig(), { store: browserSettingsStore });
     expect(migrated.read().ingestTimeoutMs).toBe(180000);
     expect(migrated.read().timeoutMs).toBe(45000);
   });
 
+  it('"only this tab" moves the key to sessionStorage, and back again', async () => {
+    const local = storageArea(), session = storageArea();
+    vi.stubGlobal('localStorage', local); vi.stubGlobal('sessionStorage', session);
+    cleanups.push(async () => vi.unstubAllGlobals());
+    const manager = await createApiSettingsManager(testConfig(), { store: browserSettingsStore });
+    await manager.save({ provider: 'gemini', gemini: { apiKey: secret } });
+    const tabOnly = await manager.save({ provider: 'gemini', rememberKey: false });
+    expect(tabOnly.persistence).toBe('session');
+    expect(local.dump()).toEqual({});
+    expect(JSON.parse(session.getItem('pips-notebook.ai-settings')!).gemini.apiKey).toBe(secret);
+    expect((await createApiSettingsManager(testConfig(), { store: browserSettingsStore })).read()).toMatchObject({ provider: 'gemini', persistence: 'session' });
+    session.clear(); // the tab closed
+    expect((await createApiSettingsManager(testConfig(), { store: browserSettingsStore })).read()).toMatchObject({ provider: 'mock', persistence: 'local' });
+    await manager.save({ provider: 'gemini', rememberKey: true });
+    expect(session.dump()).toEqual({});
+    expect(JSON.parse(local.getItem('pips-notebook.ai-settings')!).gemini.apiKey).toBe(secret);
+  });
+
+  it('ignores unreadable saved settings instead of failing to start', async () => {
+    for (const text of ['not json', JSON.stringify({ version: 1, provider: 'openai' }), JSON.stringify({ version: 1, provider: 'openai', timeoutMs: 30000,
+      openai: { model: 'm', embeddingModel: 'e', apiKey: '' }, gemini: { model: 'm', embeddingModel: 'e', apiKey: '' } })]) {
+      const manager = await createApiSettingsManager(testConfig(), { store: memorySettingsStore({ text, place: 'local' }) });
+      expect(manager.read().provider).toBe('mock');
+    }
+  });
+
   it('preserves active settings on a persistence failure', async () => {
-    const directory = await mkdtemp(join(tmpdir(), 'top-settings-'));
-    cleanups.push(() => rm(directory, { recursive: true, force: true }));
-    const file = join(directory, 'api-settings.json');
-    const manager = await createApiSettingsManager(testConfig(), { file });
-    await rm(directory, { recursive: true });
-    // A regular file cannot serve as the settings directory.
-    const { writeFile } = await import('node:fs/promises');
-    await writeFile(directory, 'blocked');
+    const store = { load: async () => null, save: async () => { throw new Error('QuotaExceededError'); } };
+    const manager = await createApiSettingsManager(testConfig(), { store });
     await expect(manager.save({ provider: 'openai', openai: { apiKey: secret } })).rejects.toThrow(/previous settings/);
     expect(manager.read().provider).toBe('mock');
     expect(manager.read().providers.openai.hasApiKey).toBe(false);
@@ -97,7 +131,7 @@ describe('API settings', () => {
   });
 });
 
-describe('local settings HTTP API', () => {
+describe('settings API (in the page)', () => {
   async function start() {
     const used: Config[] = [];
     const llmFactory = (config: Config): LlmClient => {
@@ -106,8 +140,8 @@ describe('local settings HTTP API', () => {
         ? { feedback: 'Could you explain one idea from this topic?', notesToAdd: [], statedMisconceptionIds: [], questions: [], resolvedMisconceptionIds: [] }
         : { ready: true }) };
     };
-    const container = await createContainer({ env: { LLM_PROVIDER: 'mock' }, llmFactory, seed: 42 });
-    const app = await buildApp(container);
+    const container = await createContainer({ env: { LLM_PROVIDER: 'mock' }, llmFactory, seed: 42, samples: createDirectorySampleSource() });
+    const app = buildApp(container);
     cleanups.push(() => app.close());
     return { app, container, used };
   }
@@ -144,32 +178,17 @@ describe('local settings HTTP API', () => {
     expect(taught.statusCode).toBe(200);
   });
 
-  it.each([
-    { remoteAddress: '192.0.2.1' },
-    { headers: { host: 'attacker.example' } },
-    { headers: { origin: 'https://attacker.example' } },
-    { headers: { origin: 'http://localhost:4999' } },
-  ])('rejects nonlocal or untrusted access: %j', async options => {
-    const { app } = await start();
-    for (const [method, url] of [['GET', '/api/settings/api'], ['POST', '/api/settings/api'], ['POST', '/api/settings/api/test']] as const) {
-      const response = await app.inject({ method, url, ...options, ...(method === 'POST' ? { payload: { provider: 'mock' } } : {}) });
-      expect(response.statusCode).toBe(403);
-      expect(response.json().error.code).toBe('settings_forbidden');
-    }
-  });
-
-  it('accepts the local frontend, validates requests, and tests without saving', async () => {
+  it('validates requests, and tests without saving', async () => {
     const { app, container, used } = await start();
-    const headers = { origin: 'http://localhost:4173' };
-    const settings = await app.inject({ url: '/api/settings/api', headers });
+    const settings = await app.inject({ url: '/api/settings/api' });
     expect(settings.statusCode).toBe(200);
-    expect(settings.headers['access-control-allow-origin']).toBe(headers.origin);
+    expect(settings.headers['cache-control']).toBe('no-store');
     for (const payload of [{ provider: 'bad' }, { provider: 'openai' }, { provider: 'mock', timeoutMs: 1 }, { provider: 'mock', ingestTimeoutMs: 600001 }, { provider: 'mock', unknown: secret }]) {
       const bad = await app.inject({ method: 'POST', url: '/api/settings/api', payload });
       expect(bad.statusCode).toBe(400);
       expect(bad.body).not.toContain(secret);
     }
-    const response = await app.inject({ method: 'POST', url: '/api/settings/api/test', headers, payload: { provider: 'openai', openai: { apiKey: secret } } });
+    const response = await app.inject({ method: 'POST', url: '/api/settings/api/test', payload: { provider: 'openai', openai: { apiKey: secret } } });
     expect(response.statusCode).toBe(200);
     expect(response.json().ok).toBe(true);
     expect(used.at(-1)!.llmProvider).toBe('openai');

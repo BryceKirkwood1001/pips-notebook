@@ -197,7 +197,9 @@ h1,h2,.card strong,.gold,.ghost,.eyebrow,header>span,.energy,.gauge,.numbers str
 .offline-note{padding:5px 14px 25px 0;line-height:1.5}
 .setup-advanced{border-block:1px solid #71523f;padding:11px 0;margin-top:16px}
 .course-stage .setup-advanced>summary{font:12px Silkscreen,monospace}
-.connection-fields{display:grid;grid-template-columns:1.5fr auto 1fr;gap:14px;align-items:center;margin-top:14px}
+.connection-fields{display:grid;grid-template-columns:minmax(0,320px);gap:14px;align-items:center;margin-top:14px}
+.remember-key{display:block;margin-top:14px}
+.remember-key small{display:block;margin:4px 0 0 26px}
 .connection-fields .setup-field{margin:0}
 .setup-footer{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-top:16px}
 .setup-footer .actions{margin:0;gap:9px}

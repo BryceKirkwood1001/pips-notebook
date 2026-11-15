@@ -148,7 +148,7 @@ export interface EngineContext {
 }
 
 export interface CreateRunInput extends CreateRunBody {
-  /** Default: `run_${crypto.randomUUID()}`. */
+  /** Default: `run_<random uuid>`. */
   id?: string;
   /** Default: a random 32-bit seed. Tests pass a fixed one. */
   rngSeed?: number;

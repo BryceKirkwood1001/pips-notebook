@@ -81,8 +81,8 @@ export interface LlmClient {
   generateJson<T>(schema: z.ZodType<T, z.ZodTypeDef, unknown>, prompt: string, opts?: GenerateOptions): Promise<T>;
   /** One vector of `config.embeddingDims` numbers per text, in order. Batches internally. */
   embed(texts: string[], taskType: EmbedTaskType): Promise<number[][]>;
-  /** Uploads a file (a path, or bytes) through the Files API and waits until it is usable. */
-  uploadFile(source: string | Uint8Array, opts: { mimeType: string; displayName?: string }): Promise<UploadedFile>;
+  /** Uploads a file's bytes through the Files API and waits until it is usable. */
+  uploadFile(source: Uint8Array, opts: { mimeType: string; displayName?: string }): Promise<UploadedFile>;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

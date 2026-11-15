@@ -6,7 +6,7 @@
  *   createChunker(config: Config): Chunker
  *   createEmbedder(llm: LlmClient, config: Config): Embedder
  *   createMemoryVectorStore(): VectorStore
- *   createAtlasVectorStore(db: Db, config: Config): VectorStore        // `Db` from the `mongodb` driver
+ *   createIndexedDbVectorStore(db: IDBDatabase): VectorStore     // the browser; lives in server/src/repo/indexeddb.ts
  *   createRetriever(deps: { store: VectorStore; embedder: Embedder; config: Config }): Retriever
  *   normalizeForMatch(text: string): string
  *   quoteInText(quote: string, text: string): boolean
@@ -82,12 +82,12 @@ export interface Embedder {
 
 export interface ScoredChunk {
   chunk: Chunk;
-  /** Cosine similarity (memory) or the Atlas vectorSearchScore. Higher is closer. */
+  /** Cosine similarity. Higher is closer. */
   score: number;
 }
 
 export interface VectorStore {
-  /** Creates the Atlas vector index when it is missing. A no-op for the memory store. Safe to call twice. */
+  /** Prepares the store. A no-op for the memory and IndexedDB stores. Safe to call twice. */
   init(): Promise<void>;
   /** Insert or replace by chunk id. */
   upsert(chunks: Chunk[]): Promise<void>;

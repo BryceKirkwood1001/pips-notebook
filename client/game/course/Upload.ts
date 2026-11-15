@@ -80,7 +80,7 @@ export class UploadScene extends Page {
         })));
         archive.append(entry);
       }
-      if (!res.archive.courses.length) archive.append(el('p','dim','Your prepared dungeons will appear here, ready to return to after a restart.'));
+      if (!res.archive.courses.length) archive.append(el('p','dim','Your prepared dungeons are saved in this browser and will appear here, ready to return to.'));
       for (const s of res.samples.samples) {
         samples.append(btn(s.title, async () => { this.retryUpload = null; this.begin(await call(() => api.seedCourse(s.id))); }));
       }
@@ -124,6 +124,7 @@ export class UploadScene extends Page {
       { name: 'Library', body: el('div', '', el('h3', '', 'Your saved dungeons'), archive, el('h3', '', 'Sample lessons'), samples) },
       { name: 'Create New Dungeon', body: el('div', 'create-dungeon', el('h3', '', 'Create New Dungeon'),
         el('p', '', 'Upload files, paste notes, or use both. All your sources become one dungeon.'),
+        el('p', 'dim', 'Your files are read in this browser and sent only to the AI provider you chose in Settings. Keep this tab open while the dungeon is prepared.'),
         el('div', 'dungeon-sources',
           el('fieldset', 'dungeon-source', el('legend', '', 'Files (optional)'), picker,
             el('p', 'dim', 'PDF, text, and Markdown files are supported.')),

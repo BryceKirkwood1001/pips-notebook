@@ -1,6 +1,7 @@
-/** OpenAI Responses, embeddings and Files REST APIs. Uses Node fetch; no browser credentials. */
-import { readFile } from 'node:fs/promises';
-import { basename } from 'node:path';
+/**
+ * OpenAI Responses, embeddings and Files REST APIs over plain `fetch`, so it runs in the browser: the player's own
+ * key goes in the Authorization header, straight to api.openai.com and nowhere else. No cookies are sent.
+ */
 import { z } from 'zod';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { Config } from '../config';
@@ -70,8 +71,24 @@ const errors: Record<number, string> = {
   400: 'OpenAI rejected the request. Check model support and API settings.',
 };
 
-export function createOpenAiClient(config: Config, doFetch: typeof fetch = fetch): LlmClient {
+export function createOpenAiClient(config: Config, doFetch: typeof fetch = (input, init) => globalThis.fetch(input, init)): LlmClient {
   let summariesAvailable = true;
+
+  /**
+   * Why a request failed before any response could be read. In a browser, OpenAI answers a rejected key on these
+   * endpoints without CORS headers, so the browser reports only a network error. GET /models keeps the headers on
+   * a 401, so one small request tells "wrong key" apart from "no connection".
+   */
+  async function diagnose(): Promise<AppError> {
+    try {
+      const res = await doFetch(API + '/models', { headers: { authorization: `Bearer ${config.openaiApiKey}` }, signal: AbortSignal.timeout(10000) });
+      if (!res.ok && errors[res.status]) return new OpenAiHttpError(res.status, errors[res.status]);
+      return new AppError('llm_error', 'Could not complete the OpenAI request. Please retry.');
+    } catch {
+      return new AppError('llm_error', 'Could not reach OpenAI from this browser. Check your internet connection, then retry.');
+    }
+  }
+
   async function request(path: string, body: unknown, timeoutMs = config.llmTimeoutMs, task = 'request', onSummary?: GenerateOptions['onReasoningSummary']): Promise<any> {
     const controller = new AbortController();
     let timer: ReturnType<typeof setTimeout> | undefined;
@@ -103,6 +120,8 @@ export function createOpenAiClient(config: Config, doFetch: typeof fetch = fetch
       return await Promise.race([operation, expired]);
     } catch (err) {
       if (err instanceof AppError) throw err;
+      // fetch rejects with a TypeError when no response arrived (offline, or a response the browser may not read).
+      if (err instanceof TypeError && !controller.signal.aborted) throw await diagnose();
       throw new AppError('llm_error', 'Could not complete the OpenAI request. Please retry.');
     } finally {
       clearTimeout(timer);
@@ -176,10 +195,9 @@ export function createOpenAiClient(config: Config, doFetch: typeof fetch = fetch
       return vectors;
     },
     async uploadFile(source, opts) {
-      const bytes = typeof source === 'string' ? await readFile(source) : source;
       const form = new FormData();
       form.append('purpose', 'user_data');
-      form.append('file', new Blob([new Uint8Array(bytes)], { type: opts.mimeType }), opts.displayName ?? (typeof source === 'string' ? basename(source) : 'material.pdf'));
+      form.append('file', new Blob([new Uint8Array(source)], { type: opts.mimeType }), opts.displayName ?? 'material.pdf');
       const uploaded = await request('/files', form, config.llmTimeoutMs, 'file upload');
       if (typeof uploaded.id !== 'string' || !uploaded.id) throw new AppError('llm_error', 'OpenAI file upload returned no file id');
       return { uri: uploaded.id, name: uploaded.id, mimeType: opts.mimeType };

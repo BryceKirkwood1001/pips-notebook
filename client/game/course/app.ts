@@ -1,4 +1,5 @@
-import { ApiError, createApiClient, type PublicRun, type Results, type RunPhase } from '../../../shared/src/api-client.js';
+import { ApiError, BACKEND_ORIGIN, createApiClient, type PublicRun, type Results, type RunPhase } from '../../../shared/src/api-client.js';
+import { localFetch, preparingUploads } from './backend.js';
 import { createMockApi } from './mock.js';
 import { btn, el, host, clock } from './ui.js';
 import { game } from '../engine.js';
@@ -7,11 +8,10 @@ import { curtainUp } from './transition.js';
 
 const params = new URLSearchParams(location.search);
 export const mock = params.get('mock') === '1';
-// `npm start` serves the game and the API from one origin; the Phaser dev preview on 4173 talks to the API on 8787.
-const defaultOrigin = location.protocol.startsWith('http') && location.port !== '4173' ? location.origin : 'http://localhost:8787';
-export let apiOrigin = params.get('api') || defaultOrigin;
-try { apiOrigin = params.get('api') || localStorage.getItem('top.apiOrigin') || apiOrigin; } catch { /* Storage may be disabled. */ }
-export let api = mock ? createMockApi() : createApiClient({baseUrl: apiOrigin});
+// There is no server: the API runs in this page (backend.ts), so its requests never leave the browser.
+export const api = mock ? createMockApi() : createApiClient({ baseUrl: BACKEND_ORIGIN, fetch: localFetch });
+// Preparing an upload runs in this page too: closing it stops the preparation, so the browser asks first.
+clock.addEventListener('beforeunload', event => { if (preparingUploads()) { event.preventDefault(); event.returnValue = ''; } });
 export const state: {run: PublicRun | null; results: Results | null} = {run:null, results:null};
 export type Screen = 'Title' | 'Upload' | 'Learning' | 'Fight' | 'Boss' | 'Results' | 'Settings' | 'Menu';
 export let courseSource: 'Library' | 'Create New Dungeon' = 'Library';
@@ -67,15 +67,8 @@ export async function continuePlaying() {
     const run=await call(()=>api.resumeRun(state.run!.id));
     if(run){setRun(run);goTo(sceneForPhase(run.phase));}
 }
-/** After Settings switched storage: the open expedition lives in the old storage, so start from the title again. */
+/** After Settings imported a backup or the archive changed under the open expedition: start from the title again. */
 export function afterStorageSwitch() { setRun(null); state.results = null; settingsReturn = 'Title'; needsSync = false; }
-export function setApiOrigin(origin: string) {
-    if (apiOrigin !== origin) { setRun(null); state.results = null; settingsReturn = 'Title'; needsSync = false; }
-    apiOrigin = origin;
-    if (!mock) api = createApiClient({ baseUrl: origin });
-    try { localStorage.setItem('top.apiOrigin', origin); } catch { /* Only this non-secret origin is persisted in the browser. */ }
-    const url = new URL(location.href); url.searchParams.set('api', origin); history.replaceState(null, '', url);
-}
 export function sceneForPhase(phase: RunPhase): Screen {
     switch (phase) {
         case 'learning': return 'Learning';

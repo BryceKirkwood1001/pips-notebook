@@ -1,6 +1,6 @@
-# HTTP API reference
+# API reference (in the page)
 
-Base URL: `http://localhost:8787/api`. All responses are JSON. The game is served from the same origin; the Phaser dev preview on `http://localhost:4173` is allowed by default, and `CORS_ORIGINS` adds others.
+There is no server: these routes are answered inside the page by `backend.js` (`server/src/router.ts`), and the game reaches them through the API client with the backend's `fetch`. Paths are under `/api` on the made-up origin `https://backend.pips-notebook.invalid`; nothing goes over a network. All responses are JSON.
 
 These examples were captured from the integrated mock API by `scripts/e2e.ts`, using seed 42 and the seasons fixture. Ids and timestamps are real per-run values and will differ on your machine. An auxiliary run supplies the explicit learning-answer and wrong-phase examples. Full captured bodies are in [api-examples.json](api-examples.json); excerpts below omit fields, without altering the retained values. The `/debug` capture itself is also an excerpt.
 
@@ -20,8 +20,8 @@ The client is [shared/src/api-client.ts](../shared/src/api-client.ts), and the c
 | POST | `/api/settings/api` | 200 |
 | POST | `/api/settings/api/test` | 200 |
 | GET | `/api/settings/storage` | 200 |
-| POST | `/api/settings/storage` | 200 |
-| POST | `/api/settings/storage/test` | 200 |
+| GET | `/api/backup` | 200 |
+| POST | `/api/backup` | 200 |
 | GET | `/api/samples` | 200 |
 | GET | `/api/archive` | 200 |
 | POST | `/api/courses/seed/:sample` | 200 |
@@ -80,7 +80,7 @@ Response: HTTP 200.
 
 ## GET /api/settings/api
 
-Local API setup. Returns provider, generation/embedding model names, key-presence booleans, timeout, embedding dimensions and persistence mode. Never returns keys. Requires a loopback connection, a localhost Host, and an allowed browser origin. Responses use `Cache-Control: no-store`.
+The player's AI settings. Returns provider, generation/embedding model names, key-presence booleans, timeouts, embedding dimensions and `persistence` (`local`: kept in this browser's localStorage; `session`: this tab only). Never returns keys.
 
 ### Example
 
@@ -112,7 +112,7 @@ Response: HTTP 200.
 
 ## POST /api/settings/api
 
-Saves and applies API settings for subsequent calls without restarting or deleting runs. `provider` is `openai`, `gemini` or `mock`. Optional `openai`/`gemini` objects accept `model`, `embeddingModel`, and write-only `apiKey`: omit the key to retain it, send `null` to remove it. The selected live provider requires a key. `timeoutMs` is 1,000–180,000 for interactive requests; `ingestTimeoutMs` is 1,000–600,000 for new course preparation requests (default 180,000). Unknown fields are rejected. Same local-access rules as GET. Production server saves to the ignored, permission-restricted `.local/api-settings.json`; explicit test environments default to session-only settings.
+Saves and applies AI settings for subsequent calls without deleting runs. `provider` is `openai`, `gemini` or `mock`. Optional `openai`/`gemini` objects accept `model`, `embeddingModel`, and write-only `apiKey`: omit the key to retain it, send `null` to remove it. The selected live provider requires a key. `timeoutMs` is 1,000–180,000 for interactive requests; `ingestTimeoutMs` is 1,000–600,000 for new course preparation requests (default 180,000). `rememberKey: false` keeps the settings in sessionStorage (gone when the tab closes), `true` in localStorage. Unknown fields are rejected. Keys go only to their provider.
 
 ### Example
 
@@ -150,7 +150,7 @@ Response: HTTP 200.
 
 ## POST /api/settings/api/test
 
-Validates an unsaved candidate with the same body and local-access rules as Save. For a live provider, makes one small structured generation request (with at most one invalid-output retry) and an embedding request. Can incur API usage. Offline mode makes no provider calls. Does not save credentials or change the active provider.
+Validates an unsaved candidate with the same body as Save. For a live provider, makes one small structured generation request (with at most one invalid-output retry) and an embedding request, from the browser to the provider. Can incur API usage. Offline mode makes no provider calls. Does not save credentials or change the active provider.
 
 ### Example
 
@@ -174,7 +174,7 @@ Response: HTTP 200.
 
 ## GET /api/settings/storage
 
-Where dungeons are saved. `backend` is the saved choice (`local` or `mongodb`); `active` is what is in use now (`memory` only on test servers, like the capture below). They differ when MongoDB could not be reached at startup; `error` then says why. `mongodb` reports `hasUri`, the connection's `host`, `database` and `vectorIndex`, never the connection string. `courses` counts the dungeons in the active storage. Same local-access rules and `Cache-Control: no-store` as the API settings.
+What is saved in this browser. `active` is `browser` (IndexedDB) or `memory` (the browser blocks storage, and in tests, like the capture below); `courses` and `runs` count what is saved; `persisted` says whether the browser promised not to clear the data (`null` when it cannot say); `usageBytes` and `quotaBytes` are the browser's estimate; `error` says why storage is blocked.
 
 ### Example
 
@@ -184,73 +184,63 @@ Response: HTTP 200.
 
 ```json
 {
-  "backend": "local",
   "active": "memory",
-  "mongodb": {
-    "hasUri": false,
-    "host": null,
-    "database": "pips_notebook",
-    "vectorIndex": "chunks_vector"
-  },
   "courses": 0,
-  "error": null,
-  "persistence": "session"
+  "runs": 0,
+  "persisted": null,
+  "usageBytes": null,
+  "quotaBytes": null,
+  "error": null
 }
 ```
 
-## POST /api/settings/storage
+## GET /api/backup
 
-Saves the storage choice and switches to it right away, without a restart. `backend` is `local` or `mongodb`. Optional `mongodb` accepts a write-only `uri` (`mongodb://` or `mongodb+srv://`; omit to keep the saved one, `null` to remove it), `database` and `vectorIndex`. With `copyExisting: true`, the dungeons in the current storage (courses, questions, statistics, source chunks and their expeditions) are copied across; ids already there are skipped and nothing is deleted. The new storage is opened first, so a failed connection returns 502 `storage_error` and changes nothing. Background preparation finishes before the switch. Saving the storage already in use only updates the saved details. The response adds `copied` (`{ courses, runs, skipped }`, or `null`). The server saves the choice in the ignored, permission-restricted `.local/storage-settings.json`; it overrides `MONGODB_URI`.
+Every dungeon (course, questions, question statistics, search chunks) and its expeditions as one JSON file: `{ app: "pips-notebook", version: 1, exportedAt, courses, questions, questionStats, chunks, runs }`. It holds answer keys (the player's own copy) and never API keys. The captured response is an excerpt with counts.
 
 ### Example
 
-Request: `POST /api/settings/storage` (`application/json`).
+Request: `GET /api/backup` (no body).
+
+Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "backend": "local"
+  "app": "pips-notebook",
+  "version": 1,
+  "exportedAt": "2026-11-15T05:18:29.752Z",
+  "courses": [
+    {
+      "id": "sample-seasons",
+      "title": "Why Earth Has Seasons"
+    }
+  ],
+  "questions": 44,
+  "questionStats": 27,
+  "chunks": 15,
+  "runs": 1
 }
+```
+
+## POST /api/backup
+
+Imports a backup file as returned by `GET /api/backup`. The file is validated against the schema; a file that is not a backup is 400. Dungeons already saved are skipped (`skipped`), never replaced; nothing is deleted. Returns how many dungeons and expeditions were added.
+
+### Example
+
+Request: `POST /api/backup` (`application/json`).
+
+```json
+"(a backup file, as GET /api/backup returns it)"
 ```
 
 Response: HTTP 200.
 
 ```json
 {
-  "backend": "local",
-  "active": "memory",
-  "mongodb": {
-    "hasUri": false,
-    "host": null,
-    "database": "pips_notebook",
-    "vectorIndex": "chunks_vector"
-  },
   "courses": 0,
-  "error": null,
-  "persistence": "session",
-  "copied": null
-}
-```
-
-## POST /api/settings/storage/test
-
-Checks a candidate with the same body as Save, without saving or switching. For MongoDB, connects once, pings and counts the dungeons in that database. Errors never include the password.
-
-### Example
-
-Request: `POST /api/settings/storage/test` (`application/json`).
-
-```json
-{
-  "backend": "local"
-}
-```
-
-Response: HTTP 200.
-
-```json
-{
-  "ok": true,
-  "message": "This server keeps dungeons in memory."
+  "runs": 0,
+  "skipped": 3
 }
 ```
 
@@ -281,7 +271,7 @@ Response: HTTP 200.
 
 ## GET /api/archive
 
-Lists prepared/uploaded courses as public course projections and recent run summaries. No answer keys, private question banks or hidden beliefs. The real server defaults to local disk storage under ignored `.local/archive`; explicit test containers stay in memory, and configured MongoDB storage remains supported.
+Lists prepared/uploaded courses as public course projections and recent run summaries. No answer keys, private question banks or hidden beliefs. Everything is read from this browser's IndexedDB.
 
 ### Example
 
@@ -418,7 +408,7 @@ Response: HTTP 202.
 
 ```json
 {
-  "courseId": "crs_6d1024bc00"
+  "courseId": "crs_a990e395f6"
 }
 ```
 
@@ -447,7 +437,7 @@ Response: HTTP 202.
 
 ```json
 {
-  "courseId": "crs_5d7c918d52"
+  "courseId": "crs_9af7e3f583"
 }
 ```
 
@@ -586,7 +576,7 @@ Response: HTTP 201 (excerpt).
 
 ```json
 {
-  "id": "run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c",
+  "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -623,13 +613,13 @@ Returns the current public run, notebook, completed turn logs and pending help e
 
 ### Example
 
-Request: `GET /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c` (no body).
+Request: `GET /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c",
+  "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -722,13 +712,13 @@ Idempotently pauses an unfinished run and persists `pausedAt`. Gameplay mutation
 
 ### Example
 
-Request: `POST /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c/pause` (no body).
+Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/pause` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c",
+  "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -756,23 +746,23 @@ Response: HTTP 200 (excerpt).
     "maxStudentQuestions": 3,
     "helpMeTimed": true
   },
-  "pausedAt": "2026-11-15T03:55:56.039Z"
+  "pausedAt": "2026-11-15T05:18:29.649Z"
 }
 ```
 
 ## POST /api/runs/:id/resume
 
-Idempotently resumes the run. Shifts a pending help deadline and its started time by the paused duration, including time across server restarts. Does not advance a turn or erase notes.
+Idempotently resumes the run. Shifts a pending help deadline and its started time by the paused duration, including time across page reloads. Does not advance a turn or erase notes.
 
 ### Example
 
-Request: `POST /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c/resume` (no body).
+Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/resume` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c",
+  "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -809,13 +799,13 @@ Ends the expedition early and persists `endedAt` (idempotent). The run stays in 
 
 ### Example
 
-Request: `POST /api/runs/run_d11a5120-0507-4512-b033-eac9ecc90ae3/end` (no body).
+Request: `POST /api/runs/run_50d62f17-f2e4-405a-ac3b-ecba61fcfb7f/end` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_d11a5120-0507-4512-b033-eac9ecc90ae3",
+  "id": "run_50d62f17-f2e4-405a-ac3b-ecba61fcfb7f",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -852,14 +842,14 @@ Permanently removes the run (progress, notebook, history). Its course, questions
 
 ### Example
 
-Request: `DELETE /api/runs/run_d11a5120-0507-4512-b033-eac9ecc90ae3` (no body).
+Request: `DELETE /api/runs/run_50d62f17-f2e4-405a-ac3b-ecba61fcfb7f` (no body).
 
 Response: HTTP 200.
 
 ```json
 {
   "deleted": true,
-  "id": "run_d11a5120-0507-4512-b033-eac9ecc90ae3"
+  "id": "run_50d62f17-f2e4-405a-ac3b-ecba61fcfb7f"
 }
 ```
 
@@ -869,7 +859,7 @@ Allowed in `learning`. `explanation` is trimmed, nonempty, at most 8,000 charact
 
 ### Example
 
-Request: `POST /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c/teach` (`application/json`).
+Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/teach` (`application/json`).
 
 ```json
 {
@@ -907,7 +897,7 @@ Response: HTTP 200.
 
 ### Example
 
-Request: `POST /api/runs/run_4a29105b-3256-434e-8344-b09cf8921a3a/teach` (`application/json`).
+Request: `POST /api/runs/run_35c3117b-2788-452b-abfb-283c71018677/teach` (`application/json`).
 
 ```json
 {
@@ -950,7 +940,7 @@ Allowed in `learning` for an open student question. `answer` is nonempty text, a
 
 ### Example
 
-Request: `POST /api/runs/run_4a29105b-3256-434e-8344-b09cf8921a3a/questions/sq_0_0_1/answer` (`application/json`).
+Request: `POST /api/runs/run_35c3117b-2788-452b-abfb-283c71018677/questions/sq_0_0_1/answer` (`application/json`).
 
 ```json
 {
@@ -973,7 +963,7 @@ Allowed in `learning` for an open student question. No body. Adds its belief as 
 
 ### Example
 
-Request: `POST /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c/questions/sq_0_0_1/skip` (no body).
+Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/questions/sq_0_0_1/skip` (no body).
 
 Response: HTTP 200.
 
@@ -989,13 +979,13 @@ Allowed in `learning`. No body. Auto-skips open questions, draws fresh questions
 
 ### Example
 
-Request: `POST /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c/ready` (no body).
+Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/ready` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c",
+  "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
   "courseId": "sample-seasons",
   "phase": "room",
   "roomIndex": 0,
@@ -1057,7 +1047,7 @@ Allowed in `room`, `room_result`, `boss`, `results`. No body. Returns a discrimi
 
 ### student_answer
 
-Request: `POST /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c/turn` (no body).
+Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/turn` (no body).
 
 Response: HTTP 200.
 
@@ -1097,7 +1087,7 @@ Response: HTTP 200.
 
 ### help_me
 
-Request: `POST /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c/turn` (no body).
+Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/turn` (no body).
 
 Response: HTTP 200.
 
@@ -1116,13 +1106,13 @@ Response: HTTP 200.
     }
   },
   "timeBudgetSec": 80,
-  "deadline": "2026-11-15T03:57:16.078Z"
+  "deadline": "2026-11-15T05:19:49.672Z"
 }
 ```
 
 ### room_end
 
-Request: `POST /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c/turn` (no body).
+Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/turn` (no body).
 
 Response: HTTP 200.
 
@@ -1189,7 +1179,7 @@ Response: HTTP 200.
 
 ### boss_end
 
-Request: `POST /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c/turn` (no body).
+Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/turn` (no body).
 
 Response: HTTP 200.
 
@@ -1260,11 +1250,11 @@ Response: HTTP 200.
 
 ## POST /api/runs/:id/help/:eventId
 
-Allowed in `room` or `boss` for the pending event. Send `{ answer: ... }` using the question-type table below. The server checks the deadline. A late answer costs damage. A correct answer adds a notebook note. Duplicate submissions return 409. Free-response questions never trigger help events.
+Allowed in `room` or `boss` for the pending event. Send `{ answer: ... }` using the question-type table below. The backend checks the deadline. A late answer costs damage. A correct answer adds a notebook note. Duplicate submissions return 409. Free-response questions never trigger help events.
 
 ### help_result
 
-Request: `POST /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c/help/help_r0_a1_t1` (`application/json`).
+Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/help/help_r0_a1_t1` (`application/json`).
 
 ```json
 {
@@ -1313,13 +1303,13 @@ Allowed after a failed `room_result`. No body. Returns to `learning` for the sam
 
 ### Example
 
-Request: `POST /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c/retry` (no body).
+Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/retry` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c",
+  "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -1412,13 +1402,13 @@ Allowed after a passed `room_result`. No body. Moves to the next room in `learni
 
 ### Example
 
-Request: `POST /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c/continue` (no body).
+Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/continue` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c",
+  "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 1,
@@ -1531,7 +1521,7 @@ Allowed in `results`. Returns boss health rounded to a percentage, letter grade,
 
 ### Example
 
-Request: `GET /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c/results` (no body).
+Request: `GET /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/results` (no body).
 
 Response: HTTP 200.
 
@@ -1603,14 +1593,14 @@ Development only: 404 unless `DEBUG=true`. Returns `{ run, pack, questions, stat
 
 ### Example
 
-Request: `GET /api/runs/run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c/debug` (no body).
+Request: `GET /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/debug` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
   "run": {
-    "id": "run_8233c9ec-b4fb-41ee-8bf8-d2a043a5e23c",
+    "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
     "phase": "learning",
     "hidden": {
       "misconceptions": []

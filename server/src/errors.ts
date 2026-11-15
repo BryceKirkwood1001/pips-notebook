@@ -8,7 +8,6 @@ export const ERROR_STATUS = {
   validation_error: 400,
   /** The answer does not fit the question type (e.g. `text` for an mcq). */
   invalid_answer: 400,
-  settings_forbidden: 403,
   not_found: 404,
   /** The action is not allowed in the run's current phase. */
   wrong_phase: 409,
@@ -30,7 +29,7 @@ export const ERROR_STATUS = {
   not_implemented: 501,
   /** The LLM failed or timed out after retries. */
   llm_error: 502,
-  /** MongoDB could not be reached or used; the storage in use did not change. */
+  /** The browser's storage (IndexedDB) could not be opened or written, or a backup could not be read. */
   storage_error: 502,
   internal_error: 500,
 } as const;

@@ -1,7 +1,10 @@
-/** Local development settings: secrets are server-only, write-only over HTTP, and never logged. */
-import { chmod, mkdir, readFile, rename, unlink, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
-import { randomUUID } from 'node:crypto';
+/**
+ * The player's AI settings: provider, models, timeouts and their own API keys.
+ *
+ * Keys are write-only through the API (reads report only `hasApiKey`), never logged, and kept only in this
+ * browser: `localStorage` by default, or `sessionStorage` (this tab, until it closes) when the player unticks
+ * "Remember my key on this device". They are sent only to the provider they belong to.
+ */
 import { z } from 'zod';
 import { type ApiSettings, type CourseEmbedding, type TestApiSettingsResponse, type UpdateApiSettingsBody, UpdateApiSettingsBodySchema } from '@pips-notebook/shared';
 import type { Config } from './config';
@@ -18,6 +21,21 @@ const StoredSchema = z.object({
 type Stored = z.infer<typeof StoredSchema>;
 export type LlmFactory = (config: Config) => LlmClient;
 
+/** Where saved settings live: `local` survives closing the browser, `session` only this tab. */
+export type SettingsPlace = 'local' | 'session';
+/** Saves the settings as text. The browser uses localStorage/sessionStorage (browser/main.ts); tests use memory. */
+export interface SettingsStore {
+  load(): Promise<{ text: string; place: SettingsPlace } | null>;
+  /** Writes `text` to `place` and removes any copy in the other place. */
+  save(text: string, place: SettingsPlace): Promise<void>;
+}
+
+/** Settings kept in memory only, for tests and scripts. */
+export function memorySettingsStore(initial?: { text: string; place: SettingsPlace }): SettingsStore {
+  let saved = initial ?? null;
+  return { load: async () => saved, save: async (text, place) => { saved = { text, place }; } };
+}
+
 export interface ApiSettingsManager {
   read(): ApiSettings;
   config(): Config;
@@ -26,7 +44,7 @@ export interface ApiSettingsManager {
   test(body: UpdateApiSettingsBody): Promise<TestApiSettingsResponse>;
 }
 
-export async function createApiSettingsManager(base: Config, options: { file?: string; llmFactory?: LlmFactory } = {}): Promise<ApiSettingsManager> {
+export async function createApiSettingsManager(base: Config, options: { store?: SettingsStore; llmFactory?: LlmFactory } = {}): Promise<ApiSettingsManager> {
   const factory = options.llmFactory ?? createLlmClient;
   let current: Stored = {
     version: 1, provider: base.llmProvider, timeoutMs: base.llmTimeoutMs,
@@ -34,12 +52,15 @@ export async function createApiSettingsManager(base: Config, options: { file?: s
     openai: { model: base.openaiModel, embeddingModel: base.openaiEmbeddingModel, apiKey: base.openaiApiKey },
     gemini: { model: base.geminiModel, embeddingModel: base.geminiEmbeddingModel, apiKey: base.geminiApiKey },
   };
-  if (options.file) {
-    try {
-      current = StoredSchema.parse(JSON.parse(await readFile(options.file, 'utf8')));
-      await chmod(options.file, 0o600);
-    } catch (error) {
-      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw new Error('Could not load local API settings. Check .local/api-settings.json.');
+  // Without a store (tests), settings last only as long as this manager; that reports as `session`.
+  let place: SettingsPlace = options.store ? 'local' : 'session';
+  const saved = await options.store?.load().catch(() => null);
+  if (saved) {
+    const parsed = StoredSchema.safeParse((() => { try { return JSON.parse(saved.text); } catch { return null; } })());
+    // Unreadable settings (an older or edited copy) are ignored: the player sees the defaults and can save again.
+    if (parsed.success && (parsed.data.provider === 'mock' || parsed.data[parsed.data.provider].apiKey)) {
+      current = parsed.data;
+      place = saved.place;
     }
   }
 
@@ -63,7 +84,7 @@ export async function createApiSettingsManager(base: Config, options: { file?: s
   function read(): ApiSettings {
     const publicProfile = (p: Stored['openai']) => ({ model: p.model, embeddingModel: p.embeddingModel, hasApiKey: !!p.apiKey });
     return { provider: current.provider, providers: { openai: publicProfile(current.openai), gemini: publicProfile(current.gemini) },
-      timeoutMs: current.timeoutMs, ingestTimeoutMs: current.ingestTimeoutMs ?? base.ingestLlmTimeoutMs, embeddingDims: base.embeddingDims, persistence: options.file ? 'local' : 'session' };
+      timeoutMs: current.timeoutMs, ingestTimeoutMs: current.ingestTimeoutMs ?? base.ingestLlmTimeoutMs, embeddingDims: base.embeddingDims, persistence: place };
   }
   function candidate(input: UpdateApiSettingsBody): Stored {
     const body = UpdateApiSettingsBodySchema.safeParse(input);
@@ -96,18 +117,16 @@ export async function createApiSettingsManager(base: Config, options: { file?: s
     save(body) {
       const save = saves.catch(() => undefined).then(async () => {
         const next = candidate(body);
-        if (options.file) {
-          const temporary = `${options.file}.${randomUUID()}.tmp`;
+        const nextPlace: SettingsPlace = !options.store || body.rememberKey === undefined ? place : body.rememberKey ? 'local' : 'session';
+        if (options.store) {
           try {
-            await mkdir(dirname(options.file), { recursive: true, mode: 0o700 });
-            await writeFile(temporary, JSON.stringify(next, null, 2) + '\n', { mode: 0o600, flag: 'wx' });
-            await rename(temporary, options.file);
+            await options.store.save(JSON.stringify(next), nextPlace);
           } catch {
-            await unlink(temporary).catch(() => undefined);
-            throw new AppError('internal_error', 'Could not save local API settings. The previous settings are still active.');
+            throw new AppError('internal_error', 'This browser could not save the settings (storage may be blocked or full). The previous settings are still active.');
           }
         }
         current = next;
+        place = nextPlace;
         Object.assign(base, configured(current));
         return read();
       });

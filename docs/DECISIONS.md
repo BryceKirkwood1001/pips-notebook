@@ -24,8 +24,8 @@ The remote branch `origin/codex/playable-prototype` only adds a standalone `prot
 - **Node 22 or later**, not 20. `@google/genai` 3.x requires Node 22.
 - **Zod 3.25**, not Zod 4. The brief asks for `zod-to-json-schema`, which targets Zod 3 schemas.
 - **TypeScript 5.9** (the tried and tested line) rather than 7.0.
-- **Phaser AE** for the game. Its build is committed in `client/dist/` and served by the backend, so only rebuilding the game needs the separately restored Phaser AE runtime.
-- No build step. The server and scripts run through `tsx`; `shared` exports its TypeScript source directly.
+- **Phaser AE** for the game. Its build is committed in `client/dist/` (in the public edition, copied into the static site), so only rebuilding the game needs the separately restored Phaser AE runtime.
+- No build step for the server edition: the server and scripts run through `tsx`; `shared` exports its TypeScript source directly. The public edition adds one esbuild step for `backend.js`.
 - One Vitest run from the repo root covers `server/`, `shared/` and `client/tests/`.
 - `pdf-lib` is a dev dependency, used only to generate small PDFs inside tests.
 
@@ -61,7 +61,7 @@ The remote branch `origin/codex/playable-prototype` only adds a standalone `prot
 
 ## Mock mode
 
-- With no `GEMINI_API_KEY` the server runs on deterministic mocks, and with no `MONGODB_URI` it uses in-memory storage and in-memory cosine search.
+- With no key the backend runs on deterministic mocks (Offline). Search is in-memory cosine similarity (over IndexedDB in the public edition).
 - The mock ingest replays canned model outputs for the two bundled samples through the real pipeline (chunking, evidence checks, validation, time budgets, coverage), so the pipeline is exercised without a key.
 - The mock student is given the answer key through a separate `oracle` argument that the Gemini implementation must ignore. The real student only ever sees its notebook and the public question.
 
@@ -76,3 +76,19 @@ The remote branch `origin/codex/playable-prototype` only adds a standalone `prot
 - Delimit course-derived prompt fields as well as player text. Remove fixed concept/key-point/misconception quotas from the outline and misconception prompts.
 - In untimed mode, label the budget as an estimated solve time with no deadline. Timed help remains an optional rule from the original design.
 - Record real endpoint examples through `npm run e2e -- --capture-file docs/api-examples.json`; regenerate `docs/API.md` with `npm run docs:api`. Debug examples are explicit excerpts.
+
+## Public edition — November 15, 2026
+
+The `public` branch is a separate edition for hosting on free static hosts: no backend, none of the owner's keys.
+
+- **No server.** The services, engine, ingest, RAG and LLM code run in the browser, bundled by esbuild as `backend.js`. The game keeps using `shared/src/api-client.ts`; its `fetch` is answered by `server/src/router.ts` in the page (standard `Request` → `Response`), so the game barely changed and the HTTP-level tests still run in Node. Fastify, `@fastify/*`, `dotenv` and `mongodb` are gone. The folder keeps the name `server/` to keep the diff small.
+- **Served over http(s), not opened from disk.** Browsers block module scripts and `fetch` on `file://` pages, so the site needs a web host (or `npm start` locally). Every URL is relative, so it works at a domain root or under a path.
+- **IndexedDB storage, no MongoDB.** One database (`pips-notebook`) holds courses, questions, statistics, runs and chunks; search is cosine similarity in the page. A browser cannot open a MongoDB connection, and MongoDB's HTTPS Data API was retired in 2025, so a MongoDB option would need a server or a serverless function again. Instead, Settings → **Saved in this browser** exports and imports a JSON backup (dungeons and expeditions, never API keys), and can ask the browser for persistent storage.
+- **Players bring their own key**, for Gemini or OpenAI, kept in `localStorage` (or `sessionStorage` for "this tab only") and sent only to that provider. Nothing in the repository or the built site holds a key; `.env` and `.env.example` are gone, and the Node scripts read keys from the environment.
+- **Offline stays the default**, with the two bundled samples served as static JSON (`samples/index.json` lists them).
+- **Interrupted preparation.** Preparation runs in the page, so the page warns before closing while it runs, and each preparing upload holds a Web Lock named after its course. When the page opens, only dungeons whose lock no other tab holds are marked as stopped.
+- **OpenAI errors in the browser.** OpenAI's POST endpoints answer a rejected key without CORS headers, which a browser reports as a network error. The client then calls `GET /v1/models` (which keeps CORS headers on a 401) to report "OpenAI rejected the API key" instead. Gemini errors are mapped to a few plain messages (rejected key, denied access, quota, unknown model, unreachable), still without raw provider diagnostics.
+- **Ids without `crypto.randomUUID()`**, which exists only on secure pages: `server/src/util/names.ts` builds them from `crypto.getRandomValues`, so a plain-http deployment still works (dictation still needs https).
+- **Lazy chunks.** pdf.js and the Gemini SDK load only when needed, keeping the first `backend.js` download near 330 KB.
+- **Hidden fields** are still never sent in public API responses, but everything is on the player's device: answer keys are visible in developer tools and in a backup file. That is acceptable for a single-player learning game.
+- **Deployment.** `npm run build` writes `site/` (not committed). `.github/workflows/pages.yml` tests, builds and publishes it to GitHub Pages on pushes to `public`; [HOSTING.md](HOSTING.md) covers Cloudflare Pages, Netlify, shared hosting and pointing a domain at it.

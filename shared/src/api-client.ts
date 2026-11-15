@@ -2,15 +2,19 @@
  * Pip's Notebook API client.
  *
  * ONE FILE, ZERO IMPORTS, on purpose: copy this file into any front end (the Phaser AE game, the test
- * client, a script) and it works. It only needs `fetch`. The types below are plain TypeScript mirrors
+ * client, a script) and it works. It only needs a `fetch`. The types below are plain TypeScript mirrors
  * of the public Zod schemas in `schemas.ts`; `type-sync.ts` fails the type check if they drift apart.
  *
- *   const api = createApiClient({ baseUrl: 'http://localhost:8787' });
+ * This edition has no server: the "API" runs inside the page (server/src/browser/main.ts), and the game
+ * hands its `fetch` to this client, so requests never leave the browser:
+ *
+ *   const backend = await start();                                  // from backend.js
+ *   const api = createApiClient({ baseUrl: BACKEND_ORIGIN, fetch: backend.fetch });
  *   const { courseId } = await api.seedCourse('seasons');
  *   const run = await api.createRun({ courseId, targetGrade: 'B' });
  *
  * Every method rejects with an `ApiError` (status, code, message) on a non-2xx response.
- * Nothing this client returns contains answer keys or misconception data, except `getDebug`.
+ * Nothing this client returns contains answer keys or misconception data, except `getDebug` and `exportBackup`.
  */
 
 // ── Public types ────────────────────────────────────────────────────────────
@@ -309,8 +313,11 @@ export class ApiError extends Error {
   }
 }
 
+/** The made-up origin of the in-page backend. Its requests are answered in the page and never reach a network. */
+export const BACKEND_ORIGIN = 'https://backend.pips-notebook.invalid';
+
 export interface ApiClientOptions {
-  /** Server origin, without the /api suffix. Default: http://localhost:8787 */
+  /** Origin of the backend, without the /api suffix. Default: BACKEND_ORIGIN (with the in-page backend's `fetch`). */
   baseUrl?: string;
   /** Override for tests or non-browser runtimes. Default: globalThis.fetch */
   fetch?: typeof fetch;
@@ -339,36 +346,41 @@ export interface UpdateApiSettingsBody {
   gemini?: { model?: string; embeddingModel?: string; apiKey?: string | null };
   timeoutMs?: number;
   ingestTimeoutMs?: number;
+  /** true: keep the settings and keys in this browser; false: only in this tab, until it closes. Omitted = unchanged. */
+  rememberKey?: boolean;
 }
 export interface TestApiSettingsResponse { ok: boolean; provider: LlmProvider; message: string }
 
-export type StorageBackend = 'local' | 'mongodb';
+/** Where dungeons are saved: this browser's IndexedDB, or memory when the browser blocks storage. */
 export interface StorageSettings {
-  /** The saved choice. */
-  backend: StorageBackend;
-  /** What is in use now ('memory' only on test servers). Differs from `backend` after a failed MongoDB startup. */
-  active: 'local' | 'mongodb' | 'memory';
-  mongodb: { hasUri: boolean; host: string | null; database: string; vectorIndex: string };
-  /** Dungeons in the storage in use now. */
+  active: 'browser' | 'memory';
   courses: number;
-  /** Why the saved choice is not in use, when it is not. */
+  runs: number;
+  /** True when the browser promised not to clear this site's data to free space; null when it cannot say. */
+  persisted: boolean | null;
+  usageBytes: number | null;
+  quotaBytes: number | null;
+  /** Why the browser's storage is not in use, when it is not. */
   error: string | null;
-  persistence: 'local' | 'session';
 }
-export interface UpdateStorageSettingsBody {
-  backend: StorageBackend;
-  /** `uri`: omit to keep the saved one, null to remove it. Write-only. */
-  mongodb?: { uri?: string | null; database?: string; vectorIndex?: string };
-  /** Copy the dungeons in the storage in use now into the new one. */
-  copyExisting?: boolean;
+/**
+ * Every dungeon and expedition in this browser, as one JSON file. It holds answer keys (it is the player's own
+ * copy) and never API keys. Treat it as opaque: save it, and hand it back to importBackup().
+ */
+export interface Backup {
+  app: 'pips-notebook';
+  version: 1;
+  exportedAt: string;
+  courses: unknown[];
+  questions: unknown[];
+  questionStats: unknown[];
+  chunks: unknown[];
+  runs: unknown[];
 }
-export interface SaveStorageSettingsResponse extends StorageSettings {
-  copied: { courses: number; runs: number; skipped: number } | null;
-}
-export interface TestStorageSettingsResponse { ok: boolean; message: string }
+export interface ImportBackupResponse { courses: number; runs: number; skipped: number }
 
 export function createApiClient(options: ApiClientOptions = {}) {
-  const base = (options.baseUrl ?? 'http://localhost:8787').replace(/\/+$/, '') + '/api';
+  const base = (options.baseUrl ?? BACKEND_ORIGIN).replace(/\/+$/, '') + '/api';
   const doFetch: typeof fetch = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
 
   async function request<T>(method: string, path: string, body?: unknown, form?: FormData): Promise<T> {
@@ -404,14 +416,16 @@ export function createApiClient(options: ApiClientOptions = {}) {
   const enc = encodeURIComponent;
 
   return {
-    /** Local backend setup. Keys are write-only; blank key inputs should be omitted. */
+    /** AI provider setup. Keys are write-only and stay in this browser; blank key inputs should be omitted. */
     getApiSettings: () => request<ApiSettings>('GET', '/settings/api'),
     updateApiSettings: (body: UpdateApiSettingsBody) => request<ApiSettings>('POST', '/settings/api', body),
     testApiSettings: (body: UpdateApiSettingsBody) => request<TestApiSettingsResponse>('POST', '/settings/api/test', body),
-    /** Where dungeons are saved. Saving switches storage right away; the connection string is write-only. */
+    /** What is saved in this browser. */
     getStorageSettings: () => request<StorageSettings>('GET', '/settings/storage'),
-    updateStorageSettings: (body: UpdateStorageSettingsBody) => request<SaveStorageSettingsResponse>('POST', '/settings/storage', body),
-    testStorageSettings: (body: UpdateStorageSettingsBody) => request<TestStorageSettingsResponse>('POST', '/settings/storage/test', body),
+    /** GET /backup: every dungeon and expedition, for a JSON file the player keeps. */
+    exportBackup: () => request<Backup>('GET', '/backup'),
+    /** POST /backup: adds the dungeons of a backup. Ones already saved here are skipped. */
+    importBackup: (backup: unknown) => request<ImportBackupResponse>('POST', '/backup', backup),
     /** GET /health */
     health: () => request<{ ok: boolean; llmProvider: string; storage: string; debug: boolean }>('GET', '/health'),
 

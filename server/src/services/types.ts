@@ -21,7 +21,7 @@ import type {
 export interface HealthInfo {
   ok: boolean;
   llmProvider: 'gemini' | 'openai' | 'mock';
-  storage: 'mongodb' | 'memory' | 'local';
+  storage: 'browser' | 'memory';
   debug: boolean;
 }
 
@@ -65,6 +65,8 @@ export interface Services {
   /** Throws not_found unless DEBUG=true. */
   getDebug(runId: string): Promise<DebugResponse>;
 
+  /** How many uploads are being prepared in the background right now (the page warns before closing). */
+  preparing(): number;
   /** Resolves when background ingests have finished. For tests and scripts. */
   idle(): Promise<void>;
 }

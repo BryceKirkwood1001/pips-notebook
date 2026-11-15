@@ -3,26 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Pip's Notebook backend: API, game engine, ingest and RAG",
+  "description": "Pip's Notebook game logic: API routes, game engine, ingest and RAG. Runs in the browser (bundled as backend.js)",
   "scripts": {
-    "dev": "tsx watch src/index.ts",
-    "start": "tsx src/index.ts",
     "typecheck": "tsc -p . --noEmit"
   },
   "dependencies": {
-    "@fastify/cors": "^11.4.3",
-    "@fastify/multipart": "^10.1.8",
-    "@fastify/static": "10.1.8",
     "@google/genai": "^3.3.0",
     "@pips-notebook/shared": "*",
-    "dotenv": "^18.0.10",
-    "fastify": "^5.12.8",
-    "mongodb": "^7.9.0",
     "unpdf": "^2.1.0",
     "zod": "^3.25.76",
     "zod-to-json-schema": "^3.25.2"
   },
   "devDependencies": {
-    "pdf-lib": "^1.17.1"
+    "pdf-lib": "^1.17.1",
+    "fake-indexeddb": "6.2.7"
   }
 }

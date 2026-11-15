@@ -6,7 +6,6 @@ import type { Chunk } from '@pips-notebook/shared';
 import { testConfig } from '../config';
 import { isAppError } from '../errors';
 import {
-  createAtlasVectorStore,
   createChunker,
   createEmbedder,
   createMaterialParser,
@@ -17,7 +16,6 @@ import {
   quoteInText,
   verifyEvidence,
 } from './index';
-import { vectorIndexDefinition, vectorSearchPipeline } from './atlasStore';
 import { fakeLlm, hashEmbed } from './testHelpers';
 import type { ParsedFile, SourceFile } from './types';
 
@@ -267,96 +265,5 @@ describe('evidence', () => {
     expect(verifyEvidence(ev, chunk)).toBe(true);
     expect(verifyEvidence({ ...ev, quote: 'made up' }, chunk)).toBe(false);
     expect(verifyEvidence({ ...ev, chunkId: 'other' }, chunk)).toBe(false);
-  });
-});
-
-/** A tiny fake `Db` with just the collection methods the Atlas store uses. */
-function fakeDb(opts: { searchThrows?: boolean; indexExists?: boolean } = {}) {
-  const docs = new Map<string, any>();
-  const calls = { createIndex: [] as any[], createSearchIndex: [] as any[], pipelines: [] as any[] };
-  const col = {
-    createIndex: async (spec: any) => void calls.createIndex.push(spec),
-    listSearchIndexes: () => ({ toArray: async () => (opts.indexExists ? [{ name: 'chunks_vector' }] : []) }),
-    createSearchIndex: async (d: any) => void calls.createSearchIndex.push(d),
-    bulkWrite: async (ops: any[]) => {
-      for (const o of ops) docs.set(o.replaceOne.replacement._id, o.replaceOne.replacement);
-    },
-    aggregate: (p: any[]) => {
-      calls.pipelines.push(p);
-      return {
-        toArray: async () => {
-          if (opts.searchThrows) throw new Error('index not ready');
-          return [];
-        },
-      };
-    },
-    find: (f: any) => ({
-      toArray: async () =>
-        [...docs.values()].filter((d) => (f.courseId ? d.courseId === f.courseId : f._id.$in.includes(d._id))),
-    }),
-    deleteMany: async (f: any) => {
-      for (const [k, d] of docs) if (d.courseId === f.courseId) docs.delete(k);
-    },
-  };
-  return { db: { collection: () => col } as any, calls, docs };
-}
-
-describe('atlas store', () => {
-  it('creates the vector index and the courseId index, once', async () => {
-    const { db, calls } = fakeDb();
-    await createAtlasVectorStore(db, config).init();
-    expect(calls.createIndex).toEqual([{ courseId: 1 }]);
-    expect(calls.createSearchIndex).toEqual([vectorIndexDefinition(config)]);
-    expect(calls.createSearchIndex[0]).toEqual({
-      name: 'chunks_vector',
-      type: 'vectorSearch',
-      definition: {
-        fields: [
-          { type: 'vector', path: 'embedding', numDimensions: 768, similarity: 'cosine' },
-          { type: 'filter', path: 'courseId' },
-        ],
-      },
-    });
-    const existing = fakeDb({ indexExists: true });
-    await createAtlasVectorStore(existing.db, config).init();
-    expect(existing.calls.createSearchIndex).toEqual([]);
-  });
-
-  it('never throws when index creation fails', async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
-    const { db } = fakeDb();
-    db.collection().createSearchIndex = async () => {
-      throw new Error('Index already exists');
-    };
-    await expect(createAtlasVectorStore(db, config).init()).resolves.toBeUndefined();
-    warn.mockRestore();
-  });
-
-  it('builds the $vectorSearch pipeline', () => {
-    const p = vectorSearchPipeline(config, 'c1', [0.1, 0.2], 6);
-    expect(p[0]).toEqual({
-      $vectorSearch: { index: 'chunks_vector', path: 'embedding', queryVector: [0.1, 0.2], numCandidates: 120, limit: 6, filter: { courseId: 'c1' } },
-    });
-    expect(JSON.stringify(p[1])).toContain('vectorSearchScore');
-  });
-
-  it('stores by _id, strips it on read, and falls back to cosine when search is empty or errors', async () => {
-    for (const searchThrows of [false, true]) {
-      const { db, calls, docs } = fakeDb({ searchThrows });
-      const store = createAtlasVectorStore(db, config);
-      const mk = (id: string, text: string, courseId = 'c1'): Chunk => ({
-        id, courseId, fileId: 'f1', page: 1, sectionPath: [], conceptIds: [], text, embedding: hashEmbed(text, 768),
-      });
-      await store.upsert([mk('c1_f1_p1_0', 'binary search midpoint'), mk('c1_f1_p1_1', 'seasons axial tilt'), mk('c2_f1_p1_0', 'seasons axial tilt', 'c2')]);
-      expect(docs.get('c1_f1_p1_0')._id).toBe('c1_f1_p1_0');
-      const hits = await store.search({ courseId: 'c1', embedding: hashEmbed('axial tilt seasons', 768), topK: 2 });
-      expect(calls.pipelines).toHaveLength(1);
-      expect(hits.map((h) => h.chunk.id)).toEqual(['c1_f1_p1_1', 'c1_f1_p1_0']);
-      expect(hits[0].chunk).not.toHaveProperty('_id');
-      expect((await store.listByCourse('c1')).map((c) => c.id)).toEqual(['c1_f1_p1_0', 'c1_f1_p1_1']);
-      expect((await store.getByIds(['c1_f1_p1_1'])).map((c) => c.id)).toEqual(['c1_f1_p1_1']);
-      await store.deleteCourse('c1');
-      expect(await store.listByCourse('c1')).toEqual([]);
-    }
   });
 });

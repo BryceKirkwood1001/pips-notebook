@@ -88,7 +88,7 @@ describe('createGeminiClient.embed and uploadFile', () => {
   it('waits for the file to become active', async () => {
     vi.useFakeTimers();
     const { sdk, get } = stub([]);
-    const p = createGeminiClient(config, sdk).uploadFile('/tmp/x.pdf', { mimeType: 'application/pdf' });
+    const p = createGeminiClient(config, sdk).uploadFile(new Uint8Array([1]), { mimeType: 'application/pdf' });
     await vi.advanceTimersByTimeAsync(1500);
     await expect(p).resolves.toMatchObject({ uri: 'u', name: 'files/1' });
     expect(get).toHaveBeenCalled();
@@ -101,7 +101,7 @@ describe('createGeminiClient.embed and uploadFile', () => {
       const { sdk } = stub([]);
       sdk.files[method] = vi.fn(() => new Promise<never>(() => {}));
       const pending = createGeminiClient({ ...config, llmTimeoutMs: 50 }, sdk)
-        .uploadFile('/tmp/x.pdf', { mimeType: 'application/pdf' });
+        .uploadFile(new Uint8Array([1]), { mimeType: 'application/pdf' });
       const assertion = expect(pending).rejects.toMatchObject({ code: 'llm_error', message: expect.stringMatching(/timed out/) });
       await vi.advanceTimersByTimeAsync(1100);
       await assertion;

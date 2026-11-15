@@ -1,11 +1,10 @@
 /**
- * Server configuration, read from the environment (SPEC 7). See `.env.example` for every variable.
+ * Game configuration (SPEC 7): rules, limits and model defaults, named like the environment variables of the
+ * original server edition.
  *
- * `loadConfig(env)` is pure: pass a plain object in tests. `loadConfigFromProcess()` first loads the
- * repo-root `.env` file, then reads `process.env`.
+ * `loadConfig(env)` is pure. The browser passes `{}` (every default; the player's provider and keys come from
+ * Settings, settings.ts), tests pass a plain object, and the Node scripts pass `process.env`.
  */
-import { fileURLToPath } from 'node:url';
-import dotenv from 'dotenv';
 import { z } from 'zod';
 import { TARGET_GRADES, type CoursePace, type TargetGrade } from '@pips-notebook/shared';
 
@@ -24,14 +23,8 @@ export interface Config {
   embeddingDims: number;
   llmTimeoutMs: number;
   ingestLlmTimeoutMs: number;
-  // Storage
-  mongodbUri: string;
-  mongodbDb: string;
-  atlasVectorIndex: string;
-  // Server
+  // Diagnostics
   debug: boolean;
-  port: number;
-  corsOrigins: string[];
   // Ingest / RAG
   chunkTokens: number;
   chunkOverlap: number;
@@ -132,12 +125,7 @@ const EnvSchema = z.object({
   EMBEDDING_DIMS: int(768, 1),
   LLM_TIMEOUT_MS: int(30000, 1),
   INGEST_LLM_TIMEOUT_MS: num(180000, n => Number.isInteger(n) && n >= 1000 && n <= 600000),
-  MONGODB_URI: str(''),
-  MONGODB_DB: str('pips_notebook'),
-  ATLAS_VECTOR_INDEX: str('chunks_vector'),
   DEBUG: bool(false),
-  PORT: int(8787, 1),
-  CORS_ORIGINS: str('http://localhost:4173'),
   CHUNK_TOKENS: int(400, 50),
   CHUNK_OVERLAP: num(0.15, (n) => n >= 0 && n < 1),
   RETRIEVAL_TOP_K: int(6, 1),
@@ -199,14 +187,7 @@ export function loadConfig(env: Env = {}): Config {
     embeddingDims: e.EMBEDDING_DIMS,
     llmTimeoutMs: e.LLM_TIMEOUT_MS,
     ingestLlmTimeoutMs: e.INGEST_LLM_TIMEOUT_MS,
-    mongodbUri: e.MONGODB_URI,
-    mongodbDb: e.MONGODB_DB,
-    atlasVectorIndex: e.ATLAS_VECTOR_INDEX,
     debug: e.DEBUG,
-    port: e.PORT,
-    corsOrigins: e.CORS_ORIGINS.split(',')
-      .map((s) => s.trim())
-      .filter(Boolean),
     chunkTokens: e.CHUNK_TOKENS,
     chunkOverlap: e.CHUNK_OVERLAP,
     retrievalTopK: e.RETRIEVAL_TOP_K,
@@ -243,12 +224,6 @@ export function loadConfig(env: Env = {}): Config {
     config.helpMeTimeMultiplier = 0.75;
   }
   return config;
-}
-
-/** Loads the repo-root `.env` (if present) and reads `process.env`. */
-export function loadConfigFromProcess(): Config {
-  dotenv.config({ path: fileURLToPath(new URL('../../.env', import.meta.url)), quiet: true });
-  return loadConfig(process.env);
 }
 
 /** A config for tests: all defaults, mock LLM, in-memory storage, plus overrides. */

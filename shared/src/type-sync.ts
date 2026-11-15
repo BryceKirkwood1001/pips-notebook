@@ -23,9 +23,7 @@ export const typeSync: {
   apiSettings: Mutual<S.ApiSettings, A.ApiSettings>;
   apiSettingsUpdate: Mutual<S.UpdateApiSettingsBody, A.UpdateApiSettingsBody>;
   storageSettings: Mutual<S.StorageSettings, A.StorageSettings>;
-  storageSettingsUpdate: Mutual<S.UpdateStorageSettingsBody, A.UpdateStorageSettingsBody>;
-  storageSettingsSave: Mutual<S.SaveStorageSettingsResponse, A.SaveStorageSettingsResponse>;
-  storageSettingsTest: Mutual<S.TestStorageSettingsResponse, A.TestStorageSettingsResponse>;
+  importBackupResponse: Mutual<S.ImportBackupResponse, A.ImportBackupResponse>;
 } = {
   questionType: true,
   targetGrade: true,
@@ -42,7 +40,5 @@ export const typeSync: {
   apiSettings: true,
   apiSettingsUpdate: true,
   storageSettings: true,
-  storageSettingsUpdate: true,
-  storageSettingsSave: true,
-  storageSettingsTest: true,
+  importBackupResponse: true,
 };

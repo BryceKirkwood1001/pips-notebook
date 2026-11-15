@@ -218,7 +218,7 @@ describe('rng and config', () => {
 
   it('loads defaults, demo mode and grade thresholds', () => {
     const c = loadConfig({});
-    expect(c).toMatchObject({ llmProvider: 'mock', port: 8787, roomQuestions: 5, bossQuestions: 10, helpMeProb: 0.25 });
+    expect(c).toMatchObject({ llmProvider: 'mock', roomQuestions: 5, bossQuestions: 10, helpMeProb: 0.25 });
     expect(c.gradeThresholds['B+']).toBe(87);
     const demo = loadConfig({ DEMO_MODE: 'true' });
     expect(demo).toMatchObject({ bossQuestions: 6, roomQuestions: 3, helpMeTimeMultiplier: 0.75 });

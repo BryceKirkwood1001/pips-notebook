@@ -3,8 +3,10 @@
 This folder holds one game and the engine it is built with. It was made by `phaser-ae` (the Phaser AE CLI), which
 is also how it publishes to phaser.io.
 
-**Running it:** from the repository root, `npm start` serves this game's committed build (`dist/`) and the API together on
-http://localhost:8787. `npm run serve` here is the live-rebuilding preview on http://localhost:4173 (it needs `phaser/`).
+**Running it:** from the repository root, `npm start` builds the static site (this game's committed build `dist/` plus
+the in-page backend `backend.js`) and serves it on http://localhost:8787. There is no server: the game's API runs in the
+page. `npm run serve` here is the live-rebuilding preview on http://localhost:4173 (it needs `phaser/`, and has no
+`backend.js` beside it, so add `?mock=1` there).
 After changing game code, run `npm run build` so the committed `dist/` stays current. Hosted Phaser operations require the
 owner to link an accessible build; the repository does not contain a hosted build association.
 

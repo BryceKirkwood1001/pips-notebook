@@ -41,7 +41,7 @@ Text and Markdown files are read directly and split into pages on form feeds.
 
 - **Chunking is structure-aware.** Text is split on headings, slide separators and page breaks first, then into chunks of about `CHUNK_TOKENS` (400) tokens with `CHUNK_OVERLAP` (15%) overlap. A chunk never spans two pages. Each chunk keeps `fileId`, `page`, `sectionPath` (its heading trail) and `conceptIds`.
 - **Embeddings** come from Gemini `gemini-embedding-001`, with task type `RETRIEVAL_DOCUMENT` for chunks and `RETRIEVAL_QUERY` for queries, at `EMBEDDING_DIMS` (768) dimensions.
-- **The vector store** is MongoDB Atlas Vector Search (`$vectorSearch` on the `chunks` collection, filtered by `courseId`). The index is created from code at startup if it is missing. With no `MONGODB_URI`, the actual server persists chunks/vectors under `.local/archive` and ranks them with cosine similarity. Explicit test containers default to an isolated in-memory store.
+- **The vector store** keeps chunks and their vectors in the browser's IndexedDB (the `chunks` store, indexed by `courseId`) and ranks one course's chunks by cosine similarity in the page. Tests use an in-memory store with the same behaviour.
 - **Retrieval is hybrid**: first the concept's own chunks (structure), then the top `RETRIEVAL_TOP_K` (6) vector hits for the query, with duplicates removed.
 
 Retrieval is used for building misconceptions, adapting and generating questions, verification, resolution checks in the learning phase, and grading short-text and free-response answers.
@@ -150,7 +150,7 @@ The worked steps and the difficulty come from the verification call. Two things 
 npm run ingest -- samples/seasons.md
 ```
 
-This ingests the file and writes `samples/cache/seasons.json`, the fixture that `POST /api/courses/seed/seasons` loads instantly. It prints a coverage and provenance report and exits with an error if an invariant fails. With a live provider configured (Settings or `.env`) it uses that provider; without one it replays canned model outputs for the two bundled samples through the same pipeline, so the fixtures can be rebuilt offline.
+This ingests the file and writes `samples/cache/seasons.json`, the fixture that `POST /api/courses/seed/seasons` loads instantly. It prints a coverage and provenance report and exits with an error if an invariant fails. It runs in Node with the provider from the environment (`GEMINI_API_KEY`, or `OPENAI_API_KEY` with `LLM_PROVIDER=openai`); without one it replays canned model outputs for the two bundled samples through the same pipeline, so the fixtures can be rebuilt offline.
 
 ## Prompt safety
 
@@ -160,4 +160,4 @@ Course-derived titles, filenames, questions, style profiles, rubrics and misconc
 
 ## Offline limitations
 
-The two bundled samples replay canned outputs through the real pipeline and satisfy coverage. Unknown uploads use a small heuristic fallback, which may produce a partial pack but cannot guarantee the required pool size or multi-concept coverage. Such packs now report `error` instead of `ready`. Live Gemini and Atlas runs have not been verified end to end.
+The two bundled samples replay canned outputs through the real pipeline and satisfy coverage. Unknown uploads use a small heuristic fallback, which may produce a partial pack but cannot guarantee the required pool size or multi-concept coverage. Such packs now report `error` instead of `ready`. In the browser, an OpenAI-prepared one-page PDF has been verified end to end (preparation, teaching, fight turns and "Help me!").

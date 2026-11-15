@@ -4,7 +4,7 @@ This is the public game-data handoff for the Phaser AE game. Source paths below 
 
 Use [api-client.ts](../shared/src/api-client.ts) for the exact TypeScript types and API methods; the game imports it directly. [API.md](API.md) supplies real requests/responses; [ARCHITECTURE.md](ARCHITECTURE.md) explains scene wiring.
 
-`?` means optional; `[]` means an array; `null` is an intentional empty value. Server responses own game state. Frontend state owns form inputs, animation and presentation.
+`?` means optional; `[]` means an array; `null` is an intentional empty value. Backend responses own game state (the backend runs in the page, `backend.js`). Frontend state owns form inputs, animation and presentation.
 
 ## Screen map
 
@@ -28,22 +28,27 @@ The game registers `Title`, `Upload`, `Learning`, `Fight`, `Boss`, `Results`, `S
 
 | Variable | Type/default | Where used | Purpose |
 |---|---|---|---|
-| `api` | `ApiClient` | Every screen | Shared HTTP client |
-| `state.run` | `PublicRun \| null`, initially `null` | All run screens | Current public server state |
+| `api` | `ApiClient` | Every screen | Shared API client; its `fetch` is the in-page backend (`localFetch` from `course/backend.ts`) |
+| `state.run` | `PublicRun \| null`, initially `null` | All run screens | Current public run state |
 | `state.results` | `Results \| null`, initially `null` | Boss, Results | Cache the final results |
 | `inflight` | `boolean`, initially `false` | `app.ts` call wrapper | Prevent concurrent UI submissions |
 | `params` | `URLSearchParams` | Startup | Read the query parameters below |
-| `params.get('api')` | `string \| null`; default: the page's own origin (`http://localhost:8787` on the 4173 dev preview) | API initialization | Server origin, without `/api` |
 | `params.get('run')` / `runId` | `string \| null` | Boot/resume and URL persistence | Reload an existing run |
-| `params.get('mock')` / `mock` | `mock=1` → `true` | API initialization | Use the browser's canned mock API; omit this to test the real backend, even when that backend uses mock LLM tasks |
+| `params.get('mock')` / `mock` | `mock=1` → `true` | API initialization | Use the game's canned practice API instead of `backend.js`; omit this to play the real backend, even with the Offline provider |
 | `TARGET_GRADES` | `A, A-, B+, B, B-, C+, C, C-, D` | Setup | Target selector options |
 | `ApiError.status`, `.code`, `.message` | `number`, `string`, `string` | Error banner on every screen | Show/handle failed requests; status `0` denotes a network error |
 
-No API key, MongoDB URI, hidden misconception state or answer key belongs in browser configuration or local storage. Settings accepts keys only as temporary password inputs sent to the local backend; the read API exposes only `hasApiKey`. Gameplay settings come from `run.rules`; set server environment variables on the backend.
+The game's own code never holds an API key, hidden misconception state or answer key. Settings sends a typed key once to the in-page backend, which keeps it under `pips-notebook.ai-settings` in `localStorage` (or `sessionStorage`) and sends it only to the chosen provider; the read API exposes only `hasApiKey`. Gameplay settings come from `run.rules`.
+
+| Browser storage key | Where | Holds |
+|---|---|---|
+| `pips-notebook.ai-settings` | `localStorage`, or `sessionStorage` for "this tab only" | Provider, models, timeouts and the player's keys (written by the backend, `server/src/browser/main.ts`) |
+| `pips-notebook` | IndexedDB | Dungeons, questions, statistics, expeditions and search chunks |
+| music on/off | `localStorage` (`soundtrack.ts`) | The Music button's choice |
 
 ## API Settings fields and source variables
 
-`course/settings-view.ts` implements the setup form, mounted by `course/Settings.ts` in the main game's frame. See [ARCHITECTURE.md](ARCHITECTURE.md#model-providers-and-api-setup) for setup and storage rules.
+`course/settings-view.ts` implements the setup form, mounted by `course/Settings.ts` in the main game's frame. See [ARCHITECTURE.md](ARCHITECTURE.md#model-providers-and-the-players-key) for where keys live and go.
 
 | Name/field | Type | Use |
 |---|---|---|
@@ -55,37 +60,37 @@ No API key, MongoDB URI, hidden misconception state or answer key belongs in bro
 | `profiles[provider].state` / `providers[provider].hasApiKey` | Status element / boolean | Key-presence indicator; never the key itself |
 | `timeout` / `timeoutMs` | Seconds input / integer milliseconds | UI accepts 1–180 whole seconds |
 | `ingestTimeout` / `ingestTimeoutMs` | Seconds input / integer milliseconds | Per-request course preparation budget; 1–600 whole seconds, default 180; separate from interactive turns |
-| `origin` / `apiOrigin` | URL input / string | Backend origin; query parameter overrides `top.apiOrigin` in localStorage, then localhost default |
-| response `persistence` | `'local' \| 'session'` | Returned by the API; not shown on the page |
+| `remember` / `rememberKey` | Checkbox / boolean | "Remember my key on this device": `true` keeps settings in `localStorage`, `false` in `sessionStorage` |
+| response `persistence` | `'local' \| 'session'` | Where settings are kept now; sets `remember` and the key status line |
 | response `embeddingDims` | number | Returned by the API; not shown on the page |
 | `loaded`, `active` | boolean | Gate Save/Test until load; ignore responses after scene closes |
-| `controller` | AbortController | Cancel browser requests when leaving Settings; each request also has a deadline |
+| `controller` | AbortController | Stops waiting for a connection test when leaving Settings (the test itself has a deadline) |
 | `root`, `status`, `keyStatus`, `providerCards`, `cards`, `fields`, `offline` | DOM handles / map | Component structure, selected state and request feedback |
-| `connection`, `clientFor` | API client / factory | Read, test or save settings against the chosen origin |
-| `save`, `test`, `load`, `back`, `advanced` | DOM handles | Component controls; Back remains usable while a request runs |
+| `connection` | API client | The game's client (`options.api`) |
+| `save`, `test`, `back`, `advanced`, `keyPlace` | DOM handles | Component controls; Back remains usable while a request runs |
 | `currentScreen`, `settingsReturn` | Game `Screen` | Return from Settings to the previous page or current run phase |
-| `setApiOrigin`, `openSettings`, `backFromSettings` | Game app helpers | Update the shared client, clear a run when changing servers, navigate |
+| `openSettings`, `backFromSettings` | Game app helpers | Navigate to and from Settings |
 
-These setup responses do not belong in `PublicRun`. Changing a provider keeps existing runs; changing the backend origin starts a new client session. The browser's `?mock=1` canned practice mode remains independent of the backend provider.
+These setup responses do not belong in `PublicRun`. Changing a provider keeps existing runs. The browser's `?mock=1` canned practice mode remains independent of the backend provider.
 
 The actual game's battle feedback now lives in `course/battle-feedback.ts`: `turnCard(event)` renders one completed event with labeled answer/reasoning/evidence/expected-answer fields and a separate damage footer. `course/battle.ts` keeps title, hearts/attempt/answered counts and actions separate and refreshes the canonical run after completed turns. Question headings can be suppressed by `questionEl(question, false)` when the card summary already displays the prompt.
 
 The actual game's `UploadScene.retryUpload` retains the submitted file array or notes/title while that scene stays open. An ingest error exposes **Retry preparation**, which submits a new course and clears stale room selections. Leaving/reloading Upload releases those inputs. A failed course keeps Start disabled and shows a preparation-error hint, rather than asking the player to select nonexistent rooms.
 
-## MongoDB (storage) settings fields
+## Saved in this browser (storage) fields
 
-`course/storage-view.ts` builds the **MongoDB** tab of Settings; `course/settings-view.ts` shows it next to the **AI provider** tab.
+`course/storage-view.ts` builds the **Saved in this browser** tab of Settings; `course/settings-view.ts` shows it next to the **AI provider** tab.
 
 | Name/field | Type | Use |
 |---|---|---|
-| `selected` / body `backend` | `'local' \| 'mongodb'` | Card choice: This computer or MongoDB |
-| `uri` / body `mongodb.uri` | Password input / string, `null` removes | Write-only connection string; blank keeps the saved one |
-| `database`, `vectorIndex` / body `mongodb.database`, `mongodb.vectorIndex` | Text inputs / strings | Database and Atlas vector index names |
-| `copy` / body `copyExisting` | Checkbox / boolean | Shown only when saving would switch storage and the current one has dungeons |
-| response `active`, `courses`, `error` | `'local' \| 'mongodb' \| 'memory'`, number, string or null | "In use now" line and the startup-fallback warning |
-| response `mongodb.hasUri`, `mongodb.host` | boolean, string or null | Saved-connection state; the host is shown, the string never is |
-| response `copied` | `{ courses, runs, skipped }` or null | Result line after Save & switch |
-| `afterStorageSwitch()` | `app.ts` | Clears the open run and results after a switch; Back goes to the title |
+| response `active` | `'browser' \| 'memory'` | Badge: THIS BROWSER, or THIS TAB ONLY when the browser blocks storage |
+| response `courses`, `runs` | numbers | "N dungeons and M expeditions saved here" |
+| response `usageBytes`, `quotaBytes` | numbers or null | "Using X of the Y this browser allows"; hidden when unknown |
+| response `persisted` | boolean or null | Whether the browser promised to keep the data; **Keep my dungeons** shows only when `false` and calls `navigator.storage.persist()` |
+| response `error` | string or null | Why storage is blocked |
+| `download` → `exportBackup()` | `Backup` | Saved as `pips-notebook-backup-<date>.json` |
+| `file` / `upload` → `importBackup(json)` | `{ courses, runs, skipped }` | Result line; dungeons already saved are skipped |
+| `afterStorageSwitch()` | `app.ts` | Called after an import that added dungeons; clears the open run and results |
 
 ## Course picker and upload inputs
 
@@ -98,7 +103,7 @@ The actual game's `UploadScene.retryUpload` retains the submitted file array or 
 | `title?` | `string`, max 200 chars for JSON | Optional course title input |
 | `courseId` | `string` | Upload/seed response → poll course and create run |
 
-File formats are `.pdf`, `.txt`, `.md` (`.markdown` is also accepted by the server). `POST /courses` returns 202 before ingest finishes; watch `status` rather than treating upload acceptance as readiness.
+File formats are `.pdf`, `.txt`, `.md` (`.markdown` is also accepted by the backend). `POST /courses` returns 202 before ingest finishes; watch `status` rather than treating upload acceptance as readiness.
 
 My archive switches between Library and Create New Dungeon. The creation form keeps both sources visible, one optional title and one submit action; at least one file or nonblank notes is required. With files present, the shared client adds notes as a uniquely named `pasted-notes.md` source in the same multipart request, preserving text, indentation and source provenance. Section switches retain files, notes and title; Retry preparation uses the complete submitted source snapshot.
 
@@ -185,7 +190,7 @@ These are available on the run, even if a particular screen does not render them
 | `ready` | `boolean` | Room readiness |
 | `state` | `upcoming \| current \| passed` | Progress-map styling |
 
-Navigation: `learning` → Learning; `room` or `room_result` → Fight; `boss` → Boss; `results` → Results. Keep the server's current run rather than recalculating phase/health locally.
+Navigation: `learning` → Learning; `room` or `room_result` → Fight; `boss` → Boss; `results` → Results. Keep the backend's current run rather than recalculating phase/health locally.
 
 New native-game navigation: `pausedAt` opens `Menu`; Rooms/Pause calls `pauseRun(id)` and Resume expedition calls `resumeRun(id)`. `listArchive()` supplies public `courses[]` and recent run summaries for My archive / Your saved dungeons. The game uses the latest `student_answer`/`help_result` in the current fight log for its persistent outcome card. Click opens and focuses that same turn in the chronicle. See [ARCHITECTURE.md](ARCHITECTURE.md) for the source map and persistence behavior.
 
@@ -263,7 +268,7 @@ Every `PublicQuestion` has `id: string`, `type: QuestionType`, `prompt: string`,
 
 Help modal state: `q` (the public question), `pick` (MCQ index or true/false choice), `boxes` (multi-select inputs), `n` (numeric input), `order` (ordering indexes), `t` (text input), `build(final)` (builds the typed answer), `sent` (submission guard), `tick` (interval id), `end` (deadline in milliseconds), `left` (seconds left), `timer` (display element), `stop()` (clear interval). `LEVELS` provides difficulty labels.
 
-There are two budgets: `question.timeBudgetSec` is the question's baseline estimate; `help_me.timeBudgetSec` is the effective event budget after the backend multiplier. Countdown to the actual `deadline`, not `Date.now() + budget`. If `deadline === null`, show no countdown. The remaining seconds are presentation state, not server authority.
+There are two budgets: `question.timeBudgetSec` is the question's baseline estimate; `help_me.timeBudgetSec` is the effective event budget after the backend multiplier. Countdown to the actual `deadline`, not `Date.now() + budget`. If `deadline === null`, show no countdown. The remaining seconds are presentation state, not backend authority.
 
 ## Results: every `Results` field
 
@@ -311,7 +316,7 @@ There is currently no file-download URL in `materialRef`. Show file/page/section
 |---|---|
 | Seed/upload | Save `courseId`, poll `course` |
 | Create run | Replace `state.run`, clear cached results, enter Learning |
-| Teach | Replace `notebookMd` and question list; refresh run if exact server state is needed |
+| Teach | Replace `notebookMd` and question list; refresh run if exact backend state is needed |
 | Answer/Skip | Replace notebook; mark the selected question answered/skipped |
 | Ready/Retry/Continue | Replace the whole run from the response and navigate by `phase` |
 | Student/help result | Animate, then apply returned hearts/health and `phaseAfter`; refresh run for a canonical snapshot |

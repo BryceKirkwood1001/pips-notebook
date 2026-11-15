@@ -2,7 +2,7 @@
   "name": "pips-notebook",
   "private": true,
   "type": "module",
-  "description": "Pip's Notebook: teach Pip, then watch Pip fight. Phaser AE game (client/), API and ingest/RAG server (server/), shared contracts (shared/)",
+  "description": "Pip's Notebook, public edition: teach Pip, then watch Pip fight. Runs entirely in the browser as static files: the Phaser AE game (client/), the game logic, ingest and RAG (server/, bundled as backend.js) and shared contracts (shared/)",
   "engines": {
     "node": ">=22"
   },
@@ -12,9 +12,9 @@
   ],
   "scripts": {
     "start": "node scripts/start.mjs",
-    "dev": "tsx watch server/src/index.ts",
-    "dev:game": "npm --prefix client run serve",
+    "build": "node scripts/build.mjs",
     "build:game": "npm --prefix client run build",
+    "dev:game": "npm --prefix client run serve",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc -p shared --noEmit && tsc -p server --noEmit",
@@ -27,6 +27,7 @@
     "@types/node": "^24.0.0",
     "tsx": "^4.23.15",
     "typescript": "~5.9.3",
-    "vitest": "^5.1.0"
+    "vitest": "^5.1.0",
+    "esbuild": "^0.28.2"
   }
 }

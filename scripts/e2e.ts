@@ -1,7 +1,8 @@
 /**
- * End-to-end gauntlet with a "teacher bot". Drives the real API (in-process by default) with mocks.
+ * End-to-end gauntlet with a "teacher bot". Drives the real API in-process (the same router the browser runs,
+ * on memory storage) with the Offline mocks.
  *
- *   npx tsx scripts/e2e.ts [--url http://localhost:8787] [--sample seasons]
+ *   npx tsx scripts/e2e.ts [--sample seasons]
  *   npm run e2e -- --capture-file docs/api-examples.json
  *
  * The bot reads the hidden course data from /debug ONLY to decide what to type, the way a teacher who
@@ -10,6 +11,7 @@
 import { ApiError, createApiClient, type PublicRun, type TurnResult } from '@pips-notebook/shared/api-client';
 import { buildApp } from '../server/src/app';
 import { createContainer } from '../server/src/container';
+import { createDirectorySampleSource } from '../server/src/node/samples';
 import { correctAnswerOf, wrongAnswerFor } from '../server/src/core/grading';
 import { FORBIDDEN_KEYS } from '../server/test/helpers/leaks';
 import { coverage } from '../server/src/llm/mock-text';
@@ -41,20 +43,13 @@ function findLeaks(v: unknown, path = '$'): string[] {
 }
 
 async function main() {
-  let close = async () => {};
-  let baseUrl = flag('url');
-  if (!baseUrl) {
-    const container = await createContainer({ env: { LLM_PROVIDER: 'mock', DEBUG: 'true' }, seed: 42 });
-    const app = await buildApp(container);
-    await app.listen({ port: 0, host: '127.0.0.1' });
-    const addr = app.server.address();
-    baseUrl = `http://127.0.0.1:${typeof addr === 'object' && addr ? addr.port : 0}`;
-    close = () => app.close();
-    log(`Started an in-process server at ${baseUrl}`);
-  }
+  const container = await createContainer({ env: { LLM_PROVIDER: 'mock', DEBUG: 'true' }, seed: 42, samples: createDirectorySampleSource() });
+  const app = buildApp(container);
+  const close = () => app.close();
+  log('Started the backend in-process (memory storage, Offline mocks)');
   const captures = new Map<string, unknown>();
-  const api = createApiClient({ baseUrl, fetch: async (input, init) => {
-    const res = await fetch(input, init);
+  const api = createApiClient({ fetch: async (input, init) => {
+    const res = await app.fetch(input, init);
     if (!flag('capture-file')) return res;
     const pathname = new URL(String(input)).pathname;
     const route = pathname.replace(/\/runs\/[^/]+/, '/runs/:id')
@@ -62,7 +57,13 @@ async function main() {
       .replace(/\/courses\/seed\/[^/]+/, '/courses/seed/:sample').replace(/\/courses\/(?!seed)[^/]+/, '/courses/:id');
     let response = await res.clone().json() as any;
     const debug = route.endsWith('/debug');
-    if (!debug) seen(response);
+    const backup = route === '/api/backup' && (init?.method ?? 'GET') === 'GET';
+    if (!debug && !backup) seen(response);
+    if (backup) {
+      response = { app: response.app, version: response.version, exportedAt: response.exportedAt,
+        courses: response.courses.slice(0, 1).map((c: any) => ({ id: c.id, title: c.title })),
+        questions: response.questions.length, questionStats: response.questionStats.length, chunks: response.chunks.length, runs: response.runs.length };
+    }
     if (debug) {
       response = {
         run: { id: response.run.id, phase: response.run.phase, hidden: response.run.hidden },
@@ -72,11 +73,12 @@ async function main() {
       };
     }
     const multipart = init?.body instanceof FormData;
-    const request = typeof init?.body === 'string' ? JSON.parse(init.body) : multipart
+    const request = route === '/api/backup' && typeof init?.body === 'string' ? '(a backup file, as GET /api/backup returns it)'
+      : typeof init?.body === 'string' ? JSON.parse(init.body) : multipart
       ? [...(init!.body as FormData).entries()].map(([field, value]) => ({ field, value: typeof value === 'string' ? value : { name: value.name, type: value.type, size: value.size } })) : undefined;
     const key = `${init?.method ?? 'GET'} ${route}${multipart ? ' multipart' : ''}${response.kind ? ` ${response.kind}` : ''}${request?.conceptId ? ' focused' : ''}${route === '/api/runs/:id' && response.history?.length ? ' history' : ''}`;
     if (!captures.has(key)) captures.set(key, { method: init?.method ?? 'GET', route, path: pathname, status: res.status, request,
-      ...(multipart ? { multipart: true } : {}), ...(debug ? { responseIsExcerpt: true } : {}), response });
+      ...(multipart ? { multipart: true } : {}), ...(debug || backup ? { responseIsExcerpt: true } : {}), response });
     return res;
   } });
   const failures: string[] = [];
@@ -93,8 +95,6 @@ async function main() {
       seen(await api.testApiSettings({ provider: 'mock' }));
       seen(await api.updateApiSettings({ provider: 'mock' }));
       seen(await api.getStorageSettings());
-      seen(await api.testStorageSettings({ backend: 'local' }));
-      seen(await api.updateStorageSettings({ backend: 'local' }));
     }
     seen(await api.listSamples());
     head(`Seed "${sample}" and create a run (target B)`);
@@ -116,7 +116,7 @@ async function main() {
     const ended = seen(await api.endRun(spare.id));
     check(!!ended.endedAt, 'end keeps an ended, read-only record');
     check(seen(await api.deleteRun(spare.id)).deleted === true, 'remove deletes the expedition');
-    if (!flag('url')) { // Only cascade-delete data in the disposable in-process server.
+    { // The in-process backend is disposable, so cascade-deleting a dungeon is safe.
       const disposable=seen(await api.seedCourse(sample==='seasons'?'binary-search':'seasons'));
       await api.createRun({courseId:disposable.courseId,targetGrade:'B'});
       check(seen(await api.deleteCourse(disposable.courseId)).deleted===true,'delete dungeon removes its course and expeditions');
@@ -252,6 +252,18 @@ async function main() {
     const leaks = bodies.flatMap((b) => findLeaks(b));
     check(leaks.length === 0, `no response contained a hidden key${leaks.length ? ': ' + leaks.slice(0, 5).join(', ') : ''}`);
     check(run.phase === 'results', 'the run ended in phase results');
+
+    head('Backup');
+    const backup = await api.exportBackup();
+    check(backup.courses.length > 0 && backup.runs.some((r: any) => r.id === runId), 'the backup holds the dungeon and the finished expedition');
+    check(!JSON.stringify(backup).includes('apiKey'), 'the backup holds no API keys');
+    const again = await api.importBackup(backup);
+    check(again.courses === 0 && again.skipped === backup.courses.length, 'importing a backup again skips dungeons already saved');
+    const fresh = buildApp(await createContainer({ env: { LLM_PROVIDER: 'mock' }, seed: 42 }));
+    const restored = await createApiClient({ fetch: fresh.fetch }).importBackup(backup);
+    const copy = await createApiClient({ fetch: fresh.fetch }).getRun(runId);
+    check(restored.courses === backup.courses.length && copy.phase === 'results', 'a backup restores dungeons and expeditions into an empty browser');
+    await fresh.close();
     if (flag('results-file')) await writeFile(flag('results-file')!, JSON.stringify(results, null, 2) + '\n');
     if (flag('capture-file')) {
       // The good lessons can cover every probe already. Use a separate run to capture an explicit answer.

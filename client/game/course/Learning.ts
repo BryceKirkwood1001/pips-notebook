@@ -9,7 +9,7 @@ import { travel } from './transition.js';
 
 /** Where Pip's speech bubble sits: above Pip's head at the desk, in world units. */
 const BUBBLE_Y = POS.desk.y - 117;
-/** Characters a single topic explanation may hold (the server accepts 8000). */
+/** Characters a single topic explanation may hold (the backend accepts 8000). */
 const EXPLANATION_MAX = 4000;
 /** Pip's floating reaction is removed after this long even without animation events. */
 const POP_MS = 1300;

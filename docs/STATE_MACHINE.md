@@ -95,7 +95,7 @@ Details that matter for a client:
 - **The deadline is checked on the server.** `deadline` is an ISO timestamp, or `null` in untimed mode (`HELP_ME_TIMED=false`), where the player can take as long as they like.
 - **Reloading mid-fight is safe.** `GET /runs/:id` returns the turn log so far (`room.log` or `boss.log`) and any waiting event in `pendingHelpMe`.
 - **Double clicks are safe.** Requests for one run are processed one at a time, and a second answer to the same event or question gets a 409.
-- **Pausing freezes time.** A pending "Help me!" deadline and its start time move forward by the paused interval, also across a server restart; time that had already run out is not given back. When a deadline passes, the next `turn` settles the expired event as a `help_result`. Pause before leaving a timed run: an unpaused deadline keeps running in wall-clock time.
+- **Pausing freezes time.** A pending "Help me!" deadline and its start time move forward by the paused interval, also across a page reload; time that had already run out is not given back. When a deadline passes, the next `turn` settles the expired event as a `help_result`. Pause before leaving a timed run: an unpaused deadline keeps running in wall-clock time.
 
 ## What changes at each step
 

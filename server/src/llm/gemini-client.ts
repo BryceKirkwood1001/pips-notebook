@@ -1,8 +1,8 @@
 /**
- * Gemini transport (`@google/genai`). The SDK object can be injected so the retry, validation and
- * timeout logic is unit-testable with a stub.
+ * Gemini transport (`@google/genai`), in the browser with the player's own key, sent only to Google's API.
+ * The SDK object can be injected so the retry, validation and timeout logic is unit-testable with a stub.
+ * The real SDK is loaded on first use, so Offline and OpenAI players never download it.
  */
-import { GoogleGenAI } from '@google/genai';
 import { zodToJsonSchema } from 'zod-to-json-schema';
 import type { z } from 'zod';
 import type { Config } from '../config';
@@ -48,6 +48,22 @@ function normalize(v: number[]): number[] {
   return norm === 0 ? v : v.map((x) => x / norm);
 }
 
+/**
+ * A failed Gemini call as a message the player can act on. Google's errors carry an HTTP status and never the key,
+ * so a rejected key, a quota or a missing model is named; anything else stays generic.
+ */
+export function geminiError(err: unknown, fallback: string): AppError {
+  const e = err as { status?: unknown; message?: unknown; name?: unknown };
+  const status = typeof e?.status === 'number' ? e.status : undefined;
+  const text = typeof e?.message === 'string' ? e.message : '';
+  if (/API key not valid|API_KEY_INVALID/i.test(text) || status === 401) return new AppError('llm_error', 'Google rejected the API key. Check it in Settings.');
+  if (status === 403) return new AppError('llm_error', 'Google denied access with this key. Check that the key may use the Gemini API.');
+  if (status === 429) return new AppError('llm_error', 'Gemini rate limit or quota reached. Check your Google AI account and retry later.');
+  if (status === 404) return new AppError('llm_error', 'Gemini could not find the configured model. Check the model name in Settings.');
+  if (err instanceof TypeError) return new AppError('llm_error', 'Could not reach Google from this browser. Check your internet connection, then retry.');
+  return new AppError('llm_error', fallback);
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 /** Rejects with a timeout error if `p` takes longer than `ms`. */
@@ -63,8 +79,24 @@ async function withTimeout<T>(p: Promise<T>, ms: number, what: string): Promise<
   }
 }
 
+/** The real SDK behind the GenAiLike slice, imported the first time a call needs it. */
+function lazySdk(apiKey: string): GenAiLike {
+  let loaded: Promise<GenAiLike> | undefined;
+  const sdk = () => (loaded ??= import('@google/genai').then(({ GoogleGenAI }) => new GoogleGenAI({ apiKey }) as unknown as GenAiLike));
+  return {
+    models: {
+      generateContent: async (params) => (await sdk()).models.generateContent(params),
+      embedContent: async (params) => (await sdk()).models.embedContent(params),
+    },
+    files: {
+      upload: async (params) => (await sdk()).files.upload(params),
+      get: async (params) => (await sdk()).files.get(params),
+    },
+  };
+}
+
 export function createGeminiClient(config: Config, sdk?: GenAiLike): LlmClient {
-  const ai: GenAiLike = sdk ?? (new GoogleGenAI({ apiKey: config.geminiApiKey }) as unknown as GenAiLike);
+  const ai: GenAiLike = sdk ?? lazySdk(config.geminiApiKey);
 
   async function callOnce(jsonSchema: unknown, prompt: string, opts: GenerateOptions): Promise<string> {
     const timeoutMs = opts.timeoutMs ?? config.llmTimeoutMs;
@@ -92,7 +124,7 @@ export function createGeminiClient(config: Config, sdk?: GenAiLike): LlmClient {
       controller.abort();
       req.catch(() => undefined); // the aborted request may reject later; ignore it
       if (err instanceof AppError) throw err;
-      throw new AppError('llm_error', 'LLM call failed');
+      throw geminiError(err, 'LLM call failed');
     }
   }
 
@@ -138,7 +170,7 @@ export function createGeminiClient(config: Config, sdk?: GenAiLike): LlmClient {
           );
         } catch (err) {
           if (err instanceof AppError) throw err;
-          throw new AppError('llm_error', 'Embedding call failed');
+          throw geminiError(err, 'Embedding call failed');
         }
         const vectors = res.embeddings ?? [];
         if (vectors.length !== batch.length || vectors.some((e) => !e.values)) {
@@ -151,10 +183,7 @@ export function createGeminiClient(config: Config, sdk?: GenAiLike): LlmClient {
 
     async uploadFile(source, opts): Promise<UploadedFile> {
       try {
-        const file =
-          typeof source === 'string'
-            ? source
-            : new Blob([source as Uint8Array<ArrayBuffer>], { type: opts.mimeType });
+        const file = new Blob([new Uint8Array(source)], { type: opts.mimeType });
         let f = await withTimeout(
           ai.files.upload({ file, config: { mimeType: opts.mimeType, displayName: opts.displayName } }),
           config.llmTimeoutMs,

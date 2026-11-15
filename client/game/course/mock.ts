@@ -378,12 +378,12 @@ export function createMockApi(): ApiClient {
       return view();
     },
     getResults: async () => (need('results'), results()),
-    getApiSettings: async () => { throw new ApiError(501, 'not_implemented', 'API setup uses the local backend.'); },
-    updateApiSettings: async () => { throw new ApiError(501, 'not_implemented', 'API setup uses the local backend.'); },
-    testApiSettings: async () => { throw new ApiError(501, 'not_implemented', 'API setup uses the local backend.'); },
-    getStorageSettings: async () => { throw new ApiError(501, 'not_implemented', 'Storage settings use the local backend.'); },
-    updateStorageSettings: async () => { throw new ApiError(501, 'not_implemented', 'Storage settings use the local backend.'); },
-    testStorageSettings: async () => { throw new ApiError(501, 'not_implemented', 'Storage settings use the local backend.'); },
+    getApiSettings: async () => { throw new ApiError(501, 'not_implemented', 'Practice mode has no AI settings. Open the game without ?mock=1.'); },
+    updateApiSettings: async () => { throw new ApiError(501, 'not_implemented', 'Practice mode has no AI settings. Open the game without ?mock=1.'); },
+    testApiSettings: async () => { throw new ApiError(501, 'not_implemented', 'Practice mode has no AI settings. Open the game without ?mock=1.'); },
+    getStorageSettings: async () => { throw new ApiError(501, 'not_implemented', 'Practice mode saves nothing. Open the game without ?mock=1.'); },
+    exportBackup: async () => { throw new ApiError(501, 'not_implemented', 'Practice mode saves nothing. Open the game without ?mock=1.'); },
+    importBackup: async () => { throw new ApiError(501, 'not_implemented', 'Practice mode saves nothing. Open the game without ?mock=1.'); },
     getDebug: async () => ({
       misconceptionStates: [{ id: 'm1', state: 'active', origin: 'skipped' }],
       currentQuestionAnswerKeys: HELP.map((h) => ({ id: h.q.id, key: h.key })),

@@ -1,12 +1,12 @@
-/** The Settings scene's content: an AI provider tab and a MongoDB (storage) tab. */
-import { createApiClient, type ApiSettings, type LlmProvider, type UpdateApiSettingsBody } from '../../../shared/src/api-client.js';
+/** The Settings scene's content: an AI provider tab and a "Saved in this browser" tab. */
+import type { ApiClient, ApiSettings, LlmProvider, UpdateApiSettingsBody } from '../../../shared/src/api-client.js';
 import { buildStoragePanel } from './storage-view.js';
-import { btn, el, host } from './ui.js';
+import { btn, clock, el, host } from './ui.js';
 
 export interface SettingsViewOptions {
-  apiOrigin: string;
-  onOriginChange: (origin: string) => void;
-  /** The server switched storage, so the open expedition belongs to the old one. */
+  /** The game's API client (the in-page backend). */
+  api: ApiClient;
+  /** A backup added dungeons. */
   onStorageChange: () => void;
   onBack: () => void;
   practice?: boolean;
@@ -18,7 +18,7 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
   let loaded = false;
   const controller = new AbortController();
   const root = el('div', 'api-setup');
-  const status = el('div', 'setup-status dim', 'Connecting to your server…');
+  const status = el('div', 'setup-status dim', 'Loading your settings…');
   status.setAttribute('role', 'status'); status.setAttribute('aria-live', 'polite');
   const keyStatus = el('span', 'setup-badge', 'OFFLINE');
   const providerCards = el('div', 'provider-choices');
@@ -28,11 +28,8 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
   timeout.id = 'api-timeout';
   const ingestTimeout = el('input'); ingestTimeout.type = 'number'; ingestTimeout.min = '1'; ingestTimeout.max = '600'; ingestTimeout.value = '180';
   ingestTimeout.id = 'api-ingest-timeout';
-  const origin = el('input'); origin.type = 'url'; origin.value = options.apiOrigin; origin.id = 'api-origin'; origin.autocomplete = 'off';
-  const clientFor = (baseUrl: string) => createApiClient({ baseUrl, fetch: (url, init) => fetch(url, { ...init,
-    signal: AbortSignal.any([controller.signal, AbortSignal.timeout(String(url).endsWith('/test') ? Number(timeout.value || 30) * 3000 + 5000 : 15000)]),
-  }) });
-  let connection = clientFor(options.apiOrigin);
+  const remember = el('input'); remember.type = 'checkbox'; remember.id = 'api-remember'; remember.checked = true;
+  const connection = options.api;
   const titleFor = (p: LlmProvider) => p === 'openai' ? 'OpenAI' : p === 'gemini' ? 'Google Gemini' : 'Offline';
   const field = (name: string, input: HTMLInputElement, hint?: string) => {
     const label = el('label', '', name); label.htmlFor = input.id;
@@ -46,7 +43,7 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
     const remove = el('input'); remove.type = 'checkbox';
     const state = el('span', 'dim', 'No key saved');
     const box = el('section', 'provider-fields',
-      field(`${titleFor(provider)} API key`, key, 'Leave blank to keep your saved key. Keys stay on your computer.'),
+      field(`${titleFor(provider)} API key`, key, `Leave blank to keep your saved key. It is saved only in this browser and sent only to ${provider === 'openai' ? 'OpenAI' : 'Google'}.`),
       el('div', 'key-options', state, el('label', '', remove, ' Remove saved key')),
       el('div', 'model-fields', field('Generation model', model), field('Embedding model', embedding)),
     );
@@ -54,7 +51,7 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
     fields.append(box);
   }
   const offline = el('section', 'provider-fields offline-note', el('h3', '', 'Play without a key'),
-    el('p', '', 'Play the sample lessons with a built-in practice student. No account, internet, or API credits needed.'),
+    el('p', '', 'Play the sample lessons with a built-in practice student. No account or API credits needed.'),
     el('small', 'dim', 'To learn from your own material, choose OpenAI or Gemini.'));
   fields.append(offline);
   const cards = new Map<LlmProvider, HTMLButtonElement>();
@@ -74,13 +71,6 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
     keyStatus.textContent = provider === 'mock' ? 'OFFLINE' : titleFor(provider).toUpperCase();
   }
   const showStatus = (text: string, kind = 'dim') => { status.textContent = text; status.className = `setup-status ${kind}`; };
-  function serverOrigin() {
-    const url = new URL(origin.value.trim());
-    if (!['http:', 'https:'].includes(url.protocol) || url.username || url.password || url.pathname !== '/' || url.search || url.hash) {
-      throw new Error('Enter a server origin such as http://localhost:8787, without a path or credentials.');
-    }
-    return url.origin;
-  }
   function apply(settings: ApiSettings) {
     loaded = true;
     choose(settings.provider);
@@ -91,14 +81,15 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
       view.model.value = saved.model; view.embedding.value = saved.embeddingModel;
       view.key.value = ''; view.remove.checked = false;
       view.key.placeholder = saved.hasApiKey ? 'Saved — enter a replacement or leave blank' : 'Paste your API key';
-      view.state.textContent = saved.hasApiKey ? 'Key saved on backend' : 'No key saved';
+      view.state.textContent = saved.hasApiKey ? (settings.persistence === 'session' ? 'Key saved in this tab' : 'Key saved in this browser') : 'No key saved';
       view.state.className = saved.hasApiKey ? 'ok' : 'dim';
     }
+    remember.checked = settings.persistence !== 'session';
   }
   function body(): UpdateApiSettingsBody {
     const seconds = Number(timeout.value);
     if (!Number.isInteger(seconds) || seconds < 1 || seconds > 180) throw new Error('Choose a whole-number timeout between 1 and 180 seconds.');
-    const update: UpdateApiSettingsBody = { provider: selected, timeoutMs: seconds * 1000 };
+    const update: UpdateApiSettingsBody = { provider: selected, timeoutMs: seconds * 1000, rememberKey: remember.checked };
     const ingestSeconds = Number(ingestTimeout.value);
     if (!Number.isInteger(ingestSeconds) || ingestSeconds < 1 || ingestSeconds > 600) throw new Error('Choose a whole-number course preparation timeout between 1 and 600 seconds.');
     update.ingestTimeoutMs = ingestSeconds * 1000;
@@ -110,19 +101,22 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
     return update;
   }
   const save = btn('Save & apply', () => void act(showStatus, async () => {
-    if (!loaded) throw new Error('Connect to the backend first.');
-    const apiOrigin = serverOrigin();
-    const settings = await clientFor(apiOrigin).updateApiSettings(body());
+    if (!loaded) throw new Error('Your settings are still loading. Try again in a moment.');
+    const settings = await connection.updateApiSettings(body());
     if (!active) return;
-    connection = clientFor(apiOrigin); apply(settings); options.onOriginChange(apiOrigin);
-    showStatus(`${titleFor(settings.provider)} is ready. Your settings are saved and active.`, 'ok');
+    apply(settings);
+    showStatus(`${titleFor(settings.provider)} is ready. Your settings are saved ${settings.persistence === 'session' ? 'in this tab until you close it' : 'in this browser'}.`, 'ok');
   }));
   const test = btn('Test connection', () => void act(showStatus, async () => {
-    if (!loaded) throw new Error('Connect to the backend first.');
-    const result = await clientFor(serverOrigin()).testApiSettings(body());
+    if (!loaded) throw new Error('Your settings are still loading. Try again in a moment.');
+    const result = await withTimeout(connection.testApiSettings(body()), Number(timeout.value || 30) * 3000 + 5000);
     showStatus(result.message, result.ok ? 'ok' : 'bad');
   }), 'alt');
-  const load = btn('Load server', () => void loadSettings(), 'alt');
+  /** The request keeps running in the page; the player just stops waiting for it. */
+  const withTimeout = <T>(work: Promise<T>, ms: number) => Promise.race([work, new Promise<never>((_, reject) => {
+    const timer = clock.setTimeout(() => reject(Object.assign(new Error('timeout'), { name: 'TimeoutError' })), ms);
+    controller.signal.addEventListener('abort', () => clock.clearTimeout(timer));
+  })]);
   const back = btn('Back to game', options.onBack, 'alt');
   /** Runs one request with every control disabled; `say` is the status line of the tab that started it. */
   async function act(say: (text: string, kind?: string) => void, action: () => Promise<void>) {
@@ -133,7 +127,7 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
     report('Working…');
     try { await action(); }
     catch (error) { report(error instanceof Error && ['TimeoutError', 'AbortError'].includes(error.name)
-      ? 'The server took too long to respond. Check the backend URL and try again.'
+      ? 'The AI provider took too long to answer. Check your key and connection, then try again.'
       : error instanceof Error ? error.message : 'Could not update the settings.', 'bad'); }
     finally {
       if (active) {
@@ -145,36 +139,40 @@ export function buildSettingsView(options: SettingsViewOptions): { el: HTMLEleme
   }
   async function loadSettings() {
     await act(showStatus, async () => {
-      const apiOrigin = serverOrigin(); connection = clientFor(apiOrigin);
       const settings = await connection.getApiSettings();
       if (!active) return;
-      apply(settings); showStatus('Connected.');
+      apply(settings); showStatus(settings.provider === 'mock' ? 'Offline: no key needed for the sample lessons.' : `Using ${titleFor(settings.provider)}.`);
     });
     if (active) await storage.load();
   }
-  const storage = buildStoragePanel({ client: () => connection, act, field, onSwitched: options.onStorageChange, practice: options.practice });
-  const advanced = el('details', 'setup-advanced', el('summary', '', 'Connection details'),
-    el('div', 'connection-fields', field('Backend URL', origin, 'Changing servers starts a new game session.'), load, field('Request timeout (seconds)', timeout)),
+  const storage = buildStoragePanel({ client: () => connection, act, onSwitched: options.onStorageChange, practice: options.practice });
+  const advanced = el('details', 'setup-advanced', el('summary', '', 'Timeouts'),
+    el('div', 'connection-fields', field('Request timeout (seconds)', timeout)),
     field('Course preparation timeout (seconds)', ingestTimeout, 'Per request while preparing your course. Active OpenAI document streams extend this idle budget, with a 10-minute request cap.'));
+  const keyPlace = el('label', 'remember-key', remember, ' Remember my key on this device',
+    el('small', 'dim', ' Untick on a shared computer: the key is then forgotten when this tab closes.'));
   const aiPanel = el('div', 'setup-panel',
     el('div', 'setup-heading', el('div', '', el('h2', '', 'Choose an AI provider'),
       el('p', 'dim', "This AI writes Pip's questions and notes and prepares your courses. You can switch anytime.")), keyStatus),
     providerCards,
     el('div', 'setup-grid', fields, el('aside', 'setup-aside', el('h3', '', 'How it works'),
       el('p', '', 'Pip still only knows what you teach. In battle, the AI answers as Pip using nothing but Pip\'s notebook.'),
-      el('div', 'setup-rule'), el('p', 'dim', 'No key? Choose Offline to play the sample lessons.'),
+      el('div', 'setup-rule'),
+      el('p', '', 'This game has no server. Your key is saved only in this browser and is sent only to the provider you choose, straight from this page. Usage is billed to your own account.'),
+      el('p', 'dim', 'No key? Choose Offline to play the sample lessons.'),
       el('p', 'dim', "Dictate uses your browser's speech recognition. Chrome, Edge and Safari may send your voice to Google, "
         + 'Microsoft or Apple to turn it into text; other browsers use a speech model that runs on this computer.'),
-      options.practice ? el('p', 'warn', 'Practice mode uses canned responses. These settings apply when you play through the backend.') : null)),
+      options.practice ? el('p', 'warn', 'Practice mode uses canned responses. Open the game without ?mock=1 to use these settings.') : null)),
+    keyPlace,
     advanced,
     el('div', 'setup-footer', el('div', 'actions', test, save), el('small', 'dim', 'Testing sends one small request to the AI, which may use a little API credit.')),
     status,
   );
 
-  // Tabs: AI provider and MongoDB. Arrow keys move between them, as in any tab list.
+  // Tabs: AI provider and Saved in this browser. Arrow keys move between them, as in any tab list.
   const panels = [
     { id: 'ai', label: 'AI provider', panel: aiPanel },
-    { id: 'storage', label: 'MongoDB', panel: storage.el },
+    { id: 'storage', label: 'Saved in this browser', panel: storage.el },
   ];
   const tabList = el('div', 'setup-tabs');
   tabList.setAttribute('role', 'tablist'); tabList.setAttribute('aria-label', 'Settings');

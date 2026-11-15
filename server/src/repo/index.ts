@@ -1,3 +1,3 @@
 export { createMemoryRepository } from './memory';
-export { createMongoRepository } from './mongo';
+export { createIndexedDbRepository, createIndexedDbVectorStore, openBrowserDatabase, DATABASE_NAME } from './indexeddb';
 export type { Repository, StatsEvent } from './types';

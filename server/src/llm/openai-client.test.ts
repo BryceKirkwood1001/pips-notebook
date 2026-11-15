@@ -21,6 +21,14 @@ describe('OpenAI transport', () => {
     expect(JSON.parse(send.mock.calls[0][1]!.body as string)).toMatchObject({ model: 'gpt-6-luna', reasoning: { effort: 'none' } });
   });
 
+  it('names a rejected key that the browser saw only as a network error (no CORS headers on that 401)', async () => {
+    const send = transport([{ error: new TypeError('Failed to fetch') }, { status: 401, body: { error: { message: 'Incorrect API key' } } }]);
+    await expect(createOpenAiClient(config, send).generateJson(z.object({ ok: z.boolean() }), 'hi')).rejects.toThrow('OpenAI rejected the API key');
+    expect(String(send.mock.calls[1][0])).toBe('https://api.openai.com/v1/models');
+    const offline = transport([{ error: new TypeError('Failed to fetch') }, { error: new TypeError('Failed to fetch') }]);
+    await expect(createOpenAiClient(config, offline).generateJson(z.object({ ok: z.boolean() }), 'hi')).rejects.toThrow(/Could not reach OpenAI/);
+  });
+
   it('honors a per-call timeout and names the failed operation', async () => {
     const send = vi.fn<typeof fetch>(() => new Promise<never>(() => {}));
     await expect(createOpenAiClient(config, send).generateJson(z.object({ ok: z.boolean() }), 'hi', { timeoutMs: 15, label: 'extractOutline' })).rejects.toThrow('OpenAI extractOutline timed out after 15 ms');

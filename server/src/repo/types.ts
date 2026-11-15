@@ -3,10 +3,10 @@
  *
  * FACTORIES other modules import from `server/src/repo/index.ts` (exact names):
  *   createMemoryRepository(): Repository
- *   createMongoRepository(db: Db): Repository        // `Db` from the official `mongodb` driver
+ *   createIndexedDbRepository(db: IDBDatabase): Repository   // the browser; see indexeddb.ts
  *
- * Collections (Mongo): `courses`, `questions`, `questionStats`, `runs`. Chunks live in the `chunks`
- * collection, which the VectorStore (server/src/rag) owns.
+ * Object stores (IndexedDB): `courses`, `questions`, `questionStats`, `runs`. Chunks live in the `chunks`
+ * store, which the VectorStore (server/src/rag) owns.
  *
  * Every method returns copies: callers may mutate what they get without touching stored state.
  */
@@ -21,7 +21,7 @@ export interface StatsEvent {
 }
 
 export interface Repository {
-  /** Creates indexes. A no-op for the memory repo. Safe to call twice. */
+  /** Prepares the storage. A no-op for the memory and IndexedDB repos. Safe to call twice. */
   init(): Promise<void>;
   close(): Promise<void>;
 

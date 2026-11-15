@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 /**
- * One command to play: installs what is missing, starts the server (which also serves the game) and
- * opens the browser. `npm start`, `start.command` (macOS) and `start.bat` (Windows) all run this file.
+ * One command to play on this computer: installs what is missing, builds the static site (scripts/build.mjs) and
+ * serves it on http://localhost, then opens the browser. `npm start`, `start.command` (macOS) and `start.bat`
+ * (Windows) all run this file.
  *
- *   node scripts/start.mjs              start on PORT from the environment or .env, else 8787
- *   node scripts/start.mjs --port 9000  start on another port
+ * The game itself needs no server: this is only a static file server, like the web host the site is deployed to.
+ *
+ *   node scripts/start.mjs              serve on PORT from the environment, else 8787
+ *   node scripts/start.mjs --port 9000  serve on another port
  *   node scripts/start.mjs --no-open    do not open a browser tab
+ *   node scripts/start.mjs --no-build   serve the existing site/ folder as it is
  *
  * Plain Node with no dependencies, because it runs before `npm install` has.
  */
@@ -54,28 +58,29 @@ if (!installed) {
   fs.writeFileSync(stamp, lockHash);
 }
 
-// 3. Port: --port, then PORT from the environment, then from .env, then 8787. A busy port moves to the next free one.
-const envFilePort = () => {
-  try {
-    return fs.readFileSync(path.join(root, '.env'), 'utf8').match(/^\s*PORT\s*=\s*(\d+)/m)?.[1];
-  } catch {
-    return undefined;
-  }
-};
+// 3. The site: built fresh each start (about a second), so it always matches the code.
+const site = path.join(root, 'site');
+if (!process.argv.includes('--no-build') || !fs.existsSync(path.join(site, 'index.html'))) {
+  const built = spawnSync(process.execPath, [path.join(root, 'scripts', 'build.mjs')], { cwd: root, stdio: 'inherit' });
+  if (built.status !== 0) fail('Building the site failed (see above).');
+}
+
+// 4. Port: --port, then PORT from the environment, then 8787. A busy port moves to the next free one.
 const portFlag = process.argv.indexOf('--port');
-const rawPort = String((portFlag > 0 && process.argv[portFlag + 1]) || process.env.PORT || envFilePort() || 8787);
+const rawPort = String((portFlag > 0 && process.argv[portFlag + 1]) || process.env.PORT || 8787);
 const wanted = Number(rawPort);
 if (!Number.isInteger(wanted) || wanted < 1 || wanted > 65535) fail(`"${rawPort}" is not a valid port.`);
-// Probe exactly the address the server binds (server/src/index.ts listens on 0.0.0.0).
+const HOST = '127.0.0.1';
+// Free means free on every address: another server on 0.0.0.0 or :: would otherwise answer "localhost" instead.
 const isFree = (port) =>
   new Promise((resolve) => {
     const probe = net.createServer().once('error', () => resolve(false));
-    probe.listen(port, '0.0.0.0', () => probe.close(() => resolve(true)));
+    probe.listen(port, () => probe.close(() => resolve(true)));
   });
 const isOurs = async (port) => {
   try {
-    const res = await fetch(`http://127.0.0.1:${port}/api/health`, { signal: AbortSignal.timeout(1500) });
-    return res.ok && typeof (await res.json()).llmProvider === 'string';
+    const res = await fetch(`http://${HOST}:${port}/samples/index.json`, { signal: AbortSignal.timeout(1500) });
+    return res.ok && res.headers.get('x-pips-notebook') === 'site' && Array.isArray((await res.json()).samples);
   } catch {
     return false;
   }
@@ -93,7 +98,7 @@ const openBrowser = (url) => {
 let port = wanted;
 for (;;) {
   if (await isOurs(port)) {
-    say(`Pip's Notebook is already running at http://localhost:${port}`);
+    say(`Pip's Notebook is already being served at http://localhost:${port} (it now shows the new build)`);
     openBrowser(`http://localhost:${port}`);
     process.exit(0);
   }
@@ -103,36 +108,13 @@ for (;;) {
 }
 if (port !== wanted) say(`Port ${wanted} is busy, using ${port} instead.`);
 
-if (!fs.existsSync(path.join(root, 'client', 'dist', 'index.html'))) {
-  say('The game build (client/dist) is missing, so only the API will run. Rebuild it with `npm run build:game`.');
-}
-
-// 4. Server, which also serves the game. tsx runs the TypeScript directly.
-say('Starting Pip\'s Notebook...');
-const server = spawn(process.execPath, ['--import', 'tsx', 'server/src/index.ts'], {
-  cwd: root,
-  stdio: 'inherit',
-  env: { ...process.env, PORT: String(port) },
+// 5. A static file server for site/, with the byte ranges Safari needs to play the music.
+const { createStaticServer } = await import('./serve.mjs');
+const server = createStaticServer(site);
+server.listen(port, HOST, () => {
+  const url = `http://localhost:${port}`;
+  say(`Ready: ${url}  (press Ctrl+C to stop)`);
+  say('Everything runs in your browser; this only serves the files in site/.');
+  openBrowser(url);
 });
-let stopping = false;
-for (const signal of ['SIGINT', 'SIGTERM']) {
-  process.on(signal, () => {
-    stopping = true;
-    server.kill(signal);
-  });
-}
-server.on('exit', (code) => {
-  if (!stopping && code) console.error('\n[start] The server stopped with an error (see above).');
-  process.exit(code ?? 0);
-});
-
-// 5. Open the browser once the API answers.
-const url = `http://localhost:${port}`;
-for (let i = 0; i < 120 && server.exitCode === null; i++) {
-  if ((await isOurs(port)) && server.exitCode === null) {
-    say(`Ready: ${url}  (press Ctrl+C to stop)`);
-    openBrowser(url);
-    break;
-  }
-  await new Promise((r) => setTimeout(r, 500));
-}
+for (const signal of ['SIGINT', 'SIGTERM']) process.on(signal, () => server.close(() => process.exit(0)));

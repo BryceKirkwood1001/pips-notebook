@@ -2,6 +2,11 @@
 
 Sections 1-7 of the build brief, copied verbatim. Where the brief left a detail open, the choice we made is in [DECISIONS.md](DECISIONS.md); the contracts in `shared/src/schemas.ts` and the `server/src/**/types.ts` files are the source of truth for shapes.
 
+> **Public edition.** This brief describes the original server edition and is kept as it was written. This edition
+> runs the same rules in the browser instead: no Fastify, ports or CORS (the API is answered in the page), IndexedDB
+> instead of MongoDB Atlas (cosine search in the page), and the player's own key from Settings instead of environment
+> variables. See [ARCHITECTURE.md](ARCHITECTURE.md) and the public-edition entries in [DECISIONS.md](DECISIONS.md).
+
 ---
 
 ## 1. Product summary

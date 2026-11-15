@@ -1,91 +1,28 @@
+import { IDBFactory } from 'fake-indexeddb';
 import { describe, expect, it } from 'vitest';
-import type { Db } from 'mongodb';
 import { buildPack, buildQuestions, createDeps } from '../engine/testing/fixtures';
 import { newRun, defaultCtx } from '../engine/testing/play';
-import { createMemoryRepository, createMongoRepository, type Repository } from './index';
+import { createMemoryVectorStore } from '../rag';
+import { createIndexedDbRepository, createIndexedDbVectorStore, createMemoryRepository, openBrowserDatabase, type Repository } from './index';
 
-// ── A minimal fake of the parts of `Db` the Mongo repository uses ───────────
+/** A fresh, empty IndexedDB (fake-indexeddb, the same API browsers have). */
+const freshDb = () => openBrowserDatabase({ factory: new IDBFactory() });
 
-type Doc = Record<string, any>;
-
-function matches(doc: Doc, filter: Doc): boolean {
-  return Object.entries(filter).every(([k, v]) =>
-    v && typeof v === 'object' && '$in' in v ? (v.$in as unknown[]).includes(doc[k]) : doc[k] === v,
-  );
-}
-
-function fakeCollection(store: Map<string, Doc>, indexes: string[]) {
-  return {
-    async createIndex(spec: Doc) {
-      indexes.push(JSON.stringify(spec));
-    },
-    async replaceOne(filter: Doc, doc: Doc, opts?: { upsert?: boolean }) {
-      const found = [...store.values()].find((d) => matches(d, filter));
-      if (found || opts?.upsert) store.set(doc._id, structuredClone(doc));
-    },
-    async findOne(filter: Doc) {
-      const d = [...store.values()].find((x) => matches(x, filter));
-      return d ? structuredClone(d) : null;
-    },
-    async bulkWrite(ops: Doc[]) {
-      for (const op of ops) store.set(op.replaceOne.replacement._id, structuredClone(op.replaceOne.replacement));
-    },
-    find(filter: Doc) {
-      return { toArray: async () => [...store.values()].filter((d) => matches(d, filter)).map((d) => structuredClone(d)) };
-    },
-    async deleteMany(filter: Doc) {
-      for (const [id, d] of store) if (matches(d, filter)) store.delete(id);
-    },
-    async deleteOne(filter: Doc) {
-      const found=[...store.entries()].find(([,doc])=>matches(doc,filter));
-      if (!found) return {deletedCount:0};
-      store.delete(found[0]);return {deletedCount:1};
-    },
-    async updateOne(filter: Doc, update: Doc, opts?: { upsert?: boolean }) {
-      let found = [...store.values()].find((d) => matches(d, filter));
-      if (!found) {
-        if (!opts?.upsert) return;
-        found = { _id: filter._id, ...(update.$setOnInsert ?? {}) } as Doc;
-        store.set(found._id, found);
-      }
-      const doc: Doc = found;
-      for (const [k, v] of Object.entries<number>(update.$inc ?? {})) doc[k] = (doc[k] ?? 0) + v;
-      for (const [k, v] of Object.entries<any>(update.$push ?? {})) {
-        doc[k] = doc[k] ?? [];
-        if (v && typeof v === 'object' && '$each' in v) doc[k].push(...v.$each);
-        else doc[k].push(v);
-      }
-    },
-  };
-}
-
-function fakeDb(): { db: Db; indexes: string[] } {
-  const stores = new Map<string, Map<string, Doc>>();
-  const indexes: string[] = [];
-  const db = {
-    collection(name: string) {
-      if (!stores.has(name)) stores.set(name, new Map());
-      return fakeCollection(stores.get(name)!, indexes);
-    },
-  } as unknown as Db;
-  return { db, indexes };
-}
-
-const implementations: [string, () => Repository][] = [
-  ['memory', () => createMemoryRepository()],
-  ['mongo (fake Db)', () => createMongoRepository(fakeDb().db)],
+const implementations: [string, () => Promise<Repository>][] = [
+  ['memory', async () => createMemoryRepository()],
+  ['indexeddb', async () => createIndexedDbRepository(await freshDb())],
 ];
 
 describe.each(implementations)('Repository: %s', (_name, make) => {
   it('init and close are safe to call twice', async () => {
-    const repo = make();
+    const repo = await make();
     await repo.init();
     await repo.init();
     await repo.close();
   });
 
   it('course packs round-trip as copies, not references', async () => {
-    const repo = make();
+    const repo = await make();
     const pack = buildPack();
     await repo.saveCoursePack(pack);
     const got = await repo.getCoursePack(pack.id);
@@ -100,7 +37,7 @@ describe.each(implementations)('Repository: %s', (_name, make) => {
   });
 
   it('questions: upsert, list per course, verifiedOnly, delete', async () => {
-    const repo = make();
+    const repo = await make();
     const qs = buildQuestions();
     await repo.upsertQuestions(qs);
     await repo.upsertQuestions([{ ...qs[0], id: 'other_q', courseId: 'other' }]);
@@ -123,7 +60,7 @@ describe.each(implementations)('Repository: %s', (_name, make) => {
   });
 
   it('stats: increments and solve times; unplayed questions are absent', async () => {
-    const repo = make();
+    const repo = await make();
     await repo.recordStats([
       { questionId: 'a', kind: 'student_correct' },
       { questionId: 'a', kind: 'student_correct' },
@@ -145,7 +82,7 @@ describe.each(implementations)('Repository: %s', (_name, make) => {
   });
 
   it('runs round-trip as copies', async () => {
-    const repo = make();
+    const repo = await make();
     const run = newRun(createDeps(), defaultCtx);
     await repo.saveRun(run);
     const got = await repo.getRun(run.id);
@@ -158,7 +95,7 @@ describe.each(implementations)('Repository: %s', (_name, make) => {
   });
 
   it('deleting a dungeon cascades through questions, stats and runs, preserving another course',async()=>{
-    const repo=make(), pack=buildPack(), questions=buildQuestions();
+    const repo=await make(), pack=buildPack(), questions=buildQuestions();
     await repo.saveCoursePack(pack);
     await repo.saveCoursePack({...pack,id:'other'});
     await repo.upsertQuestions([...questions,{...questions[0],id:'other_q',courseId:'other'}]);
@@ -178,10 +115,48 @@ describe.each(implementations)('Repository: %s', (_name, make) => {
   });
 });
 
-describe('Mongo repository specifics', () => {
-  it('init creates an index on questions.courseId', async () => {
-    const { db, indexes } = fakeDb();
-    await createMongoRepository(db).init();
-    expect(indexes).toContain(JSON.stringify({ courseId: 1 }));
+describe('IndexedDB storage specifics', () => {
+  it('keeps dungeons, expeditions and chunks across a reopen (a page reload)', async () => {
+    const factory = new IDBFactory();
+    const pack = buildPack();
+    const questions = buildQuestions();
+    const first = await openBrowserDatabase({ factory, name: 'reload-test' });
+    await createIndexedDbRepository(first).saveCoursePack(pack);
+    await createIndexedDbRepository(first).upsertQuestions(questions);
+    await createIndexedDbRepository(first).recordStats([{ questionId: questions[0].id, kind: 'help_solve', solveTimeSec: 12 }]);
+    const run = newRun(createDeps(), defaultCtx);
+    await createIndexedDbRepository(first).saveRun(run);
+    const chunk = { id: `${pack.id}_f1_p1_0`, courseId: pack.id, fileId: 'f1', page: 1, sectionPath: ['Intro'], conceptIds: [], text: 'Seasons come from tilt.', embedding: [1, 0, 0] };
+    await createIndexedDbVectorStore(first).upsert([chunk]);
+    first.close();
+
+    const second = await openBrowserDatabase({ factory, name: 'reload-test' });
+    const repo = createIndexedDbRepository(second);
+    expect(await repo.getCoursePack(pack.id)).toEqual(pack);
+    expect(await repo.listQuestions(pack.id)).toHaveLength(questions.length);
+    expect((await repo.getQuestionStats([questions[0].id]))[0].helpMeSolveTimesSec).toEqual([12]);
+    expect((await repo.getRun(run.id))?.id).toBe(run.id);
+    const store = createIndexedDbVectorStore(second);
+    expect(await store.listByCourse(pack.id)).toEqual([chunk]);
+    const [hit] = await store.search({ courseId: pack.id, embedding: [1, 0, 0], topK: 1 });
+    expect(hit.chunk.id).toBe(chunk.id);
+    expect(hit.score).toBeCloseTo(1);
+  });
+
+  it('the vector store matches the in-memory one: search per course, ordered listing, delete', async () => {
+    const db = await freshDb();
+    const stores = [createMemoryVectorStore(), createIndexedDbVectorStore(db)];
+    const chunk = (id: string, courseId: string, embedding: number[], page = 1) =>
+      ({ id, courseId, fileId: 'f1', page, sectionPath: [], conceptIds: [], text: id, embedding });
+    const all = [chunk('a_f1_p2_0', 'a', [0, 1], 2), chunk('a_f1_p1_1', 'a', [1, 0]), chunk('a_f1_p1_0', 'a', [1, 1]), chunk('b_f1_p1_0', 'b', [1, 0])];
+    for (const store of stores) {
+      await store.upsert(all);
+      expect((await store.listByCourse('a')).map((c) => c.id)).toEqual(['a_f1_p1_0', 'a_f1_p1_1', 'a_f1_p2_0']);
+      expect((await store.search({ courseId: 'a', embedding: [1, 0], topK: 2 })).map((s) => s.chunk.id)).toEqual(['a_f1_p1_1', 'a_f1_p1_0']);
+      expect((await store.getByIds(['b_f1_p1_0', 'missing'])).map((c) => c.id)).toEqual(['b_f1_p1_0']);
+      await store.deleteCourse('a');
+      expect(await store.listByCourse('a')).toEqual([]);
+      expect(await store.listByCourse('b')).toHaveLength(1);
+    }
   });
 });

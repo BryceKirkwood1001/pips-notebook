@@ -3,9 +3,6 @@
  * ingest pipeline, save, return a PUBLIC shape. It depends only on interfaces; `container.ts`
  * supplies the implementations.
  */
-import { randomUUID } from 'node:crypto';
-import { readFile, readdir } from 'node:fs/promises';
-import path from 'node:path';
 import {
   CourseFixtureSchema,
   QUESTION_TYPES,
@@ -28,6 +25,8 @@ import type { IngestDeps, IngestInput, IngestReport } from '../ingest/types';
 import type { GameplayTasks } from '../llm/types';
 import type { Embedder, Retriever, SourceFile, VectorStore } from '../rag/types';
 import type { Repository, StatsEvent } from '../repo/types';
+import type { SampleSource } from '../samples';
+import { extname, randomHex, stem } from '../util/names';
 import type { Services, UploadInput } from './types';
 
 export interface ServiceDeps {
@@ -43,18 +42,23 @@ export interface ServiceDeps {
   /** Called once per ingest: the mock ingest tasks keep state, so every ingest gets fresh deps. */
   makeIngestDeps: () => IngestDeps;
   runIngest: (deps: IngestDeps, input: IngestInput) => Promise<IngestReport>;
-  /** Folder holding `cache/<sample>.json`. */
-  samplesDir: string;
+  /** The bundled sample lessons. */
+  samples: SampleSource;
   /** Seed for a new run. */
   newSeed: () => number;
-  storage: 'mongodb' | 'memory' | 'local';
+  storage: 'browser' | 'memory';
+  /**
+   * Holds a course's preparation open (the browser takes a Web Lock, so another tab of the game can tell it is
+   * still running). Default: just runs it.
+   */
+  whilePreparing?: (courseId: string, job: () => Promise<void>) => Promise<void>;
 }
 
 const SAMPLE_NAME = /^[a-z0-9][a-z0-9-]{0,63}$/;
 
 /** The file type from the file name, or a 415 for anything we can't read. */
 export function fileTypeOf(name: string): FileType {
-  const ext = path.extname(name).toLowerCase();
+  const ext = extname(name).toLowerCase();
   if (ext === '.pdf') return 'pdf';
   if (ext === '.txt') return 'txt';
   if (ext === '.md' || ext === '.markdown') return 'md';
@@ -186,17 +190,16 @@ export function createServices(deps: ServiceDeps): Services {
 
   // ── Samples ───────────────────────────────────────────────────────────────
 
-  const cacheDir = path.join(deps.samplesDir, 'cache');
-
   async function readFixture(sample: string) {
     if (!SAMPLE_NAME.test(sample)) throw new AppError('not_found', `Sample "${sample}" not found`);
-    let raw: string;
+    let raw: unknown;
     try {
-      raw = await readFile(path.join(cacheDir, `${sample}.json`), 'utf8');
+      raw = await deps.samples.read(sample);
     } catch {
-      throw new AppError('not_found', `Sample "${sample}" not found`);
+      throw new AppError('not_found', `Sample "${sample}" could not be loaded. Check your connection and try again.`);
     }
-    const parsed = CourseFixtureSchema.safeParse(JSON.parse(raw));
+    if (raw === null || raw === undefined) throw new AppError('not_found', `Sample "${sample}" not found`);
+    const parsed = CourseFixtureSchema.safeParse(raw);
     if (!parsed.success) {
       const issue = parsed.error.issues[0];
       throw new Error(`Sample "${sample}" is not a valid fixture: ${issue.path.join('.')}: ${issue.message}`);
@@ -267,25 +270,13 @@ export function createServices(deps: ServiceDeps): Services {
     }),
 
     async listSamples() {
-      let names: string[];
-      try {
-        // Short hand-made demos (demo-*) come first, then the other samples alphabetically.
-        const isDemo = (f: string) => (f.startsWith('demo-') ? 0 : 1);
-        names = (await readdir(cacheDir)).filter((f) => f.endsWith('.json')).sort((a, b) => isDemo(a) - isDemo(b) || a.localeCompare(b));
-      } catch {
-        return { samples: [] };
-      }
-      const samples: { id: string; title: string }[] = [];
-      for (const file of names) {
-        const id = file.replace(/\.json$/, '');
-        if (!SAMPLE_NAME.test(id)) continue;
-        try {
-          const json = JSON.parse(await readFile(path.join(cacheDir, file), 'utf8')) as { pack?: { title?: string } };
-          samples.push({ id, title: json.pack?.title || id });
-        } catch {
-          // An unreadable fixture is simply not offered.
-        }
-      }
+      // Short hand-made demos (demo-*) come first, then the other samples alphabetically.
+      const isDemo = (id: string) => (id.startsWith('demo-') ? 0 : 1);
+      const listed = await deps.samples.list().catch(() => []);
+      const samples = listed
+        .filter((s) => SAMPLE_NAME.test(s.id))
+        .sort((a, b) => isDemo(a.id) - isDemo(b.id) || a.id.localeCompare(b.id))
+        .map((s) => ({ id: s.id, title: s.title || s.id }));
       return { samples };
     },
 
@@ -323,18 +314,19 @@ export function createServices(deps: ServiceDeps): Services {
         data: f.data,
       }));
 
-      const courseId = `crs_${randomUUID().replace(/-/g, '').slice(0, 10)}`;
-      const title = input.title ?? path.basename(files[0].name, path.extname(files[0].name));
+      const courseId = `crs_${randomHex(10)}`;
+      const title = input.title ?? stem(files[0].name);
       await repo.saveCoursePack(emptyCoursePack(courseId, title, clock.now().toISOString()));
 
       // Progressive ingest runs in the background; the client polls GET /courses/:id.
       ingestingCourses.add(courseId);
+      const prepare = async () => {
+        const report = await deps.runIngest(deps.makeIngestDeps(), { courseId, title: input.title, files });
+        if (report.error) console.error(`[ingest] ${courseId} failed: ${report.error}`);
+        else if (!report.ok) console.warn(`[ingest] ${courseId} is ready, but some coverage targets were not met`);
+      };
       const job: Promise<void> = Promise.resolve()
-        .then(() => deps.runIngest(deps.makeIngestDeps(), { courseId, title: input.title, files }))
-        .then((report) => {
-          if (report.error) console.error(`[ingest] ${courseId} failed: ${report.error}`);
-          else if (!report.ok) console.warn(`[ingest] ${courseId} is ready, but some coverage targets were not met`);
-        })
+        .then(() => (deps.whilePreparing ? deps.whilePreparing(courseId, prepare) : prepare()))
         .catch(async (err: unknown) => {
           // runIngest should never reject; if it does, don't leave the pack stuck in 'parsing'.
           console.error(`[ingest] ${courseId} crashed:`, err);
@@ -436,6 +428,8 @@ export function createServices(deps: ServiceDeps): Services {
       }
       return { run, pack, questions, stats, timeBudgets };
     },
+
+    preparing: () => ingests.size,
 
     async idle() {
       while (ingests.size > 0) await Promise.allSettled([...ingests]);

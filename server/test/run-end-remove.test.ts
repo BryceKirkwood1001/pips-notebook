@@ -1,10 +1,9 @@
 /** Ending an expedition early (kept as a read-only record) and removing one permanently. */
+import { IDBFactory } from 'fake-indexeddb';
 import { afterAll, afterEach, beforeAll, describe, expect, it, test } from 'vitest';
-import { mkdtemp, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { createContainer, type Container } from '../src/container';
-import { startTestApp, type TestApp } from './helpers/app';
+import { openBrowserStorage } from '../src/browser/main';
+import type { Container } from '../src/container';
+import { createTestContainer, startTestApp, type TestApp } from './helpers/app';
 import { Bot } from './helpers/bot';
 import { findHiddenKeys } from './helpers/leaks';
 
@@ -76,22 +75,15 @@ describe('removing an expedition', () => {
     const archive = await t.get('/api/archive');
     expect(archive.body.runs.map((r: { id: string }) => r.id)).not.toContain(bot.runId);
   });
-
-  it('the browser may send DELETE from the game origin (CORS preflight)', async () => {
-    const res = await t.app.inject({ method: 'OPTIONS', url: '/api/runs/x', headers: {
-      origin: 'http://localhost:4173', 'access-control-request-method': 'DELETE' } });
-    expect(res.statusCode).toBeLessThan(300);
-    expect(String(res.headers['access-control-allow-methods'])).toContain('DELETE');
-  });
 });
 
-const directories: string[] = [], containers: Container[] = [];
-afterEach(async () => { for (const c of containers.splice(0)) await c.close(); for (const d of directories.splice(0)) await rm(d, { recursive: true, force: true }); });
+const containers: Container[] = [];
+afterEach(async () => { for (const c of containers.splice(0)) await c.close(); });
 
-test('ended and removed expeditions stay that way across a backend restart', async () => {
-  const dataDir = await mkdtemp(join(tmpdir(), 'top-end-remove-')); directories.push(dataDir);
+test('ended and removed expeditions stay that way across a page reload', async () => {
+  const factory = new IDBFactory();
   const env = { LLM_PROVIDER: 'mock', HELP_ME_PROB: '0' };
-  const first = await createContainer({ env, dataDir, seed: 21 });
+  const first = await createTestContainer({ env, storage: await openBrowserStorage({ factory }), seed: 21 });
   const { courseId } = await first.services.seedCourse('seasons');
   const kept = await first.services.createRun({ courseId, targetGrade: 'B' });
   const gone = await first.services.createRun({ courseId, targetGrade: 'B' });
@@ -99,7 +91,7 @@ test('ended and removed expeditions stay that way across a backend restart', asy
   expect(await first.services.deleteRun(gone.id)).toEqual({ deleted: true, id: gone.id });
   await first.close();
 
-  const second = await createContainer({ env, dataDir, seed: 21 }); containers.push(second);
+  const second = await createTestContainer({ env, storage: await openBrowserStorage({ factory }), seed: 21 }); containers.push(second);
   expect((await second.services.getRun(kept.id)).endedAt).toBe(ended.endedAt);
   await expect(second.services.getRun(gone.id)).rejects.toMatchObject({ code: 'not_found' });
   await expect(second.services.teach(kept.id, 'Still words.')).rejects.toMatchObject({ code: 'run_ended' });

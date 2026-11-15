@@ -1370,17 +1370,17 @@ var deterministicMath = (() => {
 })();
 
 // phaser/engine/kernel/src/wrap.ts
-function wrapDelta(d, size) {
-  if (size <= 0) return d;
-  d %= size;
-  if (d > size / 2) d -= size;
-  else if (d < -size / 2) d += size;
+function wrapDelta(d, size2) {
+  if (size2 <= 0) return d;
+  d %= size2;
+  if (d > size2 / 2) d -= size2;
+  else if (d < -size2 / 2) d += size2;
   return d;
 }
-function wrapPos(v, size) {
-  if (size <= 0) return v;
-  v %= size;
-  return v < 0 ? v + size : v;
+function wrapPos(v, size2) {
+  if (size2 <= 0) return v;
+  v %= size2;
+  return v < 0 ? v + size2 : v;
 }
 
 // phaser/engine/kernel/src/maths3d.ts
@@ -2584,10 +2584,10 @@ var KernelHandle = class {
     const f = this.check("frame", v) >>> 0, s = this.slot;
     this.r.frame[s] = f;
     if (this.r.flags[s] & F_AUTOSIZE) {
-      const size = this.r.art?.size(f);
-      if (size) {
-        this.r.width[s] = size.w;
-        this.r.height[s] = size.h;
+      const size2 = this.r.art?.size(f);
+      if (size2) {
+        this.r.width[s] = size2.w;
+        this.r.height[s] = size2.h;
         this.r.touched();
       }
     }
@@ -4308,12 +4308,12 @@ var KernelAssets = class {
   fetchImpl = globalThis.__aeHeadlessFetch ?? (typeof fetch === "function" && typeof document !== "undefined" ? (u, i) => fetch(u, i) : null);
   store = /* @__PURE__ */ new Map();
   urlCache = /* @__PURE__ */ new Map();
-  constructor(size = 2048) {
-    this.size = size;
-    if (typeof OffscreenCanvas !== "undefined") this.image = new OffscreenCanvas(size, size);
+  constructor(size2 = 2048) {
+    this.size = size2;
+    if (typeof OffscreenCanvas !== "undefined") this.image = new OffscreenCanvas(size2, size2);
     else if (typeof document !== "undefined") {
       const c = document.createElement("canvas");
-      c.width = c.height = size;
+      c.width = c.height = size2;
       this.image = c;
     }
     if (this.image) this.ctx = this.image.getContext("2d");
@@ -4860,9 +4860,9 @@ var KernelAssets = class {
     const spriteSize = opts.spriteSize ?? (isFile(source) ? source.spriteSize : void 0) ?? 256;
     const items = (isFile(source) ? fileItems(source, opts.pack).map(packItem) : source).map((it) => {
       if (it.kind === "sprite") {
-        const size = it.size ?? spriteSize;
-        if (!Number.isInteger(size) || size <= 0) throw new Error(`assets.load: sprite "${it.key}" has size ${String(size)}; a size is a whole number of pixels, like 128`);
-        return { kind: "image", key: it.key, url: withBase(base, `${it.file}-${size}.webp`), ...it.atlas !== void 0 ? { atlas: it.atlas } : {} };
+        const size2 = it.size ?? spriteSize;
+        if (!Number.isInteger(size2) || size2 <= 0) throw new Error(`assets.load: sprite "${it.key}" has size ${String(size2)}; a size is a whole number of pixels, like 128`);
+        return { kind: "image", key: it.key, url: withBase(base, `${it.file}-${size2}.webp`), ...it.atlas !== void 0 ? { atlas: it.atlas } : {} };
       }
       if (!("url" in it)) return it;
       const url = withBase(base, it.url);
@@ -6623,13 +6623,13 @@ function createLoadingView(host5, actions) {
       k.vy = k.vy * deterministicMath.exp(-1.3 * dt) + 46 * s * dt;
       k.x += k.vx * dt;
       k.y += k.vy * dt;
-      const t = k.age / k.life, size = deterministicMath.round(t > 0.66 && k.size > 2 * s ? k.size - s : k.size);
-      const a = deterministicMath.pow(1 - t, 1.3), px = deterministicMath.round(k.x - size / 2), py = deterministicMath.round(k.y - size / 2);
+      const t = k.age / k.life, size2 = deterministicMath.round(t > 0.66 && k.size > 2 * s ? k.size - s : k.size);
+      const a = deterministicMath.pow(1 - t, 1.3), px = deterministicMath.round(k.x - size2 / 2), py = deterministicMath.round(k.y - size2 / 2);
       ctx.fillStyle = rgb(k.c);
       ctx.globalAlpha = a * 0.18;
-      ctx.fillRect(px - size, py - size, size * 3, size * 3);
+      ctx.fillRect(px - size2, py - size2, size2 * 3, size2 * 3);
       ctx.globalAlpha = a;
-      ctx.fillRect(px, py, size, size);
+      ctx.fillRect(px, py, size2, size2);
     }
     ctx.globalAlpha = 1;
   };
@@ -8454,9 +8454,9 @@ function installWebGl2(k, deferRegistration = false) {
     gl.bindVertexArray(vao);
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
     const attrs = [[0, 2, 0], [1, 3, 2], [2, 4, 5], [3, 4, 9], [4, 4, 13], [5, 4, 17], [6, 1, 21]];
-    for (const [loc, size, off] of attrs) {
+    for (const [loc, size2, off] of attrs) {
       gl.enableVertexAttribArray(loc);
-      gl.vertexAttribPointer(loc, size, gl.FLOAT, false, STRIDE2, off * 4);
+      gl.vertexAttribPointer(loc, size2, gl.FLOAT, false, STRIDE2, off * 4);
       gl.vertexAttribDivisor(loc, 1);
     }
     gl.bindVertexArray(null);
@@ -8634,7 +8634,7 @@ function installWebGl2(k, deferRegistration = false) {
       gl.blendEquation(b.eq);
       gl.bindBuffer(gl.ARRAY_BUFFER, vbo);
       const attrs = [[0, 2, 0], [1, 3, 2], [2, 4, 5], [3, 4, 9], [4, 4, 13], [5, 4, 17], [6, 1, 21]];
-      for (const [loc, size, off] of attrs) gl.vertexAttribPointer(loc, size, gl.FLOAT, false, STRIDE2, first * STRIDE2 + off * 4);
+      for (const [loc, size2, off] of attrs) gl.vertexAttribPointer(loc, size2, gl.FLOAT, false, STRIDE2, first * STRIDE2 + off * 4);
       gl.drawArraysInstanced(gl.TRIANGLES, 0, grid ? 6 * GRID_X2 * GRID_Y2 : 6, count);
       drawCalls++;
     }
@@ -8787,17 +8787,17 @@ function installWebGl2(k, deferRegistration = false) {
 // game/node_modules/@phaser-ae/render-auto/dist/index.js
 async function selectRenderer(preference, probes, timeoutMs = 1e4, requirements = []) {
   const failures = [];
-  for (const backend of preference === "auto" ? ["webgpu", "webgl2"] : [preference]) {
-    const incompatible = requirements.filter((r) => !r.backends.includes(backend));
+  for (const backend2 of preference === "auto" ? ["webgpu", "webgl2"] : [preference]) {
+    const incompatible = requirements.filter((r) => !r.backends.includes(backend2));
     if (incompatible.length) {
-      failures.push({ backend, reason: `Incompatible with composed packs: ${incompatible.map((r) => r.id).join(", ")}` });
+      failures.push({ backend: backend2, reason: `Incompatible with composed packs: ${incompatible.map((r) => r.id).join(", ")}` });
       continue;
     }
     let expired = false;
     const controller = new AbortController();
     let timer;
     try {
-      const pending = Promise.resolve().then(() => probes[backend](controller.signal));
+      const pending = Promise.resolve().then(() => probes[backend2](controller.signal));
       void pending.then((candidate) => {
         if (expired) candidate.dispose();
       }, () => {
@@ -8811,7 +8811,7 @@ async function selectRenderer(preference, probes, timeoutMs = 1e4, requirements 
       })]);
       return { selected, failures };
     } catch (error) {
-      failures.push({ backend, reason: error instanceof Error ? error.message : String(error) });
+      failures.push({ backend: backend2, reason: error instanceof Error ? error.message : String(error) });
     } finally {
       if (timer !== void 0) clearTimeout(timer);
     }
@@ -8885,7 +8885,7 @@ function renderer(options = {}) {
   return { id: "render-auto", attach(k) {
     const preloader = installPreloader(k);
     let preference = options.backend ?? "auto";
-    let status = "pending", backend = null, error = null;
+    let status = "pending", backend2 = null, error = null;
     let failures = [], candidate = null;
     let gpu, gl, panel2 = null;
     const valid = (value) => {
@@ -8930,8 +8930,8 @@ function renderer(options = {}) {
               installed2.register();
               gl = installed2.gl;
             }
-            backend = candidate.backend;
-            candidate.canvas.dataset.renderer = backend;
+            backend2 = candidate.backend;
+            candidate.canvas.dataset.renderer = backend2;
             status = "ready";
             return;
           } catch (cause) {
@@ -8978,7 +8978,7 @@ function renderer(options = {}) {
       renderer: { get status() {
         return status;
       }, get backend() {
-        return backend;
+        return backend2;
       }, get ready() {
         return status === "ready" && (gpu?.ready ?? gl?.ready ?? false);
       }, get error() {
@@ -15519,7 +15519,7 @@ var uiFontUrls = {
   "mono": "https://cdn.phaser.games/gameblocks/typography/ui/ui-mono-f81a5ceecb6fe7a1e3d9.glb",
   "mono-bold": "https://cdn.phaser.games/gameblocks/typography/ui/ui-mono-bold-5a61ba789e261e3645e2.glb"
 };
-function createFace(api2, source, size) {
+function createFace(api2, source, size2) {
   const cache = /* @__PURE__ */ new Map();
   return {
     get font() {
@@ -15529,14 +15529,14 @@ function createFace(api2, source, size) {
       return source.loaded;
     },
     ready: source.ready,
-    size,
-    lineHeight: size * 1.3,
+    size: size2,
+    lineHeight: size2 * 1.3,
     measure(text2, scale2 = 1, spacing = 0) {
       if (!source.loaded) return 0;
       const font = source.font, key = JSON.stringify([text2, scale2, spacing]);
       const found = cache.get(key);
       if (found !== void 0) return found;
-      const probe = api2.write({ font, text: text2, style: { fontSize: size * scale2, letterSpacing: spacing * scale2, lineHeight: 1.3 } });
+      const probe = api2.write({ font, text: text2, style: { fontSize: size2 * scale2, letterSpacing: spacing * scale2, lineHeight: 1.3 } });
       let width;
       try {
         const layout = probe.glyphs();
@@ -17153,12 +17153,12 @@ function assertGeometryAccessors(accessors, views, name) {
     }
     const offset = accessor.offset ?? 0;
     if (!Number.isSafeInteger(offset) || offset < 0) throw new RangeError(`${label} needs a nonnegative byte offset`);
-    const size = componentSizes[accessor.componentType];
+    const size2 = componentSizes[accessor.componentType];
     const absoluteOffset = views[accessor.view].offset + offset;
-    if (absoluteOffset % size !== 0) {
-      throw new RangeError(`${label} absolute byte offset ${absoluteOffset} is not aligned to ${size} bytes`);
+    if (absoluteOffset % size2 !== 0) {
+      throw new RangeError(`${label} absolute byte offset ${absoluteOffset} is not aligned to ${size2} bytes`);
     }
-    const span2 = offset + checkedSpan(accessor.count, accessor.components, size, label);
+    const span2 = offset + checkedSpan(accessor.count, accessor.components, size2, label);
     if (span2 > views[accessor.view].length) {
       throw new RangeError(`${label} reads past its buffer view (${span2} of ${views[accessor.view].length} bytes)`);
     }
@@ -17242,8 +17242,8 @@ function assertGeometryDrawRange(range, limit, name, indexed, topology) {
     throw new RangeError(`${label} count ${range.count} does not contain complete ${topology} primitives`);
   }
 }
-function checkedSpan(count, components, size, label) {
-  const span2 = count * components * size;
+function checkedSpan(count, components, size2, label) {
+  const span2 = count * components * size2;
   if (!Number.isSafeInteger(span2)) throw new RangeError(`${label} exceeds a safe byte span`);
   return span2;
 }
@@ -28919,7 +28919,7 @@ function typography2(options = {}) {
   return {
     id: "typography",
     attach(k) {
-      let root, ready, disposed = false;
+      let root, ready2, disposed = false;
       const families = /* @__PURE__ */ new Map();
       const uiFonts = /* @__PURE__ */ new Map(), standIns = /* @__PURE__ */ new Map();
       const uiFont = (family) => {
@@ -29077,17 +29077,17 @@ function typography2(options = {}) {
           const named = css.replace(/^.*?[\d.]+px\s*/, "").split(",")[0]?.trim().replace(/[\"']/g, "").toLowerCase();
           const selected = !requested && named && families.has(named) ? named : family;
           const bold = /\b(bold|[6-9]00)\b/i.test(css);
-          const size = options2.size ?? Number(/([\d.]+)px/.exec(css)?.[1] ?? 14);
+          const size2 = options2.size ?? Number(/([\d.]+)px/.exec(css)?.[1] ?? 14);
           for (const key of bold ? [selected + "-bold", selected] : [selected]) {
             const font = families.get(key);
-            if (font) return createFace(api2, { font, loaded: true, ready: settled }, size);
+            if (font) return createFace(api2, { font, loaded: true, ready: settled }, size2);
             if (!Object.hasOwn(uiFontUrls, key)) continue;
             const record2 = uiFont(key);
             return createFace(api2, { get font() {
               return record2.font ?? record2.standIn;
             }, get loaded() {
               return record2.font !== void 0;
-            }, ready: record2.ready }, size);
+            }, ready: record2.ready }, size2);
           }
           throw new Error('Typography has no family "' + family + '": use sans, serif or mono, or registerFamily() a loaded font first');
         },
@@ -29098,8 +29098,8 @@ function typography2(options = {}) {
         },
         ready(wasm) {
           if (disposed) return Promise.reject(new Error("Typography is disposed"));
-          if (ready) return ready;
-          ready = (async () => {
+          if (ready2) return ready2;
+          ready2 = (async () => {
             if (!typography.initialized && typeof document === "undefined" && !wasm && !shaperWasm && !shaperUrl) await typography.init();
             if (!typography.initialized) {
               const url = shaperUrl ?? `${options.assets ?? "/typography/"}text-shaper.wasm`;
@@ -29129,10 +29129,10 @@ function typography2(options = {}) {
             });
             root = typography.handle(name, config);
           })().catch((error) => {
-            ready = void 0;
+            ready2 = void 0;
             throw error;
           });
-          return ready;
+          return ready2;
         },
         async load(source, format = "msdf") {
           await api2.ready();
@@ -29456,15 +29456,15 @@ function typography2(options = {}) {
         matrix[15] = 1;
         return { matrix, width, height, alpha: table2.alpha[i], clip, snap };
       };
-      const draw = (pass, backend, table2, first, count) => {
+      const draw = (pass, backend2, table2, first, count) => {
         if (!root) return;
-        if (backend && context !== backend.gl) {
+        if (backend2 && context !== backend2.gl) {
           gl?.dispose();
-          context = backend.gl;
+          context = backend2.gl;
           gl = new TextGlRenderer(context);
         }
-        const size = backend ?? bag;
-        if (!size) return;
+        const size2 = backend2 ?? bag;
+        if (!size2) return;
         const items = [];
         for (let i = first; i < first + count; i++) {
           const h = k.roster.bySlot(table2.order[i]);
@@ -29475,17 +29475,17 @@ function typography2(options = {}) {
           const v = view(
             table2,
             i,
-            size.width,
-            size.height,
-            size.logicalWidth,
-            size.logicalHeight,
+            size2.width,
+            size2.height,
+            size2.logicalWidth,
+            size2.logicalHeight,
             t?.transform.clip ?? d?.clip ?? [-1e20, -1e20, 1e20, 1e20],
             t?.spec.pixelSnapping ?? d?.pixelSnapping ?? true
           );
           if (d) v.fill = d.fill;
           for (const item of draws) items.push({ draw: item, view: v });
         }
-        if (backend) gl.drawBatch(items);
+        if (backend2) gl.drawBatch(items);
         else if (pass) gpu?.drawBatch(pass, items);
       };
       k.frame.addPass(
@@ -29498,8 +29498,8 @@ function typography2(options = {}) {
           const gpuBag = ctx.backend.webgpu;
           const glBag = ctx.backend.webgl2;
           const surface = ctx.backend.render3d;
-          const size = glBag ?? gpuBag;
-          if (!size || !glBag && !surface) return;
+          const size2 = glBag ?? gpuBag;
+          if (!size2 || !glBag && !surface) return;
           const tables = ctx.layers.filter(
             (t) => t.kind === "meshes3d" && t.flags.subarray(0, t.count).includes(DRAWER)
           );
@@ -29546,8 +29546,8 @@ function typography2(options = {}) {
               model2[15] = 1;
               const v = {
                 matrix: mat4Mul(camera.viewProj, model2),
-                width: size.width,
-                height: size.height,
+                width: size2.width,
+                height: size2.height,
                 alpha: table2.alpha[i],
                 clip: t?.transform.clip ?? d?.clip ?? [-1e20, -1e20, 1e20, 1e20],
                 snap: false,
@@ -29566,7 +29566,7 @@ function typography2(options = {}) {
         name: "typography",
         id: DRAWER,
         draw: (pass, t, f, n) => draw(pass, void 0, t, f, n),
-        drawGl: (backend, t, f, n) => draw(void 0, backend, t, f, n)
+        drawGl: (backend2, t, f, n) => draw(void 0, backend2, t, f, n)
       });
       k.hooks.on("scene.kill", ({ handle }) => {
         texts.get(handle)?.text.dispose();
@@ -29601,10 +29601,10 @@ function typography2(options = {}) {
         object(h) {
           const t = texts.get(h);
           if (!t || t.text.disposed) return void 0;
-          const m = t.text.measure(), size = t.spec.style?.fontSize, color2 = t.spec.style?.color;
+          const m = t.text.measure(), size2 = t.spec.style?.fontSize, color2 = t.spec.style?.color;
           return {
             text: t.spec.text,
-            ...size === void 0 ? {} : { size },
+            ...size2 === void 0 ? {} : { size: size2 },
             ...color2 === void 0 ? {} : { color: color2 },
             ...m.width ? { box: { x: h.x + m.width / 2, y: h.y + m.height / 2, width: m.width, height: m.height } } : { waiting: "font not arrived; nothing drawn yet" }
           };
@@ -30451,18 +30451,18 @@ var Audio = class _Audio {
       let timeout;
       const finish = (error) => {
         clearTimeout(timeout);
-        el2.removeEventListener("canplay", ready);
+        el2.removeEventListener("canplay", ready2);
         el2.removeEventListener("error", failed);
         if (this.finishMusicLoad === cancel) this.finishMusicLoad = null;
         if (error) reject(error);
         else resolve();
       };
-      const ready = () => finish(), failed = () => finish(new Error(`audio: music ${label} could not load`)), cancel = () => finish();
+      const ready2 = () => finish(), failed = () => finish(new Error(`audio: music ${label} could not load`)), cancel = () => finish();
       this.finishMusicLoad = cancel;
-      el2.addEventListener("canplay", ready, { once: true });
+      el2.addEventListener("canplay", ready2, { once: true });
       el2.addEventListener("error", failed, { once: true });
       timeout = setTimeout(() => finish(new Error(`audio: music ${label} timed out`)), 3e4);
-      if (el2.readyState >= 3) ready();
+      if (el2.readyState >= 3) ready2();
       else if (el2.error) failed();
     })).catch((error) => console.warn("audio: music failed to load", error));
     el2.src = url;
@@ -31553,8 +31553,8 @@ var BrowserUi = class {
     this.nodes.clear();
   }
 };
-function strokeStamps(size, width) {
-  const reach = deterministicMath.max(0, deterministicMath.min(width, size * 0.045 - 0.5));
+function strokeStamps(size2, width) {
+  const reach = deterministicMath.max(0, deterministicMath.min(width, size2 * 0.045 - 0.5));
   const ring = width - reach;
   const offsets = [[0, 0]];
   if (ring > 0.05) {
@@ -31568,10 +31568,10 @@ function createUiFont(api2, font) {
   const wraps = /* @__PURE__ */ new Map();
   const capitals = /* @__PURE__ */ new Map();
   return {
-    caps(size) {
-      const found = capitals.get(size);
+    caps(size2) {
+      const found = capitals.get(size2);
       if (found) return found;
-      const probe = api2.write({ font, text: "H", style: { fontSize: size, lineHeight: 1.3 } });
+      const probe = api2.write({ font, text: "H", style: { fontSize: size2, lineHeight: 1.3 } });
       let out = null;
       try {
         probe.glyphs();
@@ -31580,14 +31580,14 @@ function createUiFont(api2, font) {
       } finally {
         probe.dispose();
       }
-      if (out) capitals.set(size, out);
+      if (out) capitals.set(size2, out);
       return out;
     },
-    measure(text2, size, spacing = 0) {
-      const key = JSON.stringify([text2, size, spacing]);
+    measure(text2, size2, spacing = 0) {
+      const key = JSON.stringify([text2, size2, spacing]);
       let width = cache.get(key);
       if (width === void 0) {
-        const probe = api2.write({ font, text: text2, style: { fontSize: size, lineHeight: 1.3, ...spacing ? { letterSpacing: spacing } : {} } });
+        const probe = api2.write({ font, text: text2, style: { fontSize: size2, lineHeight: 1.3, ...spacing ? { letterSpacing: spacing } : {} } });
         try {
           const layout = probe.glyphs();
           width = probe.measure().width;
@@ -31598,13 +31598,13 @@ function createUiFont(api2, font) {
         if (cache.size >= 512) cache.delete(cache.keys().next().value);
         cache.set(key, width);
       }
-      return { width, height: size * 1.3 };
+      return { width, height: size2 * 1.3 };
     },
-    wrap(text2, size, width, spacing = 0) {
-      const key = JSON.stringify([text2, size, width, spacing]);
+    wrap(text2, size2, width, spacing = 0) {
+      const key = JSON.stringify([text2, size2, width, spacing]);
       const found = wraps.get(key);
       if (found) return found;
-      const probe = api2.write({ font, text: text2, style: { fontSize: size, lineHeight: 1.3, ...spacing ? { letterSpacing: spacing } : {} }, layout: { wrap: "word" }, constraints: { width: { mode: "exact", size: deterministicMath.max(1, width) } } });
+      const probe = api2.write({ font, text: text2, style: { fontSize: size2, lineHeight: 1.3, ...spacing ? { letterSpacing: spacing } : {} }, layout: { wrap: "word" }, constraints: { width: { mode: "exact", size: deterministicMath.max(1, width) } } });
       let lines;
       try {
         lines = probe.measure().lines.map((line) => text2.slice(line.textStart, line.textEnd).replace(/[\r\n]+$/, ""));
@@ -31629,10 +31629,10 @@ function createUiFont(api2, font) {
       return {
         handle,
         text: text2,
-        set(value, size, color2, fx) {
+        set(value, size2, color2, fx) {
           const fxKey = fx ? JSON.stringify(fx) : "";
-          if (value === prior && size === priorSize && color2 === priorColor && fxKey === priorFx) return;
-          const base = { fontSize: size, lineHeight: 1.3, ...fx?.spacing ? { letterSpacing: fx.spacing } : {} };
+          if (value === prior && size2 === priorSize && color2 === priorColor && fxKey === priorFx) return;
+          const base = { fontSize: size2, lineHeight: 1.3, ...fx?.spacing ? { letterSpacing: fx.spacing } : {} };
           text2.set({ text: value, style: {
             ...base,
             color: color2,
@@ -31642,7 +31642,7 @@ function createUiFont(api2, font) {
           } });
           const want = [];
           if (fx?.stroke || fx?.depth) {
-            const { offsets, reach } = strokeStamps(size, fx.stroke?.width ?? 0);
+            const { offsets, reach } = strokeStamps(size2, fx.stroke?.width ?? 0);
             if (fx.depth) for (const [dx, dy] of offsets) want.push({ color: fx.depth.color, outline: reach, dx, dy: dy + fx.depth.offset, dz: -2e-3 });
             if (fx.stroke) for (const [dx, dy] of offsets) want.push({ color: fx.stroke.color, outline: reach, dx, dy, dz: -1e-3 });
           }
@@ -31659,7 +31659,7 @@ function createUiFont(api2, font) {
             c.text.set({ text: value, style: { ...base, color: w.color, ...w.outline > 0 ? { outline: { color: w.color, width: w.outline } } : {} } });
           });
           prior = value;
-          priorSize = size;
+          priorSize = size2;
           priorColor = color2;
           priorFx = fxKey;
         },
@@ -31875,8 +31875,8 @@ function readUiDialogue(raw) {
   if (r.panel && typeof r.panel === "object") out.panel = readUiStyle(r.panel);
   for (const k of ["ink", "accent", "nameInk"]) if (isUiColor(r[k])) out[k] = r[k].toLowerCase();
   if (typeof r.motif === "string" && MOTIFS.includes(r.motif)) out.motif = r.motif;
-  const size = num(r.size);
-  if (size !== null) out.size = clampN(size, 10, 64);
+  const size2 = num(r.size);
+  if (size2 !== null) out.size = clampN(size2, 10, 64);
   const font = str(r.font, 80);
   if (font) out.font = font;
   const frame2 = readUiFrame(r.frame);
@@ -32311,15 +32311,15 @@ var UI_ICON_PATHS = {
   headphones: ["M253.4 142.5v67.5c0 16-13 28.9-28.9 28.9h-19.3c-16 0-28.9-13-28.9-28.9v-48.2c0-16 13-28.9 28.9-28.9h28.5c-4.8-54.4-50.3-96.3-104.9-96.5h-.8C73.1 36.3 27.3 78.2 22.3 132.8H50.8c16 0 28.9 13 28.9 28.9v48.2c0 16-13 28.9-28.9 28.9H31.5C15.5 239 2.6 226 2.6 210v-67.5C2.7 45.8 107.4-14.5 191 33.9c9.5 5.5 18.3 12.3 26.1 20.1 23.4 23.5 36.4 55.3 36.3 88.5Z"],
   vibrate: ["M186.5 52.8L186.5 203.2A25.1 25.1 0 0 1 161.4 228.3L94.6 228.3A25.1 25.1 0 0 1 69.5 203.2L69.5 52.8A25.1 25.1 0 0 1 94.6 27.7L161.4 27.7A25.1 25.1 0 0 1 186.5 52.8ZM211.6 77.8A8.4 8.4 0 0 0 203.2 86.2L203.2 169.8A8.4 8.4 0 0 0 220 169.8L220 86.2A8.4 8.4 0 0 0 211.6 77.8ZM245 94.6A8.4 8.4 0 0 0 236.7 102.9L236.7 153.1A8.4 8.4 0 0 0 253.4 153.1L253.4 102.9A8.4 8.4 0 0 0 245 94.6ZM44.4 77.8A8.4 8.4 0 0 0 36 86.2L36 169.8A8.4 8.4 0 0 0 52.8 169.8L52.8 86.2A8.4 8.4 0 0 0 44.4 77.8ZM11 94.6A8.4 8.4 0 0 0 2.6 102.9L2.6 153.1A8.4 8.4 0 0 0 19.3 153.1L19.3 102.9A8.4 8.4 0 0 0 11 94.6Z"]
 };
-function drawUiIcon(ctx, name, size, color2 = "#ffffff", stroke = 0) {
+function drawUiIcon(ctx, name, size2, color2 = "#ffffff", stroke = 0) {
   if (typeof Path2D === "undefined") return;
   ctx.save();
-  ctx.scale(size / 256, size / 256);
+  ctx.scale(size2 / 256, size2 / 256);
   ctx.fillStyle = color2;
   ctx.strokeStyle = color2;
   ctx.lineJoin = "round";
   ctx.lineCap = "round";
-  const grow = deterministicMath.max(0, stroke) * 256 / size;
+  const grow = deterministicMath.max(0, stroke) * 256 / size2;
   const drawn = name === "music-off" ? "music-on" : name === "arrow-left" || name === "undo" ? UI_ICON_ALIASES[name] : name;
   for (const d of UI_ICON_PATHS[drawn]) {
     const path = new Path2D(d);
@@ -32473,14 +32473,14 @@ function ui() {
         }
       };
       const fontWaits = /* @__PURE__ */ new Set();
-      const repaintWhenLoaded = (ready) => {
-        if (fontWaits.has(ready)) return;
-        fontWaits.add(ready);
-        ready.then(() => {
-          fontWaits.delete(ready);
+      const repaintWhenLoaded = (ready2) => {
+        if (fontWaits.has(ready2)) return;
+        fontWaits.add(ready2);
+        ready2.then(() => {
+          fontWaits.delete(ready2);
           if (fontsReady) repaintAll();
         }, () => {
-          fontWaits.delete(ready);
+          fontWaits.delete(ready2);
         });
       };
       const restyleAll = () => {
@@ -32731,9 +32731,9 @@ function ui() {
          * grows to it; a fixed one returns the scale that shrinks both to fit (never below 0.3). The caption is
          * never taller than the face.
          */
-        fitCaption(st, textW, size) {
+        fitCaption(st, textW, size2) {
           const b = this.faceBox(st), content2 = textW + 2 * st.textStroke + (b.icon ? b.icon + (textW > 0 ? b.gap : 0) : 0);
-          const tall = deterministicMath.min(1, b.faceH * 0.78 / deterministicMath.max(1, size));
+          const tall = deterministicMath.min(1, b.faceH * 0.78 / deterministicMath.max(1, size2));
           if (this.fitW && !this.stretched()) {
             const want = deterministicMath.max(this.h, deterministicMath.ceil(content2 * tall + b.pad * 2));
             if (deterministicMath.abs(want - this._w) > 0.5) this._w = want;
@@ -32849,30 +32849,30 @@ function ui() {
             this.clearFont();
             this.activeFont = adapter;
           }
-          let size = parseFloat(/([\d.]+)px/.exec(st.font)?.[1] ?? "15");
+          let size2 = parseFloat(/([\d.]+)px/.exec(st.font)?.[1] ?? "15");
           const spacing = st.letterSpacing;
-          let fx = textEffects(st), metrics = adapter.measure(text2, size, spacing);
+          let fx = textEffects(st), metrics = adapter.measure(text2, size2, spacing);
           if (!field && (this.kind === "button" || this.kind === "dropdown")) {
-            const k2 = this.fitCaption(st, metrics.width, size);
+            const k2 = this.fitCaption(st, metrics.width, size2);
             if (k2 < 0.999) {
-              size = deterministicMath.max(4, size * k2);
+              size2 = deterministicMath.max(4, size2 * k2);
               fx = scaleEffects(fx, k2);
-              metrics = adapter.measure(text2, size, spacing);
+              metrics = adapter.measure(text2, size2, spacing);
             }
           } else if (this.kind === "label" && st.designHeight > 0) {
             const k2 = deterministicMath.max(0.3, deterministicMath.min(1, (this.w - 8 - 2 * st.textStroke) / deterministicMath.max(1, metrics.width)));
             if (k2 < 0.999) {
-              size = deterministicMath.max(4, size * k2);
+              size2 = deterministicMath.max(4, size2 * k2);
               fx = scaleEffects(fx, k2);
-              metrics = adapter.measure(text2, size, spacing);
+              metrics = adapter.measure(text2, size2, spacing);
             }
           }
-          const lh = adapter.measure(" ", size).height;
+          const lh = adapter.measure(" ", size2).height;
           const tw = field ? deterministicMath.max(4, deterministicMath.floor(this.w - 16)) : deterministicMath.max(1, metrics.width + 8);
           const th = field ? deterministicMath.max(4, deterministicMath.floor(this.h - 12)) : deterministicMath.max(1, metrics.height + 4);
-          const measure = { measureText: (t) => ({ width: adapter.measure(t, size, spacing).width }) };
+          const measure = { measureText: (t) => ({ width: adapter.measure(t, size2, spacing).width }) };
           const empty = field && !this._textValue.length;
-          const lines = field && this.kind === "textarea" ? adapter.wrap(text2, size, tw, spacing) : text2.split("\n");
+          const lines = field && this.kind === "textarea" ? adapter.wrap(text2, size2, tw, spacing) : text2.split("\n");
           let cl = 0, cc = this.caret, acc = 0;
           for (let i = 0; i < lines.length; i++) {
             const value = lines[i];
@@ -32900,9 +32900,9 @@ function ui() {
               r = { line: adapter.create(this.uiLayer, this.label.z), x: 0, y: 0 };
               this.fontLines.push(r);
             }
-            r.line.set(line, size, color2, fx);
+            r.line.set(line, size2, color2, fx);
             r.x = field ? this.lineOffset(measure, line, tw) - inputOff : (tw - measure.measureText(line).width) / 2;
-            const caps = !field && st.textBox === "caps" && visible.length === 1 ? adapter.caps(size) : null;
+            const caps = !field && st.textBox === "caps" && visible.length === 1 ? adapter.caps(size2) : null;
             r.y = field && this.kind === "textarea" ? i * lh : caps ? th / 2 - (caps.top + caps.baseline) / 2 : (th - lh) / 2;
           });
           this.caretRect = null;
@@ -33098,7 +33098,7 @@ function ui() {
           let cursor = j === "center" ? (main - total) / 2 : j === "end" ? main - total : j === "space-around" && kids.length ? (main - total + gap * (kids.length - 1)) / (kids.length * 2) : 0;
           const step = j === "space-between" && kids.length > 1 ? (main - sizes.reduce((a, b) => a + b, 0)) / (kids.length - 1) : j === "space-around" && kids.length ? (main - sizes.reduce((a, b) => a + b, 0)) / kids.length : gap;
           kids.forEach((c, i) => {
-            const a = c.alignSelf ?? L.align ?? "center", size = col ? c.outerW : c.h, crossPos = a === "stretch" ? 0 : a === "center" ? (cross2 - size) / 2 : a === "end" ? cross2 - size : 0;
+            const a = c.alignSelf ?? L.align ?? "center", size2 = col ? c.outerW : c.h, crossPos = a === "stretch" ? 0 : a === "center" ? (cross2 - size2) / 2 : a === "end" ? cross2 - size2 : 0;
             if (a === "stretch") {
               if (col) {
                 if (c.w !== cross2) {
@@ -33171,14 +33171,14 @@ function ui() {
          * hard shadow (`textShadowX/Y`) are its silhouette, grown and tinted, on sprites behind it. A game's own
          * picture shows as it is.
          */
-        placeIconBack(st, x, y, size, visible) {
+        placeIconBack(st, x, y, size2, visible) {
           const name = this._icon, engine = isEngineIcon(name), seen = (c) => rgba(c) >>> 24 !== 0;
           const want = engine ? [
             st.textDepth > 0 && seen(st.textDepthColor) ? { grow: st.textStroke, color: st.textDepthColor, dx: 0, dy: st.textDepth } : null,
             st.textStroke > 0 && seen(st.textStrokeColor) ? { grow: st.textStroke, color: st.textStrokeColor, dx: 0, dy: 0 } : null,
             (st.textShadowX || st.textShadowY) && seen(st.textShadowColor) ? { grow: 0, color: st.textShadowColor, dx: st.textShadowX, dy: st.textShadowY } : null
           ] : [null, null, null];
-          const full = size * (64 + ICON_PAD * 2) / 64, z = this.iconPart.z;
+          const full = size2 * (64 + ICON_PAD * 2) / 64, z = this.iconPart.z;
           want.forEach((w, i) => {
             let h = this.iconBack[i] ?? null;
             if (!w) {
@@ -33189,7 +33189,7 @@ function ui() {
               h = k.roster.spawn({ id: "ui-icon-back", owner: "ui", tags: ["ui"], x: 0, y: 0, layer: this.uiLayer, z, width: 1, height: 1, visible: false });
               this.iconBack[i] = h;
             }
-            const key = iconMask(name, w.grow * 64 / deterministicMath.max(1, size));
+            const key = iconMask(name, w.grow * 64 / deterministicMath.max(1, size2));
             if (h.texture !== key) h.texture = key;
             h.x = x + w.dx;
             h.y = y + w.dy;
@@ -33322,20 +33322,20 @@ function ui() {
           if (this.iconPart) {
             const withText = !!this.label && this._text.length > 0 && this.kind !== "input" && this.kind !== "textarea";
             const b = onFace ? this.faceBox(st) : null;
-            const size = b ? deterministicMath.max(1, deterministicMath.round(withText ? b.icon * this.fitScale : deterministicMath.min(b.icon, this._w - 2 * (st.border + 3), b.faceH * 0.92))) : this.spec.iconSize ?? deterministicMath.round(deterministicMath.min(boxed ? box2 : this.w, this.h) * 0.6);
-            const gap = deterministicMath.round(size * 0.3);
+            const size2 = b ? deterministicMath.max(1, deterministicMath.round(withText ? b.icon * this.fitScale : deterministicMath.min(b.icon, this._w - 2 * (st.border + 3), b.faceH * 0.92))) : this.spec.iconSize ?? deterministicMath.round(deterministicMath.min(boxed ? box2 : this.w, this.h) * 0.6);
+            const gap = deterministicMath.round(size2 * 0.3);
             let ix = (boxed ? boxX : c.x) + ox;
             if (withText) {
-              this.label.x += (size + gap) / 2;
-              ix = this.label.x - this.label.width / 2 - gap - size / 2;
+              this.label.x += (size2 + gap) / 2;
+              ix = this.label.x - this.label.width / 2 - gap - size2 / 2;
             }
             this.iconPart.x = ix;
             this.iconPart.y = c.y + oy + fy;
-            this.iconPart.width = size;
-            this.iconPart.height = size;
+            this.iconPart.width = size2;
+            this.iconPart.height = size2;
             this.iconPart.visible = shown && this.showIcon();
             this.iconPart.tint = isEngineIcon(this._icon) ? st.textColor : "#ffffff";
-            this.placeIconBack(st, ix, this.iconPart.y, size, this.iconPart.visible);
+            this.placeIconBack(st, ix, this.iconPart.y, size2, this.iconPart.visible);
           }
           this.clipLabel();
           this.placeScrollbar();
@@ -34381,8 +34381,8 @@ function ui() {
           encoder3.draw(6, r.count, 0, r.first);
         }
       };
-      k.registry.add("drawer", { name: "ui", id: UI_DRAWER_ID, draw: drawPanels, drawGl: (backend, table2, first, count) => {
-        glBag = backend;
+      k.registry.add("drawer", { name: "ui", id: UI_DRAWER_ID, draw: drawPanels, drawGl: (backend2, table2, first, count) => {
+        glBag = backend2;
         try {
           drawPanels(null, table2, first, count);
         } finally {
@@ -35442,8 +35442,8 @@ function renderTexture() {
         const canvas = new OffscreenCanvas(W, H);
         const g = canvas.getContext("2d");
         const big = k.assets.isPicture(W, H);
-        const size = `${big ? "own:" : ""}${W}x${H}`;
-        const reused = spare.get(size)?.pop();
+        const size2 = `${big ? "own:" : ""}${W}x${H}`;
+        const reused = spare.get(size2)?.pop();
         const frame2 = reused ?? (big ? k.assets.addCanvas(`texture-${++n}`, canvas, W, H) : k.assets.addStrip(`texture-${++n}`, canvas, W, H, 1));
         const h = k.spawn({ id: spec.id ?? "texture", owner: "render-texture", tags: spec.tags ?? ["texture"], x: spec.x ?? (screen2 ? k.screen.width / 2 : 0), y: spec.y ?? (screen2 ? k.screen.height / 2 : 0), width: W, height: H, frame: frame2, layer: spec.layer, visible: spec.visible });
         let flushes = 0;
@@ -35582,7 +35582,7 @@ function renderTexture() {
         };
         if (spec.clear !== false) t.clear();
         if (reused !== void 0) k.assets.redraw(frame2, canvas);
-        live.set(h, { frame: frame2, size });
+        live.set(h, { frame: frame2, size: size2 });
         return t;
       };
       k.registry.add("texture", { name: "texture", create });
@@ -37243,8 +37243,8 @@ var Emitter = class _Emitter {
       if (this.delay[i] > 0) continue;
       const life = this.life[i], age = deterministicMath.min(this.age[i] + alpha * dt * this.timeScale, life), t = age / life;
       const x = this.px[i] + (this.x[i] - this.px[i]) * alpha + ox, y = this.py[i] + (this.y[i] - this.py[i]) * alpha + oy;
-      const fr2 = this.frame[i], rect2 = this.sys.assets.framePlace(fr2), size = this.size[i];
-      const base = size > 0 ? size / deterministicMath.max(rect2.w, rect2.h) : 1;
+      const fr2 = this.frame[i], rect2 = this.sys.assets.framePlace(fr2), size2 = this.size[i];
+      const base = size2 > 0 ? size2 / deterministicMath.max(rect2.w, rect2.h) : 1;
       let sx = this.lifeVal(i, 5, t) * base * this.smx[i], sy = this.lifeVal(i, 6, t) * base * this.smy[i];
       const w = rect2.w * sx, h = rect2.h * sy, r = deterministicMath.max(deterministicMath.abs(w), deterministicMath.abs(h));
       if (x + r < view.x || x - r > view.x + view.w || y + r < view.y || y - r > view.y + view.h) continue;
@@ -38200,8 +38200,8 @@ var hex3 = (where, c) => {
 function typographyText(typography3) {
   return (value, x, y, style = {}) => {
     if (style.color !== void 0) hex3("text", style.color);
-    const size = style.size ?? 24;
-    const face = typography3.face({ family: style.font ?? "sans", size });
+    const size2 = style.size ?? 24;
+    const face = typography3.face({ family: style.font ?? "sans", size: size2 });
     const label = typography3.label({
       text: String(value),
       x,
@@ -38943,8 +38943,9 @@ var ApiError = class extends Error {
     this.code = code;
   }
 };
+var BACKEND_ORIGIN = "https://backend.pips-notebook.invalid";
 function createApiClient(options = {}) {
-  const base = (options.baseUrl ?? "http://localhost:8787").replace(/\/+$/, "") + "/api";
+  const base = (options.baseUrl ?? BACKEND_ORIGIN).replace(/\/+$/, "") + "/api";
   const doFetch = options.fetch ?? ((input, init) => globalThis.fetch(input, init));
   async function request(method, path, body, form) {
     const init = { method };
@@ -38977,14 +38978,16 @@ function createApiClient(options = {}) {
   }
   const enc = encodeURIComponent;
   return {
-    /** Local backend setup. Keys are write-only; blank key inputs should be omitted. */
+    /** AI provider setup. Keys are write-only and stay in this browser; blank key inputs should be omitted. */
     getApiSettings: () => request("GET", "/settings/api"),
     updateApiSettings: (body) => request("POST", "/settings/api", body),
     testApiSettings: (body) => request("POST", "/settings/api/test", body),
-    /** Where dungeons are saved. Saving switches storage right away; the connection string is write-only. */
+    /** What is saved in this browser. */
     getStorageSettings: () => request("GET", "/settings/storage"),
-    updateStorageSettings: (body) => request("POST", "/settings/storage", body),
-    testStorageSettings: (body) => request("POST", "/settings/storage/test", body),
+    /** GET /backup: every dungeon and expedition, for a JSON file the player keeps. */
+    exportBackup: () => request("GET", "/backup"),
+    /** POST /backup: adds the dungeons of a backup. Ones already saved here are skipped. */
+    importBackup: (backup) => request("POST", "/backup", backup),
     /** GET /health */
     health: () => request("GET", "/health"),
     /** GET /samples: the cached sample packs that seedCourse() accepts. */
@@ -39049,6 +39052,36 @@ function createApiClient(options = {}) {
     /** GET /runs/:id/debug: everything, hidden fields included. 404 unless the server has DEBUG=true. */
     getDebug: (runId) => request("GET", `/runs/${enc(runId)}/debug`)
   };
+}
+
+// game/course/backend.ts
+var loading;
+var ready;
+function backend() {
+  loading ??= (async () => {
+    const url = new URL("./backend.js", import.meta.url).href;
+    const module = await import(
+      /* @vite-ignore */
+      url
+    );
+    return ready = await module.start();
+  })();
+  loading.catch(() => {
+    loading = void 0;
+  });
+  return loading;
+}
+var localFetch = async (input, init) => {
+  let started;
+  try {
+    started = await backend();
+  } catch (error) {
+    throw new TypeError("The game could not load (backend.js). Check your connection, then reload the page. " + (error instanceof Error ? error.message : ""));
+  }
+  return started.fetch(input, init);
+};
+function preparingUploads() {
+  return (ready?.preparing() ?? 0) > 0;
 }
 
 // game/course/ui.ts
@@ -39353,14 +39386,14 @@ ${list2.map((n) => `- ${n}
   };
   const course = () => {
     const stage2 = polls < 2 ? "parsing" : polls < 3 ? "outline" : polls < 6 ? "concepts" : "ready";
-    const ready = (id2) => id2 === "r1" ? polls >= 3 : polls >= 6;
+    const ready2 = (id2) => id2 === "r1" ? polls >= 3 : polls >= 6;
     return {
       id: "mock-course",
       title: "Seasons (mock)",
       status: { stage: stage2, conceptsReady: [] },
       files: [],
-      units: [{ id: "u1", title: "Unit 1: The sky", concepts: ROOMS.flatMap((r) => r.concepts.map((c) => ({ ...c, ready: ready(r.id) }))) }],
-      rooms: ROOMS.map((r) => ({ id: r.id, title: r.title, description: r.description, ...r.learningObjectives ? { learningObjectives: r.learningObjectives } : {}, conceptIds: r.concepts.map((c) => c.id), ready: ready(r.id) })),
+      units: [{ id: "u1", title: "Unit 1: The sky", concepts: ROOMS.flatMap((r) => r.concepts.map((c) => ({ ...c, ready: ready2(r.id) }))) }],
+      rooms: ROOMS.map((r) => ({ id: r.id, title: r.title, description: r.description, ...r.learningObjectives ? { learningObjectives: r.learningObjectives } : {}, conceptIds: r.concepts.map((c) => c.id), ready: ready2(r.id) })),
       styleSummary: { voice: "friendly", notation: "plain", topFormats: ["mcq"] }
     };
   };
@@ -39627,22 +39660,22 @@ ${list2.map((n) => `- ${n}
     },
     getResults: async () => (need("results"), results()),
     getApiSettings: async () => {
-      throw new ApiError(501, "not_implemented", "API setup uses the local backend.");
+      throw new ApiError(501, "not_implemented", "Practice mode has no AI settings. Open the game without ?mock=1.");
     },
     updateApiSettings: async () => {
-      throw new ApiError(501, "not_implemented", "API setup uses the local backend.");
+      throw new ApiError(501, "not_implemented", "Practice mode has no AI settings. Open the game without ?mock=1.");
     },
     testApiSettings: async () => {
-      throw new ApiError(501, "not_implemented", "API setup uses the local backend.");
+      throw new ApiError(501, "not_implemented", "Practice mode has no AI settings. Open the game without ?mock=1.");
     },
     getStorageSettings: async () => {
-      throw new ApiError(501, "not_implemented", "Storage settings use the local backend.");
+      throw new ApiError(501, "not_implemented", "Practice mode saves nothing. Open the game without ?mock=1.");
     },
-    updateStorageSettings: async () => {
-      throw new ApiError(501, "not_implemented", "Storage settings use the local backend.");
+    exportBackup: async () => {
+      throw new ApiError(501, "not_implemented", "Practice mode saves nothing. Open the game without ?mock=1.");
     },
-    testStorageSettings: async () => {
-      throw new ApiError(501, "not_implemented", "Storage settings use the local backend.");
+    importBackup: async () => {
+      throw new ApiError(501, "not_implemented", "Practice mode saves nothing. Open the game without ?mock=1.");
     },
     getDebug: async () => ({
       misconceptionStates: [{ id: "m1", state: "active", origin: "skipped" }],
@@ -39738,13 +39771,13 @@ async function go(card, work, exit) {
 // game/course/app.ts
 var params = new URLSearchParams(location.search);
 var mock = params.get("mock") === "1";
-var defaultOrigin = location.protocol.startsWith("http") && location.port !== "4173" ? location.origin : "http://localhost:8787";
-var apiOrigin = params.get("api") || defaultOrigin;
-try {
-  apiOrigin = params.get("api") || localStorage.getItem("top.apiOrigin") || apiOrigin;
-} catch {
-}
-var api = mock ? createMockApi() : createApiClient({ baseUrl: apiOrigin });
+var api = mock ? createMockApi() : createApiClient({ baseUrl: BACKEND_ORIGIN, fetch: localFetch });
+clock.addEventListener("beforeunload", (event) => {
+  if (preparingUploads()) {
+    event.preventDefault();
+    event.returnValue = "";
+  }
+});
 var state = { run: null, results: null };
 var courseSource = "Library";
 function setCourseSource(source) {
@@ -39815,23 +39848,6 @@ function afterStorageSwitch() {
   state.results = null;
   settingsReturn = "Title";
   needsSync = false;
-}
-function setApiOrigin(origin) {
-  if (apiOrigin !== origin) {
-    setRun(null);
-    state.results = null;
-    settingsReturn = "Title";
-    needsSync = false;
-  }
-  apiOrigin = origin;
-  if (!mock) api = createApiClient({ baseUrl: origin });
-  try {
-    localStorage.setItem("top.apiOrigin", origin);
-  } catch {
-  }
-  const url = new URL(location.href);
-  url.searchParams.set("api", origin);
-  history.replaceState(null, "", url);
 }
 function sceneForPhase(phase) {
   switch (phase) {
@@ -40344,7 +40360,7 @@ var UploadScene = class extends Page {
         })));
         archive.append(entry);
       }
-      if (!res.archive.courses.length) archive.append(el("p", "dim", "Your prepared dungeons will appear here, ready to return to after a restart."));
+      if (!res.archive.courses.length) archive.append(el("p", "dim", "Your prepared dungeons are saved in this browser and will appear here, ready to return to."));
       for (const s of res.samples.samples) {
         samples.append(btn(s.title, async () => {
           this.retryUpload = null;
@@ -40390,6 +40406,7 @@ var UploadScene = class extends Page {
         "create-dungeon",
         el("h3", "", "Create New Dungeon"),
         el("p", "", "Upload files, paste notes, or use both. All your sources become one dungeon."),
+        el("p", "dim", "Your files are read in this browser and sent only to the AI provider you chose in Settings. Keep this tab open while the dungeon is prepared."),
         el(
           "div",
           "dungeon-sources",
@@ -40733,9 +40750,9 @@ function micButton(box2, onText, onStatus) {
       const choice2 = await browserLanguage();
       if (!current()) return;
       if (choice2 && !deviceUnusable) {
-        const ready = choice2.status === "available" || await Local.install({ langs: [choice2.lang], processLocally: true }).catch(() => false);
+        const ready2 = choice2.status === "available" || await Local.install({ langs: [choice2.lang], processLocally: true }).catch(() => false);
         if (!current()) return;
-        if (ready && startLive(Local, choice2.lang, mine, "device")) return;
+        if (ready2 && startLive(Local, choice2.lang, mine, "device")) return;
       }
       if (Service && !serviceUnusable && startLive(Service, clock.navigator.language || "en-US", mine, "service")) return;
       if (canRecord) await record2(mine);
@@ -40831,8 +40848,8 @@ function micButton(box2, onText, onStatus) {
     }
     stream = mic;
     const firstUse = !model;
-    const loading = loadModel();
-    loading.catch(() => {
+    const loading2 = loadModel();
+    loading2.catch(() => {
     });
     let percent = 0;
     const onProgress = (p) => {
@@ -40868,7 +40885,7 @@ function micButton(box2, onText, onStatus) {
         }, 300);
         let transcriber;
         try {
-          transcriber = await loading;
+          transcriber = await loading2;
         } finally {
           clock.clearInterval(wait2);
         }
@@ -42053,189 +42070,120 @@ function arena(run, screen2) {
 }
 
 // game/course/storage-view.ts
-var NAMES = { local: "this computer", mongodb: "MongoDB", memory: "memory (test server)" };
 var plural = (n, word) => `${n} ${word}${n === 1 ? "" : "s"}`;
+var size = (bytes) => bytes >= deterministicMath.pow(1024, 3) ? `${(bytes / deterministicMath.pow(1024, 3)).toFixed(1)} GB` : `${deterministicMath.max(0.1, bytes / deterministicMath.pow(1024, 2)).toFixed(1)} MB`;
 function buildStoragePanel(deps) {
-  let current = null;
-  let selected = "local";
-  const status = el("div", "setup-status dim", "Connecting to your server\u2026");
+  const status = el("div", "setup-status dim", "Checking what is saved\u2026");
   status.setAttribute("role", "status");
   status.setAttribute("aria-live", "polite");
   const say = (text2, kind = "dim") => {
     status.textContent = text2;
     status.className = `setup-status ${kind}`;
   };
-  const badge = el("span", "setup-badge", "THIS COMPUTER");
-  const uri = el("input");
-  uri.type = "password";
-  uri.id = "storage-uri";
-  uri.autocomplete = "off";
-  uri.spellcheck = false;
-  uri.maxLength = 4096;
-  const database = el("input");
-  database.id = "storage-database";
-  database.autocomplete = "off";
-  database.maxLength = 63;
-  const vectorIndex = el("input");
-  vectorIndex.id = "storage-vector-index";
-  vectorIndex.autocomplete = "off";
-  vectorIndex.maxLength = 63;
-  const removeUri = el("input");
-  removeUri.type = "checkbox";
-  removeUri.id = "storage-remove-uri";
-  const uriState = el("span", "dim", "No connection string saved");
-  const copy = el("input");
-  copy.type = "checkbox";
-  copy.id = "storage-copy";
-  copy.checked = true;
-  const copyLabel = el("label", "", "");
-  copyLabel.htmlFor = copy.id;
-  const copyRow = el("div", "copy-option", copy, copyLabel);
-  const mongoFields = el(
-    "section",
-    "provider-fields",
-    deps.field("Connection string", uri, "Starts with mongodb+srv:// or mongodb://. It stays on your computer and is never shown again."),
-    el("div", "key-options", uriState, el("label", "", removeUri, " Remove saved connection string")),
-    el("div", "model-fields", deps.field("Database", database), deps.field(
-      "Vector search index",
-      vectorIndex,
-      "Used to find passages in your material. Created for you when your cluster allows it."
-    ))
-  );
-  const localNote = el(
-    "section",
-    "provider-fields offline-note",
-    el("h3", "", "Saved on this computer"),
-    el("p", "", "Dungeons, notebooks and expeditions are kept in the .local folder next to the game. No account or setup needed."),
-    el("small", "dim", "Choose MongoDB to keep them in a database you can reach from other computers.")
-  );
-  const cards = /* @__PURE__ */ new Map();
-  const choices = el("div", "provider-choices storage-choices");
-  choices.setAttribute("role", "radiogroup");
-  choices.setAttribute("aria-label", "Where dungeons are saved");
-  for (const [backend, label, detail] of [
-    ["local", "This computer", "Saved in .local \xB7 no setup"],
-    ["mongodb", "MongoDB", "Atlas or your own server"]
-  ]) {
-    const choice2 = btn("", () => choose(backend), "provider-choice");
-    choice2.append(el("b", "", label), el("small", "", detail));
-    choice2.setAttribute("role", "radio");
-    choice2.setAttribute("aria-label", label);
-    cards.set(backend, choice2);
-    choices.append(choice2);
-  }
-  const inUse = el("p", "", "");
+  const badge = el("span", "setup-badge", "THIS BROWSER");
+  const counts = el("p", "", "");
+  const space = el("p", "dim", "");
+  const keepNote = el("p", "", "");
   const problem = el("p", "warn", "");
   problem.hidden = true;
-  function choose(backend) {
-    selected = backend;
-    for (const [id2, card] of cards) {
-      card.setAttribute("aria-checked", String(id2 === backend));
-      card.classList.toggle("selected", id2 === backend);
-    }
-    mongoFields.hidden = backend !== "mongodb";
-    localNote.hidden = backend !== "local";
-    badge.textContent = backend === "mongodb" ? "MONGODB" : "THIS COMPUTER";
-    updateCopy();
-  }
-  function updateCopy() {
-    if (!current) {
-      copyRow.hidden = true;
-      return;
-    }
-    const from = current.active === "mongodb" ? "in MongoDB" : "on this computer";
-    const to = selected === "mongodb" ? "MongoDB" : "this computer";
-    const moving = selected === "mongodb" ? current.active !== "mongodb" || !!uri.value.trim() || database.value.trim() !== current.mongodb.database : current.active === "mongodb";
-    copyRow.hidden = !moving || current.courses === 0;
-    copyLabel.textContent = ` Copy the ${plural(current.courses, "dungeon")} saved ${from} to ${to}`;
-  }
-  for (const input of [uri, database]) input.addEventListener("input", updateCopy);
-  function apply(settings) {
-    current = settings;
-    database.value = settings.mongodb.database;
-    vectorIndex.value = settings.mongodb.vectorIndex;
-    uri.value = "";
-    removeUri.checked = false;
-    uri.placeholder = settings.mongodb.hasUri ? `Saved for ${settings.mongodb.host ?? "your cluster"} \u2014 enter a replacement or leave blank` : "mongodb+srv://user:password@cluster.example.net";
-    uriState.textContent = settings.mongodb.hasUri ? `Saved: ${settings.mongodb.host ?? "connection string"}` : "No connection string saved";
-    uriState.className = settings.mongodb.hasUri ? "ok" : "dim";
-    inUse.textContent = `In use now: ${NAMES[settings.active]}${settings.active === "mongodb" && settings.mongodb.host ? ` (${settings.mongodb.host}, ${settings.mongodb.database})` : ""} \xB7 ${plural(settings.courses, "dungeon")}.`;
-    problem.textContent = settings.error ? `MongoDB could not be reached when the game started, so this computer is in use. ${settings.error}` : "";
-    problem.hidden = !settings.error;
-    choose(settings.backend);
-  }
-  function body() {
-    const update = { backend: selected };
-    if (selected === "mongodb" || removeUri.checked) {
-      update.mongodb = {
-        database: database.value.trim(),
-        vectorIndex: vectorIndex.value.trim(),
-        ...removeUri.checked ? { uri: null } : uri.value.trim() ? { uri: uri.value.trim() } : {}
-      };
-    }
-    if (!copyRow.hidden && copy.checked) update.copyExisting = true;
-    return update;
-  }
-  const test = btn("Test connection", () => void deps.act(say, async () => {
-    if (!current) throw new Error("Connect to the server first.");
-    const result = await deps.client().testStorageSettings(body());
-    say(result.message, result.ok ? "ok" : "bad");
+  const keep = btn("Keep my dungeons", () => void deps.act(say, async () => {
+    const granted = await clock.navigator.storage?.persist?.().catch(() => false);
+    await load(false);
+    say(granted ? "Done: this browser will not clear your dungeons to free up space." : "This browser did not agree yet. Browsers often agree once you have played here for a while, or bookmarked the site.", granted ? "ok" : "dim");
   }), "alt");
-  const save2 = btn("Save & switch", () => void deps.act(say, async () => {
-    if (!current) throw new Error("Connect to the server first.");
-    const before = current;
-    const enteredUri = !!uri.value.trim();
-    const result = await deps.client().updateStorageSettings(body());
-    apply(result);
-    const switched = before.active !== result.active || result.active === "mongodb" && (enteredUri || before.mongodb.database !== result.mongodb.database || before.mongodb.vectorIndex !== result.mongodb.vectorIndex);
-    if (switched) deps.onSwitched();
-    const where = result.active === "mongodb" ? `MongoDB (${result.mongodb.host ?? "your cluster"})` : NAMES[result.active];
-    const copied = result.copied ? ` Copied ${plural(result.copied.courses, "dungeon")} and ${plural(result.copied.runs, "expedition")}${result.copied.skipped ? `; ${result.copied.skipped} already there` : ""}.` : "";
-    say(switched ? `Dungeons are now saved in ${where}.${copied}` : "Saved.", "ok");
+  const file = el("input");
+  file.type = "file";
+  file.accept = ".json,application/json";
+  file.id = "backup-file";
+  file.hidden = true;
+  const download = btn("Download backup", () => void deps.act(say, async () => {
+    const backup = await deps.client().exportBackup();
+    const blob = new Blob([JSON.stringify(backup)], { type: "application/json" });
+    const link = el("a");
+    link.href = URL.createObjectURL(blob);
+    link.download = `pips-notebook-backup-${backup.exportedAt.slice(0, 10)}.json`;
+    host3.body.append(link);
+    link.click();
+    link.remove();
+    clock.setTimeout(() => URL.revokeObjectURL(link.href), 6e4);
+    say(`Downloaded ${plural(backup.courses.length, "dungeon")} and ${plural(backup.runs.length, "expedition")}. Keep the file somewhere safe.`, "ok");
   }));
+  const upload = btn("Import backup\u2026", () => file.click(), "alt");
+  file.addEventListener("change", () => {
+    const chosen = file.files?.[0];
+    file.value = "";
+    if (!chosen) return;
+    void deps.act(say, async () => {
+      let backup;
+      try {
+        backup = JSON.parse(await chosen.text());
+      } catch {
+        throw new Error(`"${chosen.name}" is not a backup file (it is not JSON).`);
+      }
+      const result = await deps.client().importBackup(backup);
+      await load(false);
+      if (result.courses > 0) deps.onSwitched();
+      say(result.courses || result.skipped ? `Added ${plural(result.courses, "dungeon")} and ${plural(result.runs, "expedition")}${result.skipped ? `; ${result.skipped} already saved here` : ""}.` : "That backup has no dungeons.", "ok");
+    });
+  });
+  function apply(settings) {
+    const memory = settings.active === "memory";
+    badge.textContent = memory ? "THIS TAB ONLY" : "THIS BROWSER";
+    counts.textContent = `${plural(settings.courses, "dungeon")} and ${plural(settings.runs, "expedition")} saved here.`;
+    space.textContent = settings.usageBytes !== null && settings.quotaBytes ? `Using ${size(settings.usageBytes)} of the ${size(settings.quotaBytes)} this browser allows.` : "";
+    space.hidden = !space.textContent;
+    keepNote.textContent = memory ? "" : settings.persisted ? "This browser has agreed to keep them: it will not clear them to free up space." : "When a device runs low on space, a browser may clear saved data. Ask it to keep your dungeons:";
+    keepNote.hidden = memory;
+    keep.hidden = memory || settings.persisted !== false;
+    problem.textContent = settings.error ? `Saving is blocked here: ${settings.error}` : "";
+    problem.hidden = !settings.error;
+  }
   const root = el(
     "div",
     "setup-panel",
     el("div", "setup-heading", el(
       "div",
       "",
-      el("h2", "", "Where your dungeons are saved"),
-      el("p", "dim", "Keep them on this computer, or in a MongoDB database. Switching happens right away.")
+      el("h2", "", "Saved in this browser"),
+      el("p", "dim", "Your dungeons, notebooks and expeditions are saved on this device, in this browser, and nowhere else.")
     ), badge),
-    choices,
     el(
       "div",
       "setup-grid",
-      el("div", "provider-form", mongoFields, localNote, copyRow),
+      el(
+        "div",
+        "provider-form",
+        el("section", "provider-fields offline-note", counts, space, problem, keepNote, el("div", "actions", keep)),
+        el(
+          "section",
+          "provider-fields",
+          el("h3", "", "Backup"),
+          el("p", "", "Download every dungeon and expedition as one file, to keep it safe or move it to another browser. Import adds the dungeons of a backup; ones already here are kept as they are."),
+          el("div", "actions", download, upload, file)
+        )
+      ),
       el(
         "aside",
         "setup-aside",
         el("h3", "", "Good to know"),
-        inUse,
-        problem,
-        el("p", "", "Switching moves the game to the other storage at once. An expedition you have open goes back to My archive."),
+        el("p", "", "Clearing this site's data, or closing a private window, deletes what is saved here. Download a backup first."),
         el("div", "setup-rule"),
-        el("p", "dim", "Copying skips dungeons that are already there and never deletes anything."),
-        deps.practice ? el("p", "warn", "Practice mode has no server storage. Open the game without ?mock=1 to use these settings.") : null
+        el("p", "dim", "A backup holds your material and the answer keys of its questions, so it is yours to keep. It never holds your API keys."),
+        deps.practice ? el("p", "warn", "Practice mode saves nothing. Open the game without ?mock=1 to use these settings.") : null
       )
-    ),
-    el(
-      "div",
-      "setup-footer",
-      el("div", "actions", test, save2),
-      el("small", "dim", "Testing connects once and counts the dungeons there. Nothing is saved.")
     ),
     status
   );
-  async function load() {
-    await deps.act(say, async () => {
+  async function load(announce = true) {
+    const run = async () => {
       apply(await deps.client().getStorageSettings());
-      say("Connected.");
-    });
+      if (announce) say("Up to date.");
+    };
+    if (announce) await deps.act(say, run);
+    else await run();
   }
-  choose("local");
-  return { el: root, load, clear: () => {
-    uri.value = "";
+  return { el: root, load: () => load(), clear: () => {
+    file.value = "";
   } };
 }
 
@@ -42246,7 +42194,7 @@ function buildSettingsView(options) {
   let loaded = false;
   const controller = new AbortController();
   const root = el("div", "api-setup");
-  const status = el("div", "setup-status dim", "Connecting to your server\u2026");
+  const status = el("div", "setup-status dim", "Loading your settings\u2026");
   status.setAttribute("role", "status");
   status.setAttribute("aria-live", "polite");
   const keyStatus = el("span", "setup-badge", "OFFLINE");
@@ -42266,16 +42214,11 @@ function buildSettingsView(options) {
   ingestTimeout.max = "600";
   ingestTimeout.value = "180";
   ingestTimeout.id = "api-ingest-timeout";
-  const origin = el("input");
-  origin.type = "url";
-  origin.value = options.apiOrigin;
-  origin.id = "api-origin";
-  origin.autocomplete = "off";
-  const clientFor = (baseUrl) => createApiClient({ baseUrl, fetch: (url, init) => fetch(url, {
-    ...init,
-    signal: AbortSignal.any([controller.signal, AbortSignal.timeout(String(url).endsWith("/test") ? Number(timeout.value || 30) * 3e3 + 5e3 : 15e3)])
-  }) });
-  let connection = clientFor(options.apiOrigin);
+  const remember = el("input");
+  remember.type = "checkbox";
+  remember.id = "api-remember";
+  remember.checked = true;
+  const connection = options.api;
   const titleFor = (p) => p === "openai" ? "OpenAI" : p === "gemini" ? "Google Gemini" : "Offline";
   const field = (name, input, hint) => {
     const label = el("label", "", name);
@@ -42304,7 +42247,7 @@ function buildSettingsView(options) {
     const box2 = el(
       "section",
       "provider-fields",
-      field(`${titleFor(provider)} API key`, key, "Leave blank to keep your saved key. Keys stay on your computer."),
+      field(`${titleFor(provider)} API key`, key, `Leave blank to keep your saved key. It is saved only in this browser and sent only to ${provider === "openai" ? "OpenAI" : "Google"}.`),
       el("div", "key-options", state2, el("label", "", remove, " Remove saved key")),
       el("div", "model-fields", field("Generation model", model2), field("Embedding model", embedding))
     );
@@ -42315,7 +42258,7 @@ function buildSettingsView(options) {
     "section",
     "provider-fields offline-note",
     el("h3", "", "Play without a key"),
-    el("p", "", "Play the sample lessons with a built-in practice student. No account, internet, or API credits needed."),
+    el("p", "", "Play the sample lessons with a built-in practice student. No account or API credits needed."),
     el("small", "dim", "To learn from your own material, choose OpenAI or Gemini.")
   );
   fields.append(offline);
@@ -42346,13 +42289,6 @@ function buildSettingsView(options) {
     status.textContent = text2;
     status.className = `setup-status ${kind}`;
   };
-  function serverOrigin() {
-    const url = new URL(origin.value.trim());
-    if (!["http:", "https:"].includes(url.protocol) || url.username || url.password || url.pathname !== "/" || url.search || url.hash) {
-      throw new Error("Enter a server origin such as http://localhost:8787, without a path or credentials.");
-    }
-    return url.origin;
-  }
   function apply(settings) {
     loaded = true;
     choose(settings.provider);
@@ -42365,14 +42301,15 @@ function buildSettingsView(options) {
       view.key.value = "";
       view.remove.checked = false;
       view.key.placeholder = saved.hasApiKey ? "Saved \u2014 enter a replacement or leave blank" : "Paste your API key";
-      view.state.textContent = saved.hasApiKey ? "Key saved on backend" : "No key saved";
+      view.state.textContent = saved.hasApiKey ? settings.persistence === "session" ? "Key saved in this tab" : "Key saved in this browser" : "No key saved";
       view.state.className = saved.hasApiKey ? "ok" : "dim";
     }
+    remember.checked = settings.persistence !== "session";
   }
   function body() {
     const seconds = Number(timeout.value);
     if (!Number.isInteger(seconds) || seconds < 1 || seconds > 180) throw new Error("Choose a whole-number timeout between 1 and 180 seconds.");
-    const update = { provider: selected, timeoutMs: seconds * 1e3 };
+    const update = { provider: selected, timeoutMs: seconds * 1e3, rememberKey: remember.checked };
     const ingestSeconds = Number(ingestTimeout.value);
     if (!Number.isInteger(ingestSeconds) || ingestSeconds < 1 || ingestSeconds > 600) throw new Error("Choose a whole-number course preparation timeout between 1 and 600 seconds.");
     update.ingestTimeoutMs = ingestSeconds * 1e3;
@@ -42387,21 +42324,21 @@ function buildSettingsView(options) {
     return update;
   }
   const save2 = btn("Save & apply", () => void act(showStatus, async () => {
-    if (!loaded) throw new Error("Connect to the backend first.");
-    const apiOrigin2 = serverOrigin();
-    const settings = await clientFor(apiOrigin2).updateApiSettings(body());
+    if (!loaded) throw new Error("Your settings are still loading. Try again in a moment.");
+    const settings = await connection.updateApiSettings(body());
     if (!active2) return;
-    connection = clientFor(apiOrigin2);
     apply(settings);
-    options.onOriginChange(apiOrigin2);
-    showStatus(`${titleFor(settings.provider)} is ready. Your settings are saved and active.`, "ok");
+    showStatus(`${titleFor(settings.provider)} is ready. Your settings are saved ${settings.persistence === "session" ? "in this tab until you close it" : "in this browser"}.`, "ok");
   }));
   const test = btn("Test connection", () => void act(showStatus, async () => {
-    if (!loaded) throw new Error("Connect to the backend first.");
-    const result = await clientFor(serverOrigin()).testApiSettings(body());
+    if (!loaded) throw new Error("Your settings are still loading. Try again in a moment.");
+    const result = await withTimeout(connection.testApiSettings(body()), Number(timeout.value || 30) * 3e3 + 5e3);
     showStatus(result.message, result.ok ? "ok" : "bad");
   }), "alt");
-  const load = btn("Load server", () => void loadSettings(), "alt");
+  const withTimeout = (work, ms) => Promise.race([work, new Promise((_, reject) => {
+    const timer = clock.setTimeout(() => reject(Object.assign(new Error("timeout"), { name: "TimeoutError" })), ms);
+    controller.signal.addEventListener("abort", () => clock.clearTimeout(timer));
+  })]);
   const back = btn("Back to game", options.onBack, "alt");
   async function act(say, action) {
     if (root.getAttribute("aria-busy") === "true") return;
@@ -42414,7 +42351,7 @@ function buildSettingsView(options) {
     try {
       await action();
     } catch (error) {
-      report(error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name) ? "The server took too long to respond. Check the backend URL and try again." : error instanceof Error ? error.message : "Could not update the settings.", "bad");
+      report(error instanceof Error && ["TimeoutError", "AbortError"].includes(error.name) ? "The AI provider took too long to answer. Check your key and connection, then try again." : error instanceof Error ? error.message : "Could not update the settings.", "bad");
     } finally {
       if (active2) {
         root.setAttribute("aria-busy", "false");
@@ -42425,22 +42362,27 @@ function buildSettingsView(options) {
   }
   async function loadSettings() {
     await act(showStatus, async () => {
-      const apiOrigin2 = serverOrigin();
-      connection = clientFor(apiOrigin2);
       const settings = await connection.getApiSettings();
       if (!active2) return;
       apply(settings);
-      showStatus("Connected.");
+      showStatus(settings.provider === "mock" ? "Offline: no key needed for the sample lessons." : `Using ${titleFor(settings.provider)}.`);
     });
     if (active2) await storage.load();
   }
-  const storage = buildStoragePanel({ client: () => connection, act, field, onSwitched: options.onStorageChange, practice: options.practice });
+  const storage = buildStoragePanel({ client: () => connection, act, onSwitched: options.onStorageChange, practice: options.practice });
   const advanced = el(
     "details",
     "setup-advanced",
-    el("summary", "", "Connection details"),
-    el("div", "connection-fields", field("Backend URL", origin, "Changing servers starts a new game session."), load, field("Request timeout (seconds)", timeout)),
+    el("summary", "", "Timeouts"),
+    el("div", "connection-fields", field("Request timeout (seconds)", timeout)),
     field("Course preparation timeout (seconds)", ingestTimeout, "Per request while preparing your course. Active OpenAI document streams extend this idle budget, with a 10-minute request cap.")
+  );
+  const keyPlace = el(
+    "label",
+    "remember-key",
+    remember,
+    " Remember my key on this device",
+    el("small", "dim", " Untick on a shared computer: the key is then forgotten when this tab closes.")
   );
   const aiPanel = el(
     "div",
@@ -42458,17 +42400,19 @@ function buildSettingsView(options) {
       el("h3", "", "How it works"),
       el("p", "", "Pip still only knows what you teach. In battle, the AI answers as Pip using nothing but Pip's notebook."),
       el("div", "setup-rule"),
+      el("p", "", "This game has no server. Your key is saved only in this browser and is sent only to the provider you choose, straight from this page. Usage is billed to your own account."),
       el("p", "dim", "No key? Choose Offline to play the sample lessons."),
       el("p", "dim", "Dictate uses your browser's speech recognition. Chrome, Edge and Safari may send your voice to Google, Microsoft or Apple to turn it into text; other browsers use a speech model that runs on this computer."),
-      options.practice ? el("p", "warn", "Practice mode uses canned responses. These settings apply when you play through the backend.") : null
+      options.practice ? el("p", "warn", "Practice mode uses canned responses. Open the game without ?mock=1 to use these settings.") : null
     )),
+    keyPlace,
     advanced,
     el("div", "setup-footer", el("div", "actions", test, save2), el("small", "dim", "Testing sends one small request to the AI, which may use a little API credit.")),
     status
   );
   const panels = [
     { id: "ai", label: "AI provider", panel: aiPanel },
-    { id: "storage", label: "MongoDB", panel: storage.el }
+    { id: "storage", label: "Saved in this browser", panel: storage.el }
   ];
   const tabList = el("div", "setup-tabs");
   tabList.setAttribute("role", "tablist");
@@ -42519,7 +42463,7 @@ function buildSettingsView(options) {
 // game/course/Settings.ts
 var SettingsScene = class extends Page {
   create() {
-    const view = buildSettingsView({ apiOrigin, onOriginChange: setApiOrigin, onStorageChange: afterStorageSwitch, onBack: backFromSettings, practice: mock });
+    const view = buildSettingsView({ api, onStorageChange: afterStorageSwitch, onBack: backFromSettings, practice: mock });
     this.onClose = view.stop;
     panel(this, view.el);
   }

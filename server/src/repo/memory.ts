@@ -1,7 +1,7 @@
 import type { CoursePack, Question, QuestionStats, Run } from '@pips-notebook/shared';
 import type { Repository, StatsEvent } from './types';
 
-/** Applies one event to a stats record (shared by the memory and Mongo implementations' tests). */
+/** Applies one event to a stats record (shared by the memory and IndexedDB repositories). */
 export function applyStatsEvent(stats: QuestionStats, e: StatsEvent): QuestionStats {
   if (e.kind === 'student_correct') stats.studentCorrect += 1;
   else if (e.kind === 'student_wrong') stats.studentWrong += 1;

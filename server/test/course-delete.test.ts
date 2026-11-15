@@ -1,21 +1,20 @@
+import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, expect, test } from 'vitest';
-import { mkdtemp, readFile, rm } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { createContainer, type Container } from '../src/container';
-import { createFileVectorStore } from '../src/repo/file';
+import { openBrowserStorage } from '../src/browser/main';
+import type { Container } from '../src/container';
+import { createIndexedDbRepository, createIndexedDbVectorStore, openBrowserDatabase } from '../src/repo';
+import { createDirectorySampleSource } from '../src/node/samples';
 import { engine } from '../src/engine';
 import { createServices } from '../src/services/create';
 import { createMockGameplayTasks } from '../src/llm/gameplay/mock';
 import { makeDeps } from '../src/ingest/testHelpers';
 import { runIngest } from '../src/ingest';
 import type { IngestReport } from '../src/ingest/types';
-import { startTestApp } from './helpers/app';
+import { createTestContainer, startTestApp } from './helpers/app';
 
-const containers: Container[] = [], directories: string[] = [];
+const containers: Container[] = [];
 afterEach(async()=>{
   for (const c of containers.splice(0)) await c.close();
-  for (const dir of directories.splice(0)) await rm(dir,{recursive:true,force:true});
 });
 const env={LLM_PROVIDER:'mock',HELP_ME_PROB:'0',HELP_ME_TIMED:'false'};
 
@@ -40,26 +39,26 @@ test('HTTP dungeon deletion removes all associated runs and leaves other dungeon
   } finally { await t.close(); }
 });
 
-test('deletion persists across restart and removes questions, statistics and source chunks',async()=>{
-  const dataDir=await mkdtemp(join(tmpdir(),'top-delete-course-'));directories.push(dataDir);
-  const first=await createContainer({env,settingsFile:false,dataDir,seed:42});
+test('deletion persists across a reload and removes questions, statistics and source chunks',async()=>{
+  const factory=new IDBFactory();
+  const first=await createTestContainer({env,storage:await openBrowserStorage({factory}),seed:42});
   const {courseId}=await first.services.seedCourse('seasons');
   const other=(await first.services.seedCourse('binary-search')).courseId;
   const run=await first.services.createRun({courseId,targetGrade:'B'});
   await first.services.ready(run.id);await first.services.turn(run.id);
-  const before=JSON.parse(await readFile(join(dataDir,'repository.json'),'utf8'));
-  const ids=before.questions.filter((q:{courseId:string})=>q.courseId===courseId).map((q:{id:string})=>q.id);
-  expect(before.stats.some((s:{questionId:string})=>ids.includes(s.questionId))).toBe(true);
+  const db=await openBrowserDatabase({factory});
+  const repo=createIndexedDbRepository(db);
+  const ids=(await repo.listQuestions(courseId)).map(q=>q.id);
+  expect((await repo.getQuestionStats(ids)).length).toBeGreaterThan(0);
   await first.services.deleteCourse(courseId);
   await first.close();
-  const second=await createContainer({env,settingsFile:false,dataDir});containers.push(second);
+  const second=await createTestContainer({env,storage:await openBrowserStorage({factory})});containers.push(second);
   await expect(second.services.getCourse(courseId)).rejects.toMatchObject({code:'not_found'});
   await expect(second.services.getRun(run.id)).rejects.toMatchObject({code:'not_found'});
   expect((await second.services.getCourse(other)).id).toBe(other);
-  const saved=JSON.parse(await readFile(join(dataDir,'repository.json'),'utf8'));
-  expect(saved.questions.every((q:{courseId:string})=>q.courseId!==courseId)).toBe(true);
-  expect(saved.stats.every((s:{questionId:string})=>!ids.includes(s.questionId))).toBe(true);
-  const store=createFileVectorStore(dataDir);await store.init();
+  expect(await repo.listQuestions(courseId)).toEqual([]);
+  expect(await repo.getQuestionStats(ids)).toEqual([]);
+  const store=createIndexedDbVectorStore(db);
   expect(await store.listByCourse(courseId)).toEqual([]);
   expect((await store.listByCourse(other)).length).toBeGreaterThan(0);
 });
@@ -69,7 +68,7 @@ function serviceContext(overrides: Partial<Parameters<typeof createServices>[0]>
   return {...ctx,services:createServices({
     config:ctx.config,clock:ctx.deps.clock,repo:ctx.repo,store:ctx.store,embedder:ctx.deps.embedder,
     retriever:ctx.deps.retriever,engine,gameplayTasks:createMockGameplayTasks(),
-    makeIngestDeps:()=>ctx.deps,runIngest,samplesDir:new URL('../../samples/',import.meta.url).pathname,
+    makeIngestDeps:()=>ctx.deps,runIngest,samples:createDirectorySampleSource(),
     newSeed:()=>42,storage:'memory',...overrides,
   })};
 }

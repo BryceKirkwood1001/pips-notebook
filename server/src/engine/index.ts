@@ -7,6 +7,7 @@ import { EMPTY_NOTEBOOK } from './notebook';
 import { toPublicQuestion, toPublicRun } from './public';
 import { nowIso, poolFor, roomById, roomReady } from './scope';
 import type { CreateRunInput, Engine, EngineContext, EngineDeps } from './types';
+import { randomUuid } from '../util/names';
 
 function createRun(deps: EngineDeps, ctx: EngineContext, input: CreateRunInput): Run {
   const roomIds =
@@ -23,7 +24,7 @@ function createRun(deps: EngineDeps, ctx: EngineContext, input: CreateRunInput):
   const now = nowIso(deps.clock.now());
   const seed = input.rngSeed ?? randomSeed();
   return {
-    id: input.id ?? `run_${crypto.randomUUID()}`,
+    id: input.id ?? `run_${randomUuid()}`,
     courseId: input.courseId,
     targetGrade: input.targetGrade,
     studentEmoji: input.studentEmoji ?? DEFAULT_STUDENT_EMOJI,

@@ -6,10 +6,8 @@
  *   LLM_PROVIDER=gemini            -> Gemini client + Gemini-backed tasks
  *   LLM_PROVIDER=openai            -> OpenAI client + the same provider-independent tasks
  *
- * Storage (MongoDB, this computer's .local/archive, or memory in tests) is opened by storage.ts and passed in,
- * so Settings can switch it while the server runs.
+ * Storage (this browser's IndexedDB, or memory in tests) is opened by the caller and passed in.
  */
-import { fileURLToPath } from 'node:url';
 import type { Config } from './config';
 import { randomSeed } from './core/rng';
 import { engine } from './engine';
@@ -21,7 +19,8 @@ import { createIngestTasks, createMockIngestTasks } from './llm/ingest';
 import type { Retriever } from './rag/types';
 import type { ApiSettingsManager, LlmFactory } from './settings';
 import { createChunker, createEmbedder, createMaterialParser, createRetriever } from './rag';
-import { createServices } from './services/create';
+import type { SampleSource } from './samples';
+import { createServices, type ServiceDeps } from './services/create';
 import type { OpenStorage, Wired } from './storage';
 
 export interface WiringOptions {
@@ -31,23 +30,27 @@ export interface WiringOptions {
   llmFactory?: LlmFactory;
   /** Fixed RNG seed for every run (tests). Default: a random seed per run. */
   seed?: number;
-  /** Default: the repo's `samples/` folder. */
-  samplesDir?: string;
+  /** The bundled sample lessons. */
+  samples: SampleSource;
   /** The opened storage. Closing the wiring closes it. */
   storage: OpenStorage;
+  /** See ServiceDeps.whilePreparing. */
+  whilePreparing?: ServiceDeps['whilePreparing'];
+  /** Courses another tab of the game is preparing right now. Default: none. */
+  preparingElsewhere?: () => Promise<Set<string>>;
 }
-
-const DEFAULT_SAMPLES_DIR = fileURLToPath(new URL('../../samples', import.meta.url));
 
 export async function wire(options: WiringOptions): Promise<Wired> {
   const { config, clock, settings } = options;
   const factory = options.llmFactory ?? createLlmClient;
   const legacyEmbedding = { provider: config.llmProvider, model: config.embeddingModel, dims: config.embeddingDims };
   const { repo, store } = options.storage;
-  // Interrupted preparation cannot continue without the original upload. Never leave it waiting forever.
+  // Preparation runs in the page, so closing or reloading it stops an upload half way. It cannot continue without
+  // the original files: never leave it waiting forever, unless another open tab is still preparing it.
+  const elsewhere = await options.preparingElsewhere?.().catch(() => new Set<string>()) ?? new Set<string>();
   for (const pack of await repo.listCoursePacks()) {
-    if (!['ready', 'error'].includes(pack.status.stage)) {
-      pack.status = { ...pack.status, stage: 'error', error: 'Preparation was interrupted by a server restart. Upload this material again to finish preparing it.' };
+    if (!['ready', 'error'].includes(pack.status.stage) && !elsewhere.has(pack.id)) {
+      pack.status = { ...pack.status, stage: 'error', error: 'Preparation stopped because the page was closed or reloaded. Upload this material again to finish preparing it.' };
       await repo.saveCoursePack(pack);
     }
   }
@@ -98,9 +101,10 @@ export async function wire(options: WiringOptions): Promise<Wired> {
     embedder: initial.embedder,
     makeIngestDeps,
     runIngest,
-    samplesDir: options.samplesDir ?? DEFAULT_SAMPLES_DIR,
+    samples: options.samples,
     newSeed: options.seed === undefined ? randomSeed : () => options.seed as number,
     storage: options.storage.kind,
+    whilePreparing: options.whilePreparing,
   });
 
   return {

@@ -30,6 +30,8 @@ export const UpdateApiSettingsBodySchema = z.object({
   gemini: ProviderSettingsUpdateSchema.optional(),
   timeoutMs: z.number().int().min(1000).max(180000).optional(),
   ingestTimeoutMs: z.number().int().min(1000).max(600000).optional(),
+  /** true: keep the settings and keys in this browser; false: only in this tab, until it closes. Omitted = unchanged. */
+  rememberKey: z.boolean().optional(),
 }).strict();
 export type UpdateApiSettingsBody = z.infer<typeof UpdateApiSettingsBodySchema>;
 const PublicProviderSettingsSchema = z.object({
@@ -38,7 +40,9 @@ const PublicProviderSettingsSchema = z.object({
 export const ApiSettingsSchema = z.object({
   provider: LlmProviderSchema,
   providers: z.object({ openai: PublicProviderSettingsSchema, gemini: PublicProviderSettingsSchema }),
-  timeoutMs: z.number(), ingestTimeoutMs: z.number(), embeddingDims: z.number(), persistence: z.enum(['local', 'session']),
+  timeoutMs: z.number(), ingestTimeoutMs: z.number(), embeddingDims: z.number(),
+  /** Where the settings and keys are kept: this browser (`local`) or this tab only, until it closes (`session`). */
+  persistence: z.enum(['local', 'session']),
 });
 export type ApiSettings = z.infer<typeof ApiSettingsSchema>;
 export const TestApiSettingsResponseSchema = z.object({ ok: z.boolean(), provider: LlmProviderSchema, message: z.string() });
@@ -46,42 +50,27 @@ export type TestApiSettingsResponse = z.infer<typeof TestApiSettingsResponseSche
 export const CourseEmbeddingSchema = z.object({ provider: LlmProviderSchema, model: z.string(), dims: z.number().int().positive() });
 export type CourseEmbedding = z.infer<typeof CourseEmbeddingSchema>;
 
-/** Where dungeons are saved: this computer's `.local/archive`, or MongoDB. `memory` only in test servers. */
-export const StorageBackendSchema = z.enum(['local', 'mongodb']);
-export type StorageBackend = z.infer<typeof StorageBackendSchema>;
-const MongoNameSchema = z.string().trim().min(1).max(63).regex(/^[A-Za-z0-9_-]+$/);
-export const UpdateStorageSettingsBodySchema = z.object({
-  backend: StorageBackendSchema,
-  mongodb: z.object({
-    /** Omitted = keep, null = remove. The connection string is write-only, like API keys. */
-    uri: z.string().trim().min(1).max(4096).regex(/^mongodb(\+srv)?:\/\//, 'must start with mongodb:// or mongodb+srv://').nullable().optional(),
-    database: MongoNameSchema.optional(),
-    vectorIndex: MongoNameSchema.optional(),
-  }).strict().optional(),
-  /** Copy the dungeons in the storage in use now into the new one. Ids already there are skipped. */
-  copyExisting: z.boolean().optional(),
-}).strict();
-export type UpdateStorageSettingsBody = z.infer<typeof UpdateStorageSettingsBodySchema>;
+/**
+ * Where dungeons are saved: this browser's IndexedDB. `memory` when the browser blocks storage (and in tests):
+ * dungeons then last only until the page closes.
+ */
 export const StorageSettingsSchema = z.object({
-  /** The saved choice. */
-  backend: StorageBackendSchema,
-  /** What is in use now. Differs from `backend` when MongoDB could not be reached at startup. */
-  active: z.enum(['local', 'mongodb', 'memory']),
-  mongodb: z.object({ hasUri: z.boolean(), host: z.string().nullable(), database: z.string(), vectorIndex: z.string() }),
-  /** Dungeons in the storage in use now. */
+  active: z.enum(['browser', 'memory']),
+  /** Dungeons and expeditions saved in this browser. */
   courses: z.number().int().nonnegative(),
-  /** Why the saved choice is not in use, when it is not. */
+  runs: z.number().int().nonnegative(),
+  /** True when the browser promised not to clear this site's data to free space; null when it cannot say. */
+  persisted: z.boolean().nullable(),
+  /** Bytes this site uses and may use, as the browser estimates them; null when it cannot say. */
+  usageBytes: z.number().nonnegative().nullable(),
+  quotaBytes: z.number().nonnegative().nullable(),
+  /** Why the browser's storage is not in use, when it is not. */
   error: z.string().nullable(),
-  persistence: z.enum(['local', 'session']),
 });
 export type StorageSettings = z.infer<typeof StorageSettingsSchema>;
-export const SaveStorageSettingsResponseSchema = StorageSettingsSchema.extend({
-  /** Present when `copyExisting` was requested and the storage changed. */
-  copied: z.object({ courses: z.number().int(), runs: z.number().int(), skipped: z.number().int() }).nullable(),
-});
-export type SaveStorageSettingsResponse = z.infer<typeof SaveStorageSettingsResponseSchema>;
-export const TestStorageSettingsResponseSchema = z.object({ ok: z.boolean(), message: z.string() });
-export type TestStorageSettingsResponse = z.infer<typeof TestStorageSettingsResponseSchema>;
+/** POST /backup: what an imported backup added. Dungeons already in this browser are skipped, never replaced. */
+export const ImportBackupResponseSchema = z.object({ courses: z.number().int(), runs: z.number().int(), skipped: z.number().int() });
+export type ImportBackupResponse = z.infer<typeof ImportBackupResponseSchema>;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. Primitives
@@ -1124,3 +1113,20 @@ export const CourseFixtureSchema = z.object({
   chunks: z.array(ChunkSchema),
 });
 export type CourseFixture = z.infer<typeof CourseFixtureSchema>;
+
+/**
+ * GET /backup and POST /backup: every dungeon saved in this browser (courses, questions, statistics, search chunks)
+ * and their expeditions, as one JSON file. It holds answer keys, so it is the player's own copy, never shown in play.
+ * API keys are never part of it.
+ */
+export const BackupSchema = z.object({
+  app: z.literal('pips-notebook'),
+  version: z.literal(1),
+  exportedAt: z.string(),
+  courses: z.array(CoursePackSchema),
+  questions: z.array(QuestionSchema),
+  questionStats: z.array(QuestionStatsSchema),
+  chunks: z.array(ChunkSchema),
+  runs: z.array(RunSchema),
+});
+export type Backup = z.infer<typeof BackupSchema>;
