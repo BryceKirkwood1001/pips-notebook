@@ -35,7 +35,7 @@ function loadCurrentTrack() {
     player.pause();
     player.volume = 0;
     loadedTrack = currentTrack;
-    player.src = 'media/music/' + loadedTrack + '.mp3';
+    player.src = 'media/music/' + loadedTrack + '.m4a';
 }
 
 // Wait until sound actually starts (including after buffering/autoplay unlock) before fading in.
