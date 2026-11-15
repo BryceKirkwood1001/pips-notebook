@@ -109,6 +109,7 @@ export function frame(screen:string) {
 }
 export function mount() {
     const css=el('link');css.rel='stylesheet';css.href='media/game.css';host.head.append(css);
+    const icon=el('link');icon.rel='icon';icon.type='image/png';icon.href='media/pip-icon.png';host.head.append(icon);
     host.title="Pip's Notebook";host.documentElement.lang='en';host.body.append(stage);
     const fit=()=>{
         const view=host.documentElement;

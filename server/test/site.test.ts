@@ -39,7 +39,10 @@ describe('the static site', () => {
       expect(existsSync(join(out, file)), file).toBe(true);
     }
     const index = JSON.parse(readFileSync(join(out, 'samples/index.json'), 'utf8'));
-    expect(index.samples.map((s: { id: string }) => s.id)).toEqual(expect.arrayContaining(['seasons', 'binary-search']));
+    expect(index.samples.map((s: { id: string }) => s.id)).toEqual(expect.arrayContaining(['gravity', 'seasons', 'binary-search']));
+    // Packs with their own pace are marked, so the Library can list them first.
+    expect(index.samples.find((s: { id: string }) => s.id === 'gravity').short).toBe(true);
+    expect(index.samples.find((s: { id: string }) => s.id === 'seasons').short).toBe(false);
     for (const { id } of index.samples) expect(existsSync(join(out, `samples/${id}.json`))).toBe(true);
   });
 
@@ -75,6 +78,13 @@ describe('the local file server (npm start)', () => {
     expect(await page.text()).toContain('<div id="game">');
     expect((await fetch(`${base}/backend.js`)).headers.get('content-type')).toContain('javascript');
     expect((await fetch(`${base}/text-shaper.wasm`)).headers.get('content-type')).toBe('application/wasm');
+  });
+
+  it("links Pip's face as the tab icon", async () => {
+    expect(readFileSync(join(out, 'index.html'), 'utf8')).toContain('<link rel="icon" type="image/png" href="./media/pip-icon.png">');
+    const icon = await fetch(`${base}/media/pip-icon.png`);
+    expect(icon.status).toBe(200);
+    expect(icon.headers.get('content-type')).toBe('image/png');
   });
 
   it('serves media with byte ranges, which Safari needs for audio', async () => {

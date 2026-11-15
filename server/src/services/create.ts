@@ -158,7 +158,7 @@ export function createServices(deps: ServiceDeps): Services {
     return run;
   }
 
-  /** The engine's dependencies for one run, with the course's own pace applied (short demos). */
+  /** The engine's dependencies for one run, with the course's own pace applied (short courses). */
   const engineDeps = (rng: EngineDeps['rng'], pack: CoursePack): EngineDeps => {
     const selected: EngineDeps = { config, tasks: deps.gameplayTasks, retriever: deps.retriever, ...deps.getGameplay?.(), rng, clock };
     return { ...selected, config: withPace(selected.config, pack.pace) };
@@ -270,12 +270,11 @@ export function createServices(deps: ServiceDeps): Services {
     }),
 
     async listSamples() {
-      // Short hand-made demos (demo-*) come first, then the other samples alphabetically.
-      const isDemo = (id: string) => (id.startsWith('demo-') ? 0 : 1);
+      // Short samples (packs with their own pace) come first, then the others alphabetically.
       const listed = await deps.samples.list().catch(() => []);
       const samples = listed
         .filter((s) => SAMPLE_NAME.test(s.id))
-        .sort((a, b) => isDemo(a.id) - isDemo(b.id) || a.id.localeCompare(b.id))
+        .sort((a, b) => Number(!!b.short) - Number(!!a.short) || a.id.localeCompare(b.id))
         .map((s) => ({ id: s.id, title: s.title || s.id }));
       return { samples };
     },

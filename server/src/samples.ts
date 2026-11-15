@@ -3,8 +3,8 @@
  * scripts/build.mjs); tests and scripts read the repo's `samples/cache/` folder (node/samples.ts).
  */
 export interface SampleSource {
-  /** Every sample's id and title, in any order. */
-  list(): Promise<{ id: string; title: string }[]>;
+  /** Every sample's id and title, in any order. `short`: the pack has its own pace (listed first). */
+  list(): Promise<{ id: string; title: string; short?: boolean }[]>;
   /** The parsed `<id>.json` fixture, or null when there is none. */
   read(id: string): Promise<unknown | null>;
 }
@@ -26,10 +26,10 @@ export function createFetchSampleSource(base: string | URL, doFetch: typeof fetc
   };
   return {
     async list() {
-      const index = (await json('index.json').catch(() => null)) as { samples?: { id?: unknown; title?: unknown }[] } | null;
+      const index = (await json('index.json').catch(() => null)) as { samples?: { id?: unknown; title?: unknown; short?: unknown }[] } | null;
       return (index?.samples ?? [])
-        .filter((s): s is { id: string; title?: unknown } => typeof s.id === 'string')
-        .map((s) => ({ id: s.id, title: typeof s.title === 'string' && s.title ? s.title : s.id }));
+        .filter((s): s is { id: string; title?: unknown; short?: unknown } => typeof s.id === 'string')
+        .map((s) => ({ id: s.id, title: typeof s.title === 'string' && s.title ? s.title : s.id, short: s.short === true }));
     },
     read: (id) => json(`${encodeURIComponent(id)}.json`),
   };

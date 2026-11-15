@@ -16,7 +16,7 @@ the same code runs in the player's browser tab.
 | `server/` | The game logic, bundled for the browser as `backend.js`: the `/api` routes (`router.ts`), the run engine, ingest and retrieval, the model providers and storage. The folder keeps its name from the server edition. |
 | `shared/` | Zod contracts (`schemas.ts`) and a dependency-free API client (`api-client.ts`) used by both sides. |
 | `scripts/` | `build.mjs` (the static site), `start.mjs` and `serve.mjs` (the local launcher and file server), the end-to-end gauntlet (`e2e.ts`) and the API doc generator. |
-| `samples/` | Prebuilt course packs playable without any API key. A pack can set its own `pace` for short demos: questions per room and boss, hearts, how many questions Pip asks, the "Help me!" chance, or a fixed room turn for "Help me!". Packs named `demo-*` are listed first. |
+| `samples/` | Prebuilt course packs playable without any API key. A pack can set its own `pace` for a short game: questions per room and boss, hearts, how many questions Pip asks, the "Help me!" chance, or a fixed room turn for "Help me!". Packs with a pace are listed first (`short` in `samples/index.json`). |
 
 `npm run build` writes the static site, and any static host serves it:
 

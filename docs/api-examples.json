@@ -104,6 +104,10 @@
       "response": {
         "samples": [
           {
+            "id": "gravity",
+            "title": "Gravity"
+          },
+          {
             "id": "binary-search",
             "title": "Binary Search"
           },
@@ -322,7 +326,7 @@
         "title": "API upload example"
       },
       "response": {
-        "courseId": "crs_a990e395f6"
+        "courseId": "crs_0fe0daa233"
       }
     },
     {
@@ -346,7 +350,7 @@
       ],
       "multipart": true,
       "response": {
-        "courseId": "crs_9af7e3f583"
+        "courseId": "crs_323fd3cedc"
       }
     },
     {
@@ -359,7 +363,7 @@
         "targetGrade": "B"
       },
       "response": {
-        "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+        "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
         "courseId": "sample-seasons",
         "courseTitle": "Why Earth Has Seasons",
         "targetGrade": "B",
@@ -432,17 +436,17 @@
           "maxStudentQuestions": 3,
           "helpMeTimed": true
         },
-        "createdAt": "2026-11-15T05:18:29.648Z",
-        "updatedAt": "2026-11-15T05:18:29.648Z"
+        "createdAt": "2026-11-15T05:31:52.753Z",
+        "updatedAt": "2026-11-15T05:31:52.753Z"
       }
     },
     {
       "method": "POST",
       "route": "/api/runs/:id/pause",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/pause",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/pause",
       "status": 200,
       "response": {
-        "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+        "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
         "courseId": "sample-seasons",
         "courseTitle": "Why Earth Has Seasons",
         "targetGrade": "B",
@@ -515,18 +519,18 @@
           "maxStudentQuestions": 3,
           "helpMeTimed": true
         },
-        "createdAt": "2026-11-15T05:18:29.648Z",
-        "updatedAt": "2026-11-15T05:18:29.649Z",
-        "pausedAt": "2026-11-15T05:18:29.649Z"
+        "createdAt": "2026-11-15T05:31:52.753Z",
+        "updatedAt": "2026-11-15T05:31:52.755Z",
+        "pausedAt": "2026-11-15T05:31:52.755Z"
       }
     },
     {
       "method": "POST",
       "route": "/api/runs/:id/resume",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/resume",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/resume",
       "status": 200,
       "response": {
-        "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+        "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
         "courseId": "sample-seasons",
         "courseTitle": "Why Earth Has Seasons",
         "targetGrade": "B",
@@ -599,17 +603,17 @@
           "maxStudentQuestions": 3,
           "helpMeTimed": true
         },
-        "createdAt": "2026-11-15T05:18:29.648Z",
-        "updatedAt": "2026-11-15T05:18:29.650Z"
+        "createdAt": "2026-11-15T05:31:52.753Z",
+        "updatedAt": "2026-11-15T05:31:52.757Z"
       }
     },
     {
       "method": "POST",
       "route": "/api/runs/:id/end",
-      "path": "/api/runs/run_50d62f17-f2e4-405a-ac3b-ecba61fcfb7f/end",
+      "path": "/api/runs/run_43ec4f18-92c8-4755-9e93-4089bee65655/end",
       "status": 200,
       "response": {
-        "id": "run_50d62f17-f2e4-405a-ac3b-ecba61fcfb7f",
+        "id": "run_43ec4f18-92c8-4755-9e93-4089bee65655",
         "courseId": "sample-seasons",
         "courseTitle": "Why Earth Has Seasons",
         "targetGrade": "B",
@@ -682,19 +686,19 @@
           "maxStudentQuestions": 3,
           "helpMeTimed": true
         },
-        "createdAt": "2026-11-15T05:18:29.652Z",
-        "updatedAt": "2026-11-15T05:18:29.652Z",
-        "endedAt": "2026-11-15T05:18:29.652Z"
+        "createdAt": "2026-11-15T05:31:52.760Z",
+        "updatedAt": "2026-11-15T05:31:52.760Z",
+        "endedAt": "2026-11-15T05:31:52.760Z"
       }
     },
     {
       "method": "DELETE",
       "route": "/api/runs/:id",
-      "path": "/api/runs/run_50d62f17-f2e4-405a-ac3b-ecba61fcfb7f",
+      "path": "/api/runs/run_43ec4f18-92c8-4755-9e93-4089bee65655",
       "status": 200,
       "response": {
         "deleted": true,
-        "id": "run_50d62f17-f2e4-405a-ac3b-ecba61fcfb7f"
+        "id": "run_43ec4f18-92c8-4755-9e93-4089bee65655"
       }
     },
     {
@@ -710,12 +714,12 @@
     {
       "method": "GET",
       "route": "/api/runs/:id/debug",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/debug",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/debug",
       "status": 200,
       "responseIsExcerpt": true,
       "response": {
         "run": {
-          "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+          "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
           "phase": "learning",
           "hidden": {
             "misconceptions": []
@@ -799,7 +803,7 @@
     {
       "method": "POST",
       "route": "/api/runs/:id/teach",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/teach",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/teach",
       "status": 200,
       "request": {
         "explanation": "Seasons are just a thing that happens every year."
@@ -831,7 +835,7 @@
     {
       "method": "POST",
       "route": "/api/runs/:id/questions/:qid/skip",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/questions/sq_0_0_1/skip",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/questions/sq_0_0_1/skip",
       "status": 200,
       "response": {
         "notebookMd": "# Notebook\n\n## Axial tilt and sunlight angle\n- Seasons are just a thing that happens every year\n- It is summer when Earth is closer to the Sun, and winter when it is farther away.\n"
@@ -840,10 +844,10 @@
     {
       "method": "POST",
       "route": "/api/runs/:id/ready",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/ready",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/ready",
       "status": 200,
       "response": {
-        "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+        "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
         "courseId": "sample-seasons",
         "courseTitle": "Why Earth Has Seasons",
         "targetGrade": "B",
@@ -935,8 +939,8 @@
           "maxStudentQuestions": 3,
           "helpMeTimed": true
         },
-        "createdAt": "2026-11-15T05:18:29.648Z",
-        "updatedAt": "2026-11-15T05:18:29.668Z",
+        "createdAt": "2026-11-15T05:31:52.753Z",
+        "updatedAt": "2026-11-15T05:31:52.787Z",
         "room": {
           "attempt": 1,
           "turn": 0,
@@ -961,7 +965,7 @@
     {
       "method": "POST",
       "route": "/api/runs/:id/turn",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/turn",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/turn",
       "status": 200,
       "response": {
         "kind": "student_answer",
@@ -998,7 +1002,7 @@
     {
       "method": "POST",
       "route": "/api/runs/:id/turn",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/turn",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/turn",
       "status": 200,
       "response": {
         "kind": "help_me",
@@ -1014,13 +1018,13 @@
           }
         },
         "timeBudgetSec": 80,
-        "deadline": "2026-11-15T05:19:49.672Z"
+        "deadline": "2026-11-15T05:33:12.795Z"
       }
     },
     {
       "method": "POST",
       "route": "/api/runs/:id/help/:eventId",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/help/help_r0_a1_t1",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/help/help_r0_a1_t1",
       "status": 200,
       "request": {
         "answer": {
@@ -1059,7 +1063,7 @@
     {
       "method": "POST",
       "route": "/api/runs/:id/turn",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/turn",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/turn",
       "status": 200,
       "response": {
         "kind": "room_end",
@@ -1123,10 +1127,10 @@
     {
       "method": "POST",
       "route": "/api/runs/:id/retry",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/retry",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/retry",
       "status": 200,
       "response": {
-        "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+        "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
         "courseId": "sample-seasons",
         "courseTitle": "Why Earth Has Seasons",
         "targetGrade": "B",
@@ -1199,8 +1203,8 @@
           "maxStudentQuestions": 3,
           "helpMeTimed": true
         },
-        "createdAt": "2026-11-15T05:18:29.648Z",
-        "updatedAt": "2026-11-15T05:18:29.678Z",
+        "createdAt": "2026-11-15T05:31:52.753Z",
+        "updatedAt": "2026-11-15T05:31:52.805Z",
         "room": {
           "attempt": 1,
           "turn": 4,
@@ -1254,7 +1258,7 @@
                 }
               },
               "timeBudgetSec": 80,
-              "deadline": "2026-11-15T05:19:49.672Z"
+              "deadline": "2026-11-15T05:33:12.795Z"
             },
             {
               "kind": "help_result",
@@ -1412,10 +1416,10 @@
     {
       "method": "GET",
       "route": "/api/runs/:id",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
       "status": 200,
       "response": {
-        "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+        "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
         "courseId": "sample-seasons",
         "courseTitle": "Why Earth Has Seasons",
         "targetGrade": "B",
@@ -1488,8 +1492,8 @@
           "maxStudentQuestions": 3,
           "helpMeTimed": true
         },
-        "createdAt": "2026-11-15T05:18:29.648Z",
-        "updatedAt": "2026-11-15T05:18:29.678Z",
+        "createdAt": "2026-11-15T05:31:52.753Z",
+        "updatedAt": "2026-11-15T05:31:52.805Z",
         "room": {
           "attempt": 1,
           "turn": 4,
@@ -1543,7 +1547,7 @@
                 }
               },
               "timeBudgetSec": 80,
-              "deadline": "2026-11-15T05:19:49.672Z"
+              "deadline": "2026-11-15T05:33:12.795Z"
             },
             {
               "kind": "help_result",
@@ -1701,10 +1705,10 @@
     {
       "method": "POST",
       "route": "/api/runs/:id/continue",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/continue",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/continue",
       "status": 200,
       "response": {
-        "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+        "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
         "courseId": "sample-seasons",
         "courseTitle": "Why Earth Has Seasons",
         "targetGrade": "B",
@@ -1777,8 +1781,8 @@
           "maxStudentQuestions": 3,
           "helpMeTimed": true
         },
-        "createdAt": "2026-11-15T05:18:29.648Z",
-        "updatedAt": "2026-11-15T05:18:29.696Z",
+        "createdAt": "2026-11-15T05:31:52.753Z",
+        "updatedAt": "2026-11-15T05:31:52.838Z",
         "history": [
           {
             "roomId": "r1",
@@ -1860,7 +1864,7 @@
     {
       "method": "POST",
       "route": "/api/runs/:id/turn",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/turn",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/turn",
       "status": 200,
       "response": {
         "kind": "boss_end",
@@ -1928,7 +1932,7 @@
     {
       "method": "GET",
       "route": "/api/runs/:id/results",
-      "path": "/api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/results",
+      "path": "/api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/results",
       "status": 200,
       "response": {
         "predictedGradePct": 90,
@@ -1999,7 +2003,7 @@
       "response": {
         "app": "pips-notebook",
         "version": 1,
-        "exportedAt": "2026-11-15T05:18:29.752Z",
+        "exportedAt": "2026-11-15T05:31:52.943Z",
         "courses": [
           {
             "id": "sample-seasons",
@@ -2027,7 +2031,7 @@
     {
       "method": "POST",
       "route": "/api/runs/:id/teach",
-      "path": "/api/runs/run_35c3117b-2788-452b-abfb-283c71018677/teach",
+      "path": "/api/runs/run_e0240559-dec5-465b-be04-783c7d248d55/teach",
       "status": 200,
       "request": {
         "explanation": "This topic is something we study.",
@@ -2060,7 +2064,7 @@
     {
       "method": "POST",
       "route": "/api/runs/:id/questions/:qid/answer",
-      "path": "/api/runs/run_35c3117b-2788-452b-abfb-283c71018677/questions/sq_0_0_1/answer",
+      "path": "/api/runs/run_e0240559-dec5-465b-be04-783c7d248d55/questions/sq_0_0_1/answer",
       "status": 200,
       "request": {
         "answer": "The tilt of Earth's axis causes the seasons. Earth is actually closest to the Sun in early January, in the middle of Northern Hemisphere winter."
@@ -2073,7 +2077,7 @@
     {
       "method": "POST",
       "route": "/api/runs/:id/turn",
-      "path": "/api/runs/run_35c3117b-2788-452b-abfb-283c71018677/turn",
+      "path": "/api/runs/run_e0240559-dec5-465b-be04-783c7d248d55/turn",
       "status": 409,
       "response": {
         "error": {

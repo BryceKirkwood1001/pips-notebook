@@ -1,6 +1,6 @@
 {
   "name": "pips-notebook",
-  "sourceIdentity": "c940eb6ae4c2cfe29892cf866734ec84417b807b707847c822c56fb75aa3b549",
+  "sourceIdentity": "4b429b773662001a2650d19a3f180c96f48362620542daef33f5df0a48c91f3f",
   "sources": {
     "../shared/src/api-client.ts": "f08c4cfe228a6fce945430a9739d99a7663a5121552724dbe52b00ec9393e0ce",
     "game/art.ts": "28a2ca69f316d04bb8b4321d5701c9fdd0dd7316a703752535a8a0c883e74874",
@@ -18,7 +18,7 @@
     "game/course/help.ts": "ff96a712a32afafdf49b4c94f944c29b4c6bc56e4787003a56da4fddc9a10951",
     "game/course/lesson-guide.ts": "e203f0b4c49b97d6c4dc3904ade7fb4c9a88114fcd09c6341459db59c9d38dd8",
     "game/course/mock.ts": "8d75701ff72769ee94edbfc5c1c90cdf9cbd063b425b14c93489a9b18ff86b5b",
-    "game/course/page.ts": "9696be222997a4ddce61e9d486cfbbbe5394fa6393e8ad42a1878e30ac15c938",
+    "game/course/page.ts": "bb1b45da37dda8c75df93ec1a6f2404c35ab25359c7c055819affa962643c761",
     "game/course/report.ts": "faae8bbf0f9a568eeda55d32c72abd0ababf780fc597155fb8ad8e6b81e5240b",
     "game/course/settings-view.ts": "75578e2c1ac693cbbcd9f12da292fe5b2471e61c8b7ff32df72c479dccee4fd0",
     "game/course/soundtrack.ts": "c8328144772214725cb6edbd326a5e51c7fb8e7f54d0f02a57d3177e40f54651",
@@ -159,7 +159,7 @@
     "engine/bakery/src/validate-game.ts": "f03183672e6b6986adf29f890ba035bb8efc92529beba8f02491e8ce4a3b0a87"
   },
   "outputs": {
-    "game.js": "22c3de761fcacc2b38f8a17c040a89a0567d7759add5de8997ff208c6b893e49",
+    "game.js": "8a75b1c427d631e971d62b8a3b2edd3cc5c80772d65b30a84910a5fc130dc131",
     "index.html": "53efc796bd57bc0826bfd9672098cae2ed657e1c329a62430eff35aaa09465f2",
     "media/OFL-Silkscreen.txt": "86c5e9c9382cdcc5948704fdfe60f2aa164a719746931219a42736ecd9cefbd3",
     "media/boss_room_background.png": "1adf4e8e24f528eabdaccdf7b032dd49497f2e93382ce00da16b17086514ffb6",

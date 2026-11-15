@@ -208,7 +208,7 @@ Response: HTTP 200 (excerpt).
 {
   "app": "pips-notebook",
   "version": 1,
-  "exportedAt": "2026-11-15T05:18:29.752Z",
+  "exportedAt": "2026-11-15T05:31:52.943Z",
   "courses": [
     {
       "id": "sample-seasons",
@@ -246,7 +246,7 @@ Response: HTTP 200.
 
 ## GET /api/samples
 
-Lists the cached courses accepted by the seed endpoint, hand-made demos (`demo-*`) first.
+Lists the cached courses accepted by the seed endpoint, short ones (with their own pace) first. In the built site they come from `samples/index.json`.
 
 ### Example
 
@@ -257,6 +257,10 @@ Response: HTTP 200.
 ```json
 {
   "samples": [
+    {
+      "id": "gravity",
+      "title": "Gravity"
+    },
     {
       "id": "binary-search",
       "title": "Binary Search"
@@ -375,7 +379,7 @@ Response: HTTP 200.
 
 ## POST /api/courses/seed/:sample
 
-Loads a cached course immediately. Bundled sample ids: `seasons` and `binary-search`.
+Loads a cached course immediately. Bundled sample ids: `gravity`, `seasons` and `binary-search`.
 
 ### Example
 
@@ -408,7 +412,7 @@ Response: HTTP 202.
 
 ```json
 {
-  "courseId": "crs_a990e395f6"
+  "courseId": "crs_0fe0daa233"
 }
 ```
 
@@ -437,7 +441,7 @@ Response: HTTP 202.
 
 ```json
 {
-  "courseId": "crs_9af7e3f583"
+  "courseId": "crs_323fd3cedc"
 }
 ```
 
@@ -559,7 +563,7 @@ Response: HTTP 200.
 
 ## POST /api/runs
 
-Creates a run in `learning`. `targetGrade` is required: `A`, `A-`, `B+`, `B`, `B-`, `C+`, `C`, `C-`, `D`. Optional `studentEmoji` must be one of the values exported by the client. Optional `scope.roomIds` selects rooms; the default includes every course room. The first room must be ready (425 otherwise). A course pack with its own `pace` (short demos) reports it in `rules`.
+Creates a run in `learning`. `targetGrade` is required: `A`, `A-`, `B+`, `B`, `B-`, `C+`, `C`, `C-`, `D`. Optional `studentEmoji` must be one of the values exported by the client. Optional `scope.roomIds` selects rooms; the default includes every course room. The first room must be ready (425 otherwise). A course pack with its own `pace` (short courses) reports it in `rules`.
 
 ### Example
 
@@ -576,7 +580,7 @@ Response: HTTP 201 (excerpt).
 
 ```json
 {
-  "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+  "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -613,13 +617,13 @@ Returns the current public run, notebook, completed turn logs and pending help e
 
 ### Example
 
-Request: `GET /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4` (no body).
+Request: `GET /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+  "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -712,13 +716,13 @@ Idempotently pauses an unfinished run and persists `pausedAt`. Gameplay mutation
 
 ### Example
 
-Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/pause` (no body).
+Request: `POST /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/pause` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+  "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -746,7 +750,7 @@ Response: HTTP 200 (excerpt).
     "maxStudentQuestions": 3,
     "helpMeTimed": true
   },
-  "pausedAt": "2026-11-15T05:18:29.649Z"
+  "pausedAt": "2026-11-15T05:31:52.755Z"
 }
 ```
 
@@ -756,13 +760,13 @@ Idempotently resumes the run. Shifts a pending help deadline and its started tim
 
 ### Example
 
-Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/resume` (no body).
+Request: `POST /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/resume` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+  "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -799,13 +803,13 @@ Ends the expedition early and persists `endedAt` (idempotent). The run stays in 
 
 ### Example
 
-Request: `POST /api/runs/run_50d62f17-f2e4-405a-ac3b-ecba61fcfb7f/end` (no body).
+Request: `POST /api/runs/run_43ec4f18-92c8-4755-9e93-4089bee65655/end` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_50d62f17-f2e4-405a-ac3b-ecba61fcfb7f",
+  "id": "run_43ec4f18-92c8-4755-9e93-4089bee65655",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -842,14 +846,14 @@ Permanently removes the run (progress, notebook, history). Its course, questions
 
 ### Example
 
-Request: `DELETE /api/runs/run_50d62f17-f2e4-405a-ac3b-ecba61fcfb7f` (no body).
+Request: `DELETE /api/runs/run_43ec4f18-92c8-4755-9e93-4089bee65655` (no body).
 
 Response: HTTP 200.
 
 ```json
 {
   "deleted": true,
-  "id": "run_50d62f17-f2e4-405a-ac3b-ecba61fcfb7f"
+  "id": "run_43ec4f18-92c8-4755-9e93-4089bee65655"
 }
 ```
 
@@ -859,7 +863,7 @@ Allowed in `learning`. `explanation` is trimmed, nonempty, at most 8,000 charact
 
 ### Example
 
-Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/teach` (`application/json`).
+Request: `POST /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/teach` (`application/json`).
 
 ```json
 {
@@ -897,7 +901,7 @@ Response: HTTP 200.
 
 ### Example
 
-Request: `POST /api/runs/run_35c3117b-2788-452b-abfb-283c71018677/teach` (`application/json`).
+Request: `POST /api/runs/run_e0240559-dec5-465b-be04-783c7d248d55/teach` (`application/json`).
 
 ```json
 {
@@ -940,7 +944,7 @@ Allowed in `learning` for an open student question. `answer` is nonempty text, a
 
 ### Example
 
-Request: `POST /api/runs/run_35c3117b-2788-452b-abfb-283c71018677/questions/sq_0_0_1/answer` (`application/json`).
+Request: `POST /api/runs/run_e0240559-dec5-465b-be04-783c7d248d55/questions/sq_0_0_1/answer` (`application/json`).
 
 ```json
 {
@@ -963,7 +967,7 @@ Allowed in `learning` for an open student question. No body. Adds its belief as 
 
 ### Example
 
-Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/questions/sq_0_0_1/skip` (no body).
+Request: `POST /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/questions/sq_0_0_1/skip` (no body).
 
 Response: HTTP 200.
 
@@ -979,13 +983,13 @@ Allowed in `learning`. No body. Auto-skips open questions, draws fresh questions
 
 ### Example
 
-Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/ready` (no body).
+Request: `POST /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/ready` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+  "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
   "courseId": "sample-seasons",
   "phase": "room",
   "roomIndex": 0,
@@ -1047,7 +1051,7 @@ Allowed in `room`, `room_result`, `boss`, `results`. No body. Returns a discrimi
 
 ### student_answer
 
-Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/turn` (no body).
+Request: `POST /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/turn` (no body).
 
 Response: HTTP 200.
 
@@ -1087,7 +1091,7 @@ Response: HTTP 200.
 
 ### help_me
 
-Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/turn` (no body).
+Request: `POST /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/turn` (no body).
 
 Response: HTTP 200.
 
@@ -1106,13 +1110,13 @@ Response: HTTP 200.
     }
   },
   "timeBudgetSec": 80,
-  "deadline": "2026-11-15T05:19:49.672Z"
+  "deadline": "2026-11-15T05:33:12.795Z"
 }
 ```
 
 ### room_end
 
-Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/turn` (no body).
+Request: `POST /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/turn` (no body).
 
 Response: HTTP 200.
 
@@ -1179,7 +1183,7 @@ Response: HTTP 200.
 
 ### boss_end
 
-Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/turn` (no body).
+Request: `POST /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/turn` (no body).
 
 Response: HTTP 200.
 
@@ -1254,7 +1258,7 @@ Allowed in `room` or `boss` for the pending event. Send `{ answer: ... }` using 
 
 ### help_result
 
-Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/help/help_r0_a1_t1` (`application/json`).
+Request: `POST /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/help/help_r0_a1_t1` (`application/json`).
 
 ```json
 {
@@ -1303,13 +1307,13 @@ Allowed after a failed `room_result`. No body. Returns to `learning` for the sam
 
 ### Example
 
-Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/retry` (no body).
+Request: `POST /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/retry` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+  "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 0,
@@ -1402,13 +1406,13 @@ Allowed after a passed `room_result`. No body. Moves to the next room in `learni
 
 ### Example
 
-Request: `POST /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/continue` (no body).
+Request: `POST /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/continue` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
-  "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+  "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
   "courseId": "sample-seasons",
   "phase": "learning",
   "roomIndex": 1,
@@ -1521,7 +1525,7 @@ Allowed in `results`. Returns boss health rounded to a percentage, letter grade,
 
 ### Example
 
-Request: `GET /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/results` (no body).
+Request: `GET /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/results` (no body).
 
 Response: HTTP 200.
 
@@ -1593,14 +1597,14 @@ Development only: 404 unless `DEBUG=true`. Returns `{ run, pack, questions, stat
 
 ### Example
 
-Request: `GET /api/runs/run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4/debug` (no body).
+Request: `GET /api/runs/run_59e95dcf-3875-40bb-9b3a-a0ea686ec073/debug` (no body).
 
 Response: HTTP 200 (excerpt).
 
 ```json
 {
   "run": {
-    "id": "run_3d4bfa5a-aba5-4cb4-95cf-1d4c46bd02d4",
+    "id": "run_59e95dcf-3875-40bb-9b3a-a0ea686ec073",
     "phase": "learning",
     "hidden": {
       "misconceptions": []

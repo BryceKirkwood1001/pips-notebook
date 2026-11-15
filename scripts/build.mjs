@@ -54,14 +54,14 @@ for (const file of ['game.js', 'text-shaper.wasm']) fs.copyFileSync(path.join(ga
 const page = fs.readFileSync(path.join(game, 'index.html'), 'utf8').replace(
   '</title>',
   '</title><meta name="description" content="Teach Pip from your own notes, then watch Pip take the exam. A learn-by-teaching game that runs in your browser.">'
-    + '<link rel="modulepreload" href="./backend.js">',
+    + '<link rel="icon" type="image/png" href="./media/pip-icon.png"><link rel="modulepreload" href="./backend.js">',
 );
 fs.writeFileSync(path.join(out, 'index.html'), page);
 
 // 3. Media: everything the game loads by relative URL (media/...).
 fs.cpSync(path.join(root, 'client', 'game', 'media'), path.join(out, 'media'), { recursive: true, filter: (src) => !path.basename(src).startsWith('.') });
 
-// 4. Offline sample lessons and their index, hand-made demos (demo-*) first.
+// 4. Offline sample lessons and their index. `short` marks packs with their own pace, which the Library lists first.
 const samplesOut = path.join(out, 'samples');
 fs.mkdirSync(samplesOut);
 const cache = path.join(root, 'samples', 'cache');
@@ -72,7 +72,7 @@ for (const file of fs.readdirSync(cache).filter((f) => f.endsWith('.json')).sort
   const fixture = JSON.parse(fs.readFileSync(path.join(cache, file), 'utf8'));
   // Re-serialized without indentation: the same data, about a third smaller.
   fs.writeFileSync(path.join(samplesOut, file), JSON.stringify(fixture));
-  samples.push({ id, title: fixture.pack?.title || id });
+  samples.push({ id, title: fixture.pack?.title || id, short: !!fixture.pack?.pace });
 }
 fs.writeFileSync(path.join(samplesOut, 'index.json'), JSON.stringify({ samples }, null, 2) + '\n');
 

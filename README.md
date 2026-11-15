@@ -12,7 +12,7 @@ The final boss is an exam on the rooms you chose. The results show a predicted g
 
 ## Play it
 
-Open the game's website, press **Play** and pick a sample lesson. That's all: no account, no install, no key.
+Open the game's website, press **Play** and pick a sample lesson (**Gravity** is the quickest). That's all: no account, no install, no key. Without a key the game runs in **Offline** mode, which uses simple built-in rules instead of AI: Pip learns a fact when your explanation uses its key words, so explain each idea in plain sentences.
 
 To learn from **your own material**, open **Settings**, choose **Google Gemini** or **OpenAI**, paste your API key and press **Save & apply**:
 
@@ -60,14 +60,14 @@ Every option needs **https** (all three give it for free): browsers allow the mi
 | **Expedition** | One playthrough of a dungeon, from the first room to the results. Expeditions are saved in **My archive**, where you can resume, end or remove them. |
 | **"Help me!"** | Now and then Pip asks you to answer a question yourself, with a timer based on how hard it is. |
 
-A room has two halves. In the **lesson**, open **Talk to Pip**, explain each topic and answer Pip's questions; **Pip has a question!** means one is waiting. Then press **Ready: go fight** and use **Next turn** to watch Pip answer from the notebook. Each turn shows Pip's answer, reasoning, the notes Pip used and the correct answer. If Pip runs out of hearts, **Retry** returns to the lesson with the notebook kept and hearts refilled. The boss exam covers every room in the expedition, and up to half of its questions aim at wrong beliefs still in the notebook.
+A room has two halves. In the **lesson**, open **Talk to Pip**, explain each topic and answer Pip's questions; **Pip has a question!** means one is waiting. Once Pip has notes on a topic, a **Topic taught** banner appears with a button to the next topic; you can still teach that topic more. Then press **Ready: go fight** and use **Next turn** to watch Pip answer from the notebook. Each turn shows Pip's answer, reasoning, the notes Pip used and the correct answer. If Pip runs out of hearts, **Retry** returns to the lesson with the notebook kept and hearts refilled. The boss exam covers every room in the expedition, and up to half of its questions aim at wrong beliefs still in the notebook.
 
 Other things in the game:
 
 - **Rooms** and **Pause** open the expedition menu without losing your place, and pausing stops "Help me!" timers.
 - **Dictate** turns speech into text using your browser's speech recognition. If the browser can do it on your device (recent Chrome with the language downloaded), the audio stays there. Otherwise Chrome, Edge and Safari send your voice to Google, Microsoft or Apple to turn it into text; the Dictate button, the listening message and Settings say so. Browsers without speech recognition, such as Firefox, download an open speech model once (Moonshine base, about 63 MB, from jsDelivr and Hugging Face) and run it in the page, so the audio stays on your device.
 - While a dungeon is being prepared, **Thinking** shows progress and, with OpenAI, the model's public reasoning summary (not its private reasoning). You can start an expedition as soon as its first room is ready.
-- **Offline** mode replays canned AI responses for the two sample lessons. Uploads in Offline mode use a simple heuristic and often fail to prepare: choose a provider for your own material.
+- **Offline** mode replays canned AI responses for the sample lessons. Uploads in Offline mode use a simple heuristic and often fail to prepare: choose a provider for your own material.
 - Music changes with each scene. The **Music** button turns it off, and your browser remembers the choice.
 
 ## How it's built
@@ -79,7 +79,7 @@ There is no backend. The page loads two bundles: `game.js`, the Phaser AE game, 
 | `client/` | The game. Source in `client/game/` (screens in `client/game/course/`), prebuilt copy in `client/dist/`. |
 | `server/` | The game logic, run in the browser: API routes (`router.ts`), game rules (`engine/`), course preparation (`ingest/`), search over your material (`rag/`), AI providers (`llm/`), and storage in IndexedDB (`repo/indexeddb.ts`). `browser/main.ts` is the entry point bundled as `backend.js`. The name is kept from the server edition. |
 | `shared/` | The data contracts (Zod schemas) every request is checked against, and the API client the game and scripts use. |
-| `samples/` | Two sample handouts with ready-made dungeons, plus `rock-paper-scissors.pdf` for trying an upload. |
+| `samples/` | Three sample handouts with ready-made dungeons (Gravity, Binary Search, Why Earth Has Seasons), plus `rock-paper-scissors.pdf` for trying an upload. |
 | `scripts/` | `build.mjs` (the static site), `start.mjs` and `serve.mjs` (what `npm start` runs), the end-to-end test and the API doc generator. |
 | `docs/` | Hosting, architecture, API reference, run phases, course preparation, rules and decisions, and marketing art. |
 
@@ -97,11 +97,21 @@ Run these from the repository folder after `npm ci` (`npm start` installs by its
 | `npm run build` | Writes the deployable static site to `site/`. `-- --out <folder>` writes it elsewhere. |
 | `npm test` | Runs the tests, including the static site and a check that `client/dist/` is up to date with the game source. `npm run test:watch` reruns on changes. |
 | `npm run typecheck` | Type-checks `server/` and `shared/`. The game's own check is `npm --prefix client run typecheck`, which needs the Phaser tools. |
-| `npm run e2e` | Plays a full game against the backend in Node (Offline, in memory) and prints the transcript. Add `-- --sample binary-search` for the other sample. |
+| `npm run e2e` | Plays a full game against the backend in Node (Offline, in memory) and prints the transcript. Add `-- --sample binary-search` for another sample. |
 | `npm run build:game` | Rebuilds `client/dist/` from the game source. Needs the Phaser tools (below). |
 | `npm run ingest -- <file>` | Prepares a dungeon from a file and saves it to `samples/cache/`, which adds it to the built-in samples. Uses the provider from the environment, for example `GEMINI_API_KEY=… npm run ingest -- notes.md`. |
 | `npm run llm:smoke` | Makes one live call for each in-game AI task plus one embedding, with the key from the environment. Skipped without one. |
 | `npm run docs:api` | Rebuilds `docs/API.md` from recorded requests. `npm run e2e -- --capture-file docs/api-examples.json` records new ones. |
+
+## Demo script
+
+1. Open the game ([Play it](#play-it)).
+2. Press **Play** and pick a lesson from the Library: **Gravity** for a short game (one room with two topics, a three-question room fight with a "Help me!" on the second question, and a four-question boss), or **Why Earth Has Seasons** for a full one. Choose a target grade and start.
+3. **Lesson.** Open **Talk to Pip**, explain each topic and answer Pip's questions. Check the notebook before pressing **Ready: go fight**. To see a wrong belief at work, teach one on purpose, for example "There is no gravity in space."
+4. **Room fight.** Press **Next turn** and watch Pip answer from the notebook. Click a turn to see Pip's answer, the notes Pip cited and how it was graded.
+5. **"Help me!"** When Pip asks for help, answer before the timer runs out.
+6. **Boss.** The exam covers every room you chose and goes after wrong beliefs left in the notebook.
+7. **Results.** See the predicted grade, whether you met your target, and each wrong belief that cost points, with the page and section of your material that explains it.
 
 ## Changing the game
 

@@ -13,12 +13,12 @@ export function createDirectorySampleSource(dir: string = SAMPLES_CACHE_DIR): Sa
     async list() {
       let files: string[];
       try { files = (await readdir(dir)).filter((f) => f.endsWith('.json') && f !== 'index.json'); } catch { return []; }
-      const out: { id: string; title: string }[] = [];
+      const out: { id: string; title: string; short: boolean }[] = [];
       for (const file of files) {
         const id = file.replace(/\.json$/, '');
         try {
-          const json = JSON.parse(await readFile(path.join(dir, file), 'utf8')) as { pack?: { title?: string } };
-          out.push({ id, title: json.pack?.title || id });
+          const json = JSON.parse(await readFile(path.join(dir, file), 'utf8')) as { pack?: { title?: string; pace?: unknown } };
+          out.push({ id, title: json.pack?.title || id, short: !!json.pack?.pace });
         } catch {
           // An unreadable fixture is simply not offered.
         }
