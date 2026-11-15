@@ -286,7 +286,7 @@ export type MaterialItem = z.infer<typeof MaterialItemSchema>;
 
 /**
  * A course's own pace, overriding the server's gameplay settings for runs of that course. Used by short
- * hand-made demos (samples/cache/demo-*.json) so one dungeon can be played in about 90 seconds.
+ * courses, such as the Gravity sample, so one dungeon can be played in a couple of minutes.
  */
 export const CoursePaceSchema = z.object({
   roomQuestions: z.number().int().min(1).max(20).optional(),
@@ -316,7 +316,7 @@ export const CoursePackSchema = z.object({
   materialItems: z.array(MaterialItemSchema),
   /** Server-only retrieval profile; provider changes must not mix vector spaces. */
   embeddingProfile: CourseEmbeddingSchema.optional(),
-  /** Overrides the server's gameplay settings for this course (short demos). */
+  /** Overrides the server's gameplay settings for this course (short courses). */
   pace: CoursePaceSchema.optional(),
   createdAt: z.string(),
   updatedAt: z.string(),

@@ -1,6 +1,6 @@
-# Gravity: 90-Second Demo
+# Gravity
 
-A one-page lesson for a quick game of Pip's Notebook. Teach Pip the two ideas below, then watch Pip fight.
+A one-page lesson: two ideas about gravity, each with its common mistake.
 
 ## Why things fall
 

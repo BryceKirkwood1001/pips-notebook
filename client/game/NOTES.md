@@ -4,7 +4,7 @@
 
 `?mock=1` plays the canned practice API (room 1 is lost once on purpose, then everything passes);
 `?api=<origin>` picks a backend (default 8787). My archive lists Your saved dungeons.
-Title: Play (Library: samples first, with the gravity demo at the top), My archive, Settings, Music.
+Title: Play (Library: samples first, shortest at the top), My archive, Settings, Music.
 Title controls live in the menu; the usual header returns on other screens. Settings Back returns here.
 Start run shows a title card (curtain), then Pip walks into the library.
 

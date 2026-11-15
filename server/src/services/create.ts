@@ -154,7 +154,7 @@ export function createServices(deps: ServiceDeps): Services {
     return run;
   }
 
-  /** The engine's dependencies for one run, with the course's own pace applied (short demos). */
+  /** The engine's dependencies for one run, with the course's own pace applied (short courses). */
   const engineDeps = (rng: EngineDeps['rng'], pack: CoursePack): EngineDeps => {
     const selected: EngineDeps = { config, tasks: deps.gameplayTasks, retriever: deps.retriever, ...deps.getGameplay?.(), rng, clock };
     return { ...selected, config: withPace(selected.config, pack.pace) };
@@ -269,24 +269,24 @@ export function createServices(deps: ServiceDeps): Services {
     async listSamples() {
       let names: string[];
       try {
-        // Short hand-made demos (demo-*) come first, then the other samples alphabetically.
-        const isDemo = (f: string) => (f.startsWith('demo-') ? 0 : 1);
-        names = (await readdir(cacheDir)).filter((f) => f.endsWith('.json')).sort((a, b) => isDemo(a) - isDemo(b) || a.localeCompare(b));
+        names = (await readdir(cacheDir)).filter((f) => f.endsWith('.json')).sort((a, b) => a.localeCompare(b));
       } catch {
         return { samples: [] };
       }
-      const samples: { id: string; title: string }[] = [];
+      const samples: { id: string; title: string; short: boolean }[] = [];
       for (const file of names) {
         const id = file.replace(/\.json$/, '');
         if (!SAMPLE_NAME.test(id)) continue;
         try {
-          const json = JSON.parse(await readFile(path.join(cacheDir, file), 'utf8')) as { pack?: { title?: string } };
-          samples.push({ id, title: json.pack?.title || id });
+          const json = JSON.parse(await readFile(path.join(cacheDir, file), 'utf8')) as { pack?: { title?: string; pace?: unknown } };
+          samples.push({ id, title: json.pack?.title || id, short: !!json.pack?.pace });
         } catch {
           // An unreadable fixture is simply not offered.
         }
       }
-      return { samples };
+      // Short samples (packs with their own pace) come first, then the others alphabetically.
+      samples.sort((a, b) => Number(b.short) - Number(a.short));
+      return { samples: samples.map(({ id, title }) => ({ id, title })) };
     },
 
     async seedCourse(sample) {

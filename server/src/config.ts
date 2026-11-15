@@ -256,7 +256,7 @@ export function testConfig(overrides: Partial<Config> = {}): Config {
   return { ...loadConfig({ LLM_PROVIDER: 'mock' }), ...overrides };
 }
 
-/** The settings for a run of a course with its own pace (short demos); other courses get `config` unchanged. */
+/** The settings for a run of a course with its own pace (short courses); other courses get `config` unchanged. */
 export function withPace(config: Config, pace: CoursePace | undefined): Config {
   if (!pace) return config;
   const paced = { ...config };

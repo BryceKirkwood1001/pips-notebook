@@ -1,5 +1,5 @@
 /**
- * A course pack's own pace (short demos): listed first when named demo-*, its rules apply only to its runs, and a
+ * A course pack's own pace (short courses): listed first, its rules apply only to its runs, and a
  * placed "Help me!" turn always fires. Uses a copy of the Seasons sample with a pace added.
  */
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
@@ -30,7 +30,7 @@ afterEach(async () => {
 });
 
 describe('course pace', () => {
-  it('lists demo samples first', async () => {
+  it('lists short samples first', async () => {
     expect((await t.get('/api/samples')).body.samples.map((s: { id: string }) => s.id)).toEqual(['demo-short', 'seasons']);
   });
 

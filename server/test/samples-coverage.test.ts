@@ -1,6 +1,6 @@
 /**
- * SPEC 4.4 and 2.9 checked independently of the ingest module, on every pack in samples/cache. Hand-made demos
- * (demo-*) are checked against their own pace, and skip the provenance rules that only apply to ingested material.
+ * SPEC 4.4 and 2.9 checked independently of the ingest module, on every pack in samples/cache. Short packs with
+ * their own pace are checked against that pace, and skip the provenance rules that only apply to ingested material.
  */
 import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
@@ -23,7 +23,7 @@ for (const sample of samples) {
     const fx = CourseFixtureSchema.parse(JSON.parse(raw));
     const { pack } = fx;
     const config = withPace(testConfig(), pack.pace);
-    const handMade = sample.startsWith('demo-');
+    const paced = !!pack.pace;
     const verified = fx.questions.filter((q) => q.verified);
     const chunks = new Map(fx.chunks.map((c) => [c.id, c]));
 
@@ -70,7 +70,7 @@ for (const sample of samples) {
       }
     });
 
-    it.skipIf(handMade)('provenance priority: every convertible material item has a verbatim question', () => {
+    it.skipIf(paced)('provenance priority: every convertible material item has a verbatim question', () => {
       const items = pack.materialItems.filter((m) => CONVERTIBLE.includes(m.kind));
       expect(items.length).toBeGreaterThan(0);
       for (const item of items) {
@@ -83,7 +83,7 @@ for (const sample of samples) {
       expect(verbatim).toBeGreaterThanOrEqual(items.length);
     });
 
-    it.skipIf(handMade)('generated questions only fill gaps (they always target a key point, misconception or multi-concept need)', () => {
+    it.skipIf(paced)('generated questions only fill gaps (they always target a key point, misconception or multi-concept need)', () => {
       for (const q of verified.filter((x) => x.provenance.origin === 'generated')) {
         expect(q.keyPointIds.length + q.misconceptionIds.length + q.conceptIds.length - 1, q.id).toBeGreaterThan(0);
       }

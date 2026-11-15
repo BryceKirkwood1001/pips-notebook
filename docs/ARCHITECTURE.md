@@ -11,8 +11,8 @@ to the API. For the rules of play see [SPEC.md](SPEC.md); for every endpoint wit
 | `client/` | The game: a Phaser AE project. Source in `client/game/` (`main.ts` registers the screens, `course/` holds them). The committed build is `client/dist/`. |
 | `server/` | Fastify on Node: the `/api` routes, the run engine, ingest and retrieval, the model providers and storage. It also serves the game. |
 | `shared/` | Zod contracts (`schemas.ts`) and a dependency-free API client (`api-client.ts`) used by both sides. |
-| `scripts/` | `start.mjs` (the one-command launcher), the offline HTTP gauntlet (`e2e.ts`), the API doc generator and `build-demo-gravity.ts` (writes the gravity demo). |
-| `samples/` | Prebuilt course packs playable without any API key, including the hand-made gravity demo. A pack can set its own `pace` for short demos: questions per room and boss, hearts, how many questions Pip asks, the "Help me!" chance, or a fixed room turn for "Help me!". Packs named `demo-*` are listed first. |
+| `scripts/` | `start.mjs` (the one-command launcher), the offline HTTP gauntlet (`e2e.ts`) and the API doc generator. |
+| `samples/` | Prebuilt course packs playable without any API key. A pack can set its own `pace` for a short game: questions per room and boss, hearts, how many questions Pip asks, the "Help me!" chance, or a fixed room turn for "Help me!". Packs with a pace are listed first. |
 
 One process serves everything on one port (8787 by default):
 
