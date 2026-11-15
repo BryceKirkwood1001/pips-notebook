@@ -40134,6 +40134,11 @@ function mount() {
   css.rel = "stylesheet";
   css.href = "media/game.css";
   host3.head.append(css);
+  const icon2 = el("link");
+  icon2.rel = "icon";
+  icon2.type = "image/png";
+  icon2.href = "media/pip-icon.png";
+  host3.head.append(icon2);
   host3.title = "Pip's Notebook";
   host3.documentElement.lang = "en";
   host3.body.append(stage);

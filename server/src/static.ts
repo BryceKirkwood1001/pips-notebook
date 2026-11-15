@@ -20,5 +20,7 @@ export async function registerGame(app: FastifyInstance): Promise<boolean> {
   if (!fs.existsSync(path.join(GAME_DIR, 'index.html'))) return false;
   await app.register(fastifyStatic, { root: MEDIA_DIR, prefix: '/media/' });
   await app.register(fastifyStatic, { root: GAME_DIR, prefix: '/', decorateReply: false });
+  // The tab icon (Pip's smiling face). The page links it too; this covers browsers that ask before the game loads.
+  app.get('/favicon.ico', (_req, reply) => reply.sendFile('pip-icon.png', MEDIA_DIR));
   return true;
 }

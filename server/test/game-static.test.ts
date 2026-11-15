@@ -38,6 +38,14 @@ describe('game served with the API', () => {
     expect(music.rawPayload.length).toBe(100);
   });
 
+  it("serves Pip's face as the tab icon", async () => {
+    for (const url of ['/favicon.ico', '/media/pip-icon.png']) {
+      const res = await get(url);
+      expect(res.statusCode, url).toBe(200);
+      expect(res.headers['content-type'], url).toBe('image/png');
+    }
+  });
+
   it('keeps the API and its JSON errors as they were', async () => {
     const health = await t.get('/api/health');
     expect(health.status).toBe(200);
